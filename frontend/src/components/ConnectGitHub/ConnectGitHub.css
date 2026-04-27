@@ -1,0 +1,190 @@
+.connect-github {
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.connect-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border-color, #e5e7eb);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-secondary, #6b7280);
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.tab-button:hover {
+  color: var(--text-primary, #1f2937);
+}
+
+.tab-button.active {
+  color: var(--primary-color, #3b82f6);
+  border-bottom-color: var(--primary-color, #3b82f6);
+}
+
+.tab-content {
+  padding: 20px 0;
+}
+
+.oauth-tab,
+.pat-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tab-description {
+  font-size: 14px;
+  color: var(--text-secondary, #6b7280);
+  margin: 0;
+}
+
+.security-note {
+  font-size: 13px;
+  color: var(--success-color, #10b981);
+  margin: 16px 0 0 0;
+}
+
+.pat-instructions {
+  background: var(--surface-secondary, #f9fafb);
+  padding: 16px;
+  border-radius: 6px;
+  border-left: 3px solid var(--primary-color, #3b82f6);
+}
+
+.pat-instructions p {
+  font-size: 14px;
+  margin: 0 0 8px 0;
+  color: var(--text-primary, #1f2937);
+}
+
+.pat-instructions ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+
+.pat-instructions li {
+  font-size: 13px;
+  padding: 4px 0;
+  color: var(--text-secondary, #6b7280);
+}
+
+.create-token-link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--primary-color, #3b82f6);
+  text-decoration: none;
+  font-weight: 600;
+  transition: opacity 0.2s ease;
+}
+
+.create-token-link:hover {
+  opacity: 0.8;
+}
+
+.pat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pat-input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: monospace;
+  background: var(--background-color, #ffffff);
+  color: var(--text-primary, #1f2937);
+  transition: all 0.2s ease;
+}
+
+.pat-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.pat-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  padding: 10px 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  font-size: 13px;
+  color: #ef4444;
+}
+
+.success-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 6px;
+  font-size: 14px;
+  color: #10b981;
+}
+
+.success-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.validate-button {
+  padding: 10px 16px;
+  background: var(--primary-color, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.validate-button:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.validate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .connect-github {
+    max-width: 100%;
+  }
+
+  .connect-tabs {
+    gap: 4px;
+  }
+
+  .tab-button {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}

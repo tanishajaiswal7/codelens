@@ -1,0 +1,116 @@
+.persona-bar {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  flex-shrink: 0;
+}
+
+.persona-bar-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--text-5);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: 7px;
+}
+
+.persona-row { display: flex; gap: 7px; }
+
+.persona-card {
+  flex: 1;
+  padding: 7px 10px;
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.015);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.12s ease;
+}
+
+.persona-card:hover {
+  border-color: var(--border-2);
+  background: rgba(255,255,255,0.03);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.persona-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+.persona-card.active-faang    {
+  border-color: rgba(91,91,214,0.5);
+  background: rgba(91,91,214,0.1);
+  box-shadow: 0 2px 12px rgba(91,91,214,0.15);
+}
+
+.persona-card.active-startup  {
+  border-color: rgba(245,158,11,0.45);
+  background: rgba(245,158,11,0.08);
+  box-shadow: 0 2px 12px rgba(245,158,11,0.12);
+}
+
+.persona-card.active-security {
+  border-color: rgba(239,68,68,0.45);
+  background: rgba(239,68,68,0.08);
+  box-shadow: 0 2px 12px rgba(239,68,68,0.12);
+}
+
+.persona-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.icon-bg-faang    { background: rgba(91,91,214,0.2); }
+.icon-bg-startup  { background: rgba(245,158,11,0.15); }
+.icon-bg-security { background: rgba(239,68,68,0.12); }
+
+.persona-info { min-width: 0; flex: 1; }
+.persona-name { font-size: 11px; font-weight: 600; color: var(--text-2); line-height: 1.2; }
+.persona-desc { font-size: 9.5px; color: var(--text-5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.persona-active-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.active-faang    .persona-active-dot { background: var(--accent-3); }
+.active-startup  .persona-active-dot { background: var(--amber); }
+.active-security .persona-active-dot { background: var(--red); }
+
+/* Compact mode for inline usage */
+.personaPickerCompact {
+  padding: 4px 9px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.1s;
+}
+
+.personaPickerCompact:hover {
+  border-color: var(--border-3);
+  color: var(--text-2);
+}
+
+.personaPickerCompact:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}

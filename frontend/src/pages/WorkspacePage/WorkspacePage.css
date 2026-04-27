@@ -1,0 +1,100 @@
+.workspace-page {
+  padding: 2.5rem 2rem 3rem;
+  max-width: 1240px;
+  margin: 0 auto;
+  min-height: calc(100vh - 80px);
+  color: var(--text);
+  background: radial-gradient(circle at top right, rgba(96, 165, 250, 0.12), transparent 18%),
+    radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.08), transparent 14%);
+}
+
+.workspace-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  gap: 1rem;
+}
+
+.workspace-header-section h1 {
+  margin: 0;
+  font-size: clamp(2.4rem, 3.5vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.btn-primary {
+  padding: 0.95rem 1.8rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+  color: #ffffff;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 700;
+  box-shadow: 0 22px 48px rgba(59, 130, 246, 0.22);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 26px 64px rgba(59, 130, 246, 0.26);
+}
+
+.btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.error-banner {
+  background: rgba(244, 67, 54, 0.08);
+  border: 1px solid rgba(244, 67, 54, 0.22);
+  color: #fca5a5;
+  padding: 1.1rem 1.2rem;
+  border-radius: 16px;
+  margin-bottom: 1.5rem;
+}
+
+.loading,
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+}
+
+.workspaces-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .workspace-header-section {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.workspace-action-buttons,
+.empty-actions {
+  display: flex;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.workspace-subtitle {
+  margin: 0.5rem 0 0;
+  color: var(--text-2);
+  max-width: 640px;
+  line-height: 1.65;
+}

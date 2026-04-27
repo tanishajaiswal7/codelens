@@ -1,0 +1,390 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(2, 6, 23, 0.82);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+}
+
+.invite-modal {
+  width: min(100%, 920px);
+  max-height: min(90vh, 920px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 26px;
+  padding: 2rem;
+  background: rgba(8, 14, 28, 0.98);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
+}
+
+.invite-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.invite-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: 1.1;
+}
+
+.workspace-name {
+  margin: 0.5rem 0 0;
+  color: var(--blue);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  border: 0;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 1.75rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+}
+
+.invite-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
+  gap: 1rem;
+}
+
+.invite-form,
+.share-link-panel {
+  min-width: 0;
+  padding: 1.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.invite-form label,
+.panel-label {
+  display: block;
+  margin-bottom: 0.65rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.panel-description {
+  margin: 0 0 1rem;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.invite-input-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.invite-input {
+  flex: 2;
+  min-width: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.add-email-btn {
+  flex: 0 0 130px;
+}
+
+.invite-input::placeholder {
+  color: var(--text-3);
+}
+
+.invite-input:focus {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.16);
+}
+
+.btn-secondary {
+  padding: 0.85rem 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-weight: 600;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.btn-primary {
+  padding: 0.95rem 1.4rem;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 18px 40px rgba(79, 70, 229, 0.22);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #4338ca 0%, #1d4ed8 100%);
+}
+
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+.add-email-btn {
+  min-width: 120px;
+}
+
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.email-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  background: rgba(96, 165, 250, 0.12);
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.chip-close {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.modal-actions button {
+  padding: 0.95rem 1.3rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  font-weight: 600;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+
+.modal-actions button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.modal-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.share-link-box,
+.invite-link-box {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border-2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.share-link-box code,
+.invite-link-box code {
+  min-width: 0;
+  flex: 1;
+  color: var(--text);
+  word-break: break-all;
+  font-size: 0.9rem;
+}
+
+.copy-btn {
+  padding: 0.72rem 0.95rem;
+  border: 0;
+  border-radius: 10px;
+  background: var(--blue);
+  color: white;
+  font-weight: 600;
+}
+
+.copy-btn:hover {
+  background: #2563eb;
+}
+
+.invite-status {
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+  border-radius: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.invite-status.success {
+  border: 1px solid rgba(52, 211, 153, 0.22);
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+.invite-status.warning {
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+}
+
+.invite-status.error {
+  border: 1px solid rgba(248, 113, 113, 0.24);
+  background: rgba(248, 113, 113, 0.12);
+  color: #f87171;
+}
+
+.invite-results {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.invite-results h3 {
+  margin: 0 0 0.75rem;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.invite-results ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.invite-results li {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-2);
+}
+
+.invite-results li.success {
+  border-left: 4px solid var(--green);
+}
+
+.invite-results li.error {
+  border-left: 4px solid var(--red);
+  color: #fda4af;
+}
+
+.invite-note {
+  color: var(--text-2);
+  font-size: 0.92rem;
+}
+
+.success-icon {
+  font-size: 3rem;
+  color: var(--green);
+  margin-bottom: 1rem;
+}
+
+.success-text {
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+}
+
+.done-btn {
+  width: 100%;
+  padding: 0.85rem;
+  border: 0;
+  border-radius: 12px;
+  background: var(--blue);
+  color: white;
+  font-weight: 600;
+}
+
+.done-btn:hover {
+  background: #2563eb;
+}
+
+@media (max-width: 860px) {
+  .invite-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    padding: 0.75rem;
+  }
+
+  .invite-modal {
+    padding: 1.25rem;
+    border-radius: 18px;
+  }
+
+  .invite-input-row,
+  .modal-actions,
+  .share-link-box,
+  .invite-link-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copy-btn,
+  .add-email-btn,
+  .modal-actions button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .invite-modal {
+    padding: 1.5rem;
+  }
+
+  .invite-link-box {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .copy-btn,
+  .done-btn {
+    width: 100%;
+  }
+}

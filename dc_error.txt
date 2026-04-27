@@ -1,0 +1,134 @@
+time="2026-04-26T23:55:58+05:30" level=warning msg="C:\\Users\\tanis\\Desktop\\codelens\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+time="2026-04-26T23:55:59+05:30" level=warning msg="Found orphan containers ([codelens_backend]) for this project. If you removed or renamed this service in your compose file, you can run this command with the --remove-orphans flag to clean it up."
+ Container codelens_rabbitmq Running 
+ Container codelens_mongodb Running 
+ Container codelens_dashboard_service Running 
+ Container codelens_history_service Running 
+ Container codelens_github_auth_service Running 
+ Container codelens_notification_service Running 
+ Container codelens_review_service Running 
+ Container codelens_settings_service Running 
+ Container codelens_webhook_service Running 
+ Container codelens_github_filebrowser_service Running 
+ Container codelens_socratic_service Running 
+ Container codelens_job_service Running 
+ Container codelens_workspace_service Running 
+ Container codelens_github_pr_service Running 
+ Container codelens_auth_service Running 
+ Container codelens_frontend Running 
+codelens_api_gateway  | 2026/04/26 18:19:09 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:19:15 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:19:20 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:19:26 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:19:33 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:19:43 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:19:52 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:20:03 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:20:25 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:20:59 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:21:57 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:22:09 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:22:15 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:22:21 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:22:28 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:22:35 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:22:44 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:22:58 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:23:17 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:23:45 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | 2026/04/26 18:24:53 [emerg] 1#1: host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+codelens_api_gateway  | nginx: [emerg] host not found in upstream "auth-service" in /etc/nginx/nginx.conf:30
+ Container codelens_mongodb Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_mongodb Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_rabbitmq Waiting 
+ Container codelens_mongodb Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_mongodb Healthy 
+ Container codelens_rabbitmq Healthy 
+ Container codelens_api_gateway Starting 
+ Container codelens_api_gateway Started 
+ Compose Stopping Gracefully Stopping... press Ctrl+C again to force
+ Container codelens_frontend Stopping 
+ Container codelens_frontend Stopped 
+ Container codelens_api_gateway Stopping 
+ Container codelens_api_gateway Stopped 
+ Container codelens_notification_service Stopping 
+ Container codelens_auth_service Stopping 
+ Container codelens_history_service Stopping 
+ Container codelens_review_service Stopping 
+ Container codelens_webhook_service Stopping 
+ Container codelens_socratic_service Stopping 
+ Container codelens_dashboard_service Stopping 
+ Container codelens_workspace_service Stopping 
+ Container codelens_github_filebrowser_service Stopping 
+ Container codelens_github_auth_service Stopping 
+ Container codelens_job_service Stopping 
+ Container codelens_github_pr_service Stopping 
+ Container codelens_settings_service Stopping 
+ Container codelens_github_pr_service Stopped 
+ Container codelens_github_filebrowser_service Stopped 

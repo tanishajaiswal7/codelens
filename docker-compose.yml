@@ -1,0 +1,420 @@
+version: '3.9'
+
+services:
+
+  mongodb:
+    image: mongo:7
+    container_name: codelens_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: codelens-ai
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - codelens_network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: codelens_rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - codelens_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: services/auth-service/Dockerfile
+    container_name: codelens_auth_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.auth-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - ./backend/uploads:/app/uploads
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  github-auth-service:
+    build:
+      context: ./backend
+      dockerfile: services/github-auth-service/Dockerfile
+    container_name: codelens_github_auth_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.github-auth-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  github-pr-service:
+    build:
+      context: ./backend
+      dockerfile: services/github-pr-service/Dockerfile
+    container_name: codelens_github_pr_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.github-pr-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  github-filebrowser-service:
+    build:
+      context: ./backend
+      dockerfile: services/github-filebrowser-service/Dockerfile
+    container_name: codelens_github_filebrowser_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.github-filebrowser-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  workspace-service:
+    build:
+      context: ./backend
+      dockerfile: services/workspace-service/Dockerfile
+    container_name: codelens_workspace_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.workspace-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  review-service:
+    build:
+      context: ./backend
+      dockerfile: services/review-service/Dockerfile
+    container_name: codelens_review_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.review-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  dashboard-service:
+    build:
+      context: ./backend
+      dockerfile: services/dashboard-service/Dockerfile
+    container_name: codelens_dashboard_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.dashboard-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  socratic-service:
+    build:
+      context: ./backend
+      dockerfile: services/socratic-service/Dockerfile
+    container_name: codelens_socratic_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.socratic-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  history-service:
+    build:
+      context: ./backend
+      dockerfile: services/history-service/Dockerfile
+    container_name: codelens_history_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.history-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ./backend
+      dockerfile: services/notification-service/Dockerfile
+    container_name: codelens_notification_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.notification-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  settings-service:
+    build:
+      context: ./backend
+      dockerfile: services/settings-service/Dockerfile
+    container_name: codelens_settings_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.settings-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  job-service:
+    build:
+      context: ./backend
+      dockerfile: services/job-service/Dockerfile
+    container_name: codelens_job_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.job-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  webhook-service:
+    build:
+      context: ./backend
+      dockerfile: services/webhook-service/Dockerfile
+    container_name: codelens_webhook_service
+    restart: unless-stopped
+    env_file:
+      - .env.docker
+      - .env.webhook-service.docker
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/codelens-ai
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      NODE_ENV: development
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: Dockerfile
+    container_name: codelens_api_gateway
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    networks:
+      - codelens_network
+    depends_on:
+      auth-service:
+        condition: service_started
+      github-auth-service:
+        condition: service_started
+      github-pr-service:
+        condition: service_started
+      github-filebrowser-service:
+        condition: service_started
+      review-service:
+        condition: service_started
+      workspace-service:
+        condition: service_started
+      dashboard-service:
+        condition: service_started
+      socratic-service:
+        condition: service_started
+      history-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+      settings-service:
+        condition: service_started
+      job-service:
+        condition: service_started
+      webhook-service:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: codelens_frontend
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:5000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - codelens_network
+    depends_on:
+      - gateway
+
+volumes:
+  mongodb_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  codelens_network:
+    driver: bridge

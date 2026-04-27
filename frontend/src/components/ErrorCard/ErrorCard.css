@@ -1,0 +1,52 @@
+.error-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 11px 13px;
+  background: var(--red-bg);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: var(--r-sm);
+  gap: 10px;
+}
+
+.error-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.error-title { color: var(--red); font-weight: 700; font-size: 11px; }
+.error-msg { color: var(--red); font-size: 10px; line-height: 1.5; opacity: 0.9; }
+
+.error-retry-btn {
+  padding: 4px 10px;
+  background: var(--red);
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.12s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.error-retry-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(239,68,68,0.3);
+}
+
+.error-retry-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--red);
+}
+
+.error-retry-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}

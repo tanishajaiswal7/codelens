@@ -1,0 +1,157 @@
+.mpr-loading {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.mpr-empty {
+  padding: 40px 24px;
+  text-align: center;
+  border: 1px dashed var(--border-2);
+  border-radius: var(--r);
+}
+
+.mpr-empty-icon { 
+  font-size: 32px; 
+  margin-bottom: 12px; 
+}
+
+.mpr-empty p {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  margin: 0 0 6px 0;
+}
+
+.mpr-empty-sub {
+  font-size: 12px;
+  color: var(--text-3) !important;
+  font-weight: 400 !important;
+  line-height: 1.5;
+}
+
+.mpr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mpr-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-1);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mpr-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mpr-pr-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mpr-pr-num {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-3);
+  background: var(--bg-2);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.mpr-pr-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.mpr-verdict {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mpr-verdict--approved {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.mpr-verdict--rejected,
+.mpr-verdict--needs_revision {
+  background: var(--red-bg);
+  color: var(--red);
+}
+
+.mpr-verdict--minor_issues {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+
+.mpr-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mpr-date, .mpr-issues {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.mpr-critical {
+  font-size: 11px;
+  color: var(--red);
+  font-weight: 500;
+}
+
+.mpr-feedback {
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border-radius: var(--r-sm);
+  border-left: 3px solid var(--amber);
+}
+
+.mpr-feedback-label {
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.mpr-feedback-text {
+  font-size: 12px;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mpr-action-needed {
+  font-size: 12px;
+  color: var(--amber);
+  padding: 8px 12px;
+  background: var(--amber-bg);
+  border-radius: var(--r-sm);
+}
+
+.mpr-approved-msg {
+  font-size: 12px;
+  color: var(--green);
+  padding: 8px 12px;
+  background: var(--green-bg);
+  border-radius: var(--r-sm);
+}

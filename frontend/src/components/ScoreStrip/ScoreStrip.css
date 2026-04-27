@@ -1,0 +1,56 @@
+.score-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  flex-shrink: 0;
+}
+
+.ss-label {
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-right: 4px;
+}
+
+.ss-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.ss-count.improved {
+  color: var(--green);
+}
+
+.ss-count.regressed {
+  color: var(--red);
+}
+
+.ss-arrow {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.ss-delta {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.ss-delta.improved {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid var(--border-2);
+}
+
+.ss-delta.regressed {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid var(--border-2);
+}

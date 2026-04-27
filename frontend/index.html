@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <title>CodeLens AI</title>
+    <script>
+      // Apply theme before React renders to prevent flash
+      (function() {
+        const theme = localStorage.getItem('codelens-theme') || 'dark';
+        if (document.documentElement) {
+          document.documentElement.setAttribute('data-theme', theme);
+          if (theme === 'light') {
+            document.documentElement.style.backgroundColor = '#ffffff';
+            document.documentElement.style.color = '#1a1a1a';
+          } else {
+            document.documentElement.style.backgroundColor = '#0f0f1a';
+            document.documentElement.style.color = '#f0eff8';
+          }
+        }
+        // Apply body styles only if body exists
+        if (document.body) {
+          if (theme === 'light') {
+            document.body.style.backgroundColor = '#ffffff';
+            document.body.style.color = '#1a1a1a';
+          } else {
+            document.body.style.backgroundColor = '#0f0f1a';
+            document.body.style.color = '#f0eff8';
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

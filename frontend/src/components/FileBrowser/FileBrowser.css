@@ -1,0 +1,191 @@
+.file-browser {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.fb-header {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  flex-shrink: 0;
+}
+
+.fb-back-btn {
+  font-size: 12px;
+  color: var(--accent-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.fb-back-btn:hover { color: var(--text); }
+
+.fb-repo-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  font-family: 'JetBrains Mono', monospace;
+  flex: 1;
+}
+
+/* ── Workspace: 2 or 3 columns ── */
+.fb-workspace {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  gap: 0;
+}
+
+.fb-workspace.has-review {
+  grid-template-columns: 220px 1fr 360px;
+}
+
+.fb-workspace > * {
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ── Column 1: Tree ── */
+.fb-col-tree {
+  border-right: 1px solid var(--border);
+  background: var(--bg-1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.fb-tree-error {
+  margin: 10px;
+  padding: 8px 10px;
+  background: var(--red-bg);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  color: var(--red);
+}
+
+/* ── Column 2: Editor ── */
+.fb-col-editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.fb-empty-editor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+}
+
+.fb-empty-icon { font-size: 32px; opacity: 0.3; }
+
+.fb-empty-text {
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+  max-width: 200px;
+  line-height: 1.5;
+}
+
+/* ── Column 3: Review ── */
+.fb-col-review {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.fb-review-topbar {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  flex-shrink: 0;
+}
+
+.fb-review-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.fb-review-close {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-2);
+  border-radius: 4px;
+  color: var(--text-3);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.fb-review-close:hover {
+  border-color: var(--border-3);
+  color: var(--text);
+}
+
+/* ReviewPanel inside this column must scroll */
+.fb-review-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.fb-review-content > * {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Resize Handle ── */
+.fb-resize-handle {
+  position: relative;
+  width: 4px;
+  height: 100%;
+  background: transparent;
+  cursor: col-resize;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.15s ease;
+}
+
+.fb-resize-handle:hover {
+  background: var(--accent);
+}
+
+.fb-workspace.resizing .fb-resize-handle {
+  background: var(--accent);
+  opacity: 0.8;
+}

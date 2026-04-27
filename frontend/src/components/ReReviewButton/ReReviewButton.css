@@ -1,0 +1,52 @@
+.re-review-btn {
+  height: 30px;
+  padding: 0 16px;
+  border-radius: var(--r-sm);
+  border: 2px solid var(--amber);
+  background: transparent;
+  color: var(--amber);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: amber-pulse 2s ease-in-out infinite;
+  transition: background 0.12s, color 0.12s;
+}
+
+.re-review-btn:hover:not(:disabled) {
+  background: var(--amber-bg);
+}
+
+.re-review-btn.loading {
+  animation: none;
+  border-color: var(--border-2);
+  color: var(--text-3);
+  cursor: not-allowed;
+}
+
+.rrb-icon {
+  font-size: 13px;
+}
+
+.rrb-spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--amber-bg);
+  border-top-color: var(--amber);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes amber-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--amber-bg);
+  }
+
+  50% {
+    box-shadow: 0 0 8px 3px var(--amber-bg);
+  }
+}

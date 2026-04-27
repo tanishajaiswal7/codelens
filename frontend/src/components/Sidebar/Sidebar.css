@@ -1,0 +1,137 @@
+.sidebar {
+  width: 200px;
+  background: var(--bg-1);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  padding: 10px 6px;
+  overflow-y: auto;
+  animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    margin-left: -200px;
+  }
+  to {
+    opacity: 1;
+    margin-left: 0;
+  }
+}
+
+.sidebar-nav-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 12px;
+}
+
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border-radius: var(--r);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-2);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border-2);
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-align: center;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(91,91,214,0.1);
+  border-color: var(--accent-border);
+  color: var(--accent-3);
+  transform: translateY(-1px);
+}
+
+.sidebar-nav-item.active {
+  background: var(--accent-glow);
+  color: var(--accent-3);
+  border-color: var(--accent-border);
+  box-shadow: 0 0 12px rgba(91,91,214,0.2);
+}
+
+.sidebar-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+}
+
+/* History cards */
+.history-card {
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.015);
+  padding: 7px 9px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.history-card:hover {
+  border-color: var(--border-2);
+  background: rgba(255,255,255,0.03);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.history-code {
+  font-size: 10px;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 5px;
+}
+
+/* Persona pills */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.03em;
+}
+
+.pill-faang   { background: var(--accent-glow); color: var(--accent-3); border: 1px solid var(--accent-border); }
+.pill-security{ background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.pill-startup { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,0.2); }
+.pill-pr      { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+.pill-file    { background: var(--orange-bg); color: var(--orange); border: 1px solid rgba(249,115,22,0.2); }
+
+/* Rate limit card */
+.sidebar-footer { margin-top: auto; padding: 0 2px; }
+
+.rate-card {
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: rgba(255,255,255,0.015);
+  padding: 9px 10px;
+}
+
+.rate-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-5);
+  margin-bottom: 6px;
+}
+
+.rate-used { color: var(--accent-3); font-weight: 600; }
+
+.rate-track { height: 3px; background: var(--bg-4); border-radius: 2px; overflow: hidden; }
+.rate-fill  { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+/* Color thresholds for rate fill */
+.rate-fill.warn  { background: var(--amber); }
+.rate-fill.crit  { background: var(--red); }

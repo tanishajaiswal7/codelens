@@ -1,0 +1,45 @@
+.conf-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  flex-shrink: 0;
+  min-width: 48px;
+}
+
+.conf-score {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.conf-score.high     { color: var(--green); }
+.conf-score.moderate { color: var(--amber); }
+.conf-score.low      { color: var(--orange); }
+.conf-score.speculative { color: var(--red); }
+
+.conf-bar-wrap {
+  width: 44px;
+  height: 3px;
+  background: var(--bg-4);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.conf-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.conf-bar.high     { background: var(--green); }
+.conf-bar.moderate { background: var(--amber); }
+.conf-bar.low      { background: var(--orange); }
+.conf-bar.speculative { background: var(--red); }
+
+.conf-label {
+  font-size: 9px;
+  color: var(--text-5);
+  font-weight: 500;
+}
