@@ -93,7 +93,7 @@ export default function OnboardingModal({ isOpen, onClose }) {
         <div className="onboarding-dots">
           {steps.map((_, index) => (
             <button
-              key={index}
+              key={`step-${index}`}
               className={`dot ${index === currentStep ? 'active' : ''}`}
               onClick={() => setCurrentStep(index)}
               aria-label={`Go to step ${index + 1}`}

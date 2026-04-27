@@ -88,7 +88,7 @@ export default function GuidesModal({ isOpen, onClose }) {
               <h3>{selectedGuide.title}</h3>
               <ul className="guide-content">
                 {selectedGuide.content.map((item, idx) => (
-                  <li key={idx}>{item}</li>
+                  <li key={item || idx}>{item}</li>
                 ))}
               </ul>
             </div>

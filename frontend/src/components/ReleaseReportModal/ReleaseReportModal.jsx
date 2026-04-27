@@ -41,7 +41,7 @@ const ReleaseReportModal = ({ report, onClose }) => {
             <section className="blockers-section">
               <h3>Blockers</h3>
               {report.blockers.map((blocker, index) => (
-                <div key={index} className="issue-item">
+                <div key={blocker.prNumber || index} className="issue-item">
                   <strong>{blocker.title}</strong>
                   <div className="issue-details">
                     {blocker.file ? `File: ${blocker.file}` : 'File: unknown'}
@@ -58,7 +58,7 @@ const ReleaseReportModal = ({ report, onClose }) => {
             <section className="risks-section">
               <h3>Risks</h3>
               {report.risks.map((risk, index) => (
-                <div key={index} className="issue-item">
+                <div key={risk.prNumber || index} className="issue-item">
                   <strong>{risk.title}</strong>
                   <div className="issue-details">
                     {risk.file ? `File: ${risk.file}` : 'File: unknown'}

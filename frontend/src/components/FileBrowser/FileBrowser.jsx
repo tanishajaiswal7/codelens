@@ -129,7 +129,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
         persona,
         context
       )
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log('Socratic start response:', response)
       }
       
@@ -170,7 +170,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
         selectedFile?.content || null
       )
       
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log('Socratic reply response:', response)
       }
       

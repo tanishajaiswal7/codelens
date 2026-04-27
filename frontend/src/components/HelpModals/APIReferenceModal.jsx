@@ -136,7 +136,7 @@ export default function APIReferenceModal({ isOpen, onClose }) {
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
                   <span style={{
                     background: selectedEndpoint.method === 'GET' ? '#10a981' : '#f59e0b',
-                    color: 'white',
+                    color: 'var(--text)',
                     padding: '4px 8px',
                     borderRadius: '4px',
                     fontSize: '12px',

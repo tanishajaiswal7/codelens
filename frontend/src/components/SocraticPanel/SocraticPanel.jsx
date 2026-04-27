@@ -52,16 +52,16 @@ export default function SocraticPanel({
     const startSession = async () => {
       try {
         setLoading(true);
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.log('Starting Socratic session with code length:', code.length, 'persona:', persona);
         }
         const response = await socraticApi.startSession(code, persona);
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.log('Socratic start response:', response);
         }
         const { session } = response;
 
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.log('Session data:', session);
         }
         setSessionId(session.sessionId);
@@ -78,7 +78,7 @@ export default function SocraticPanel({
         setTurnNumber(session.turnNumber || 1);
         setLoading(false);
       } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
           console.error('Failed to start session:', error.response?.data || error.message);
         }
         setLoading(false);
@@ -210,7 +210,7 @@ export default function SocraticPanel({
           <div>
             {displayMessages.map((msg, idx) => (
               <ChatBubble
-                key={idx}
+                key={`${msg.role}-${idx}`}
                 role={msg.role}
                 content={msg.content}
                 timestamp={msg.timestamp}

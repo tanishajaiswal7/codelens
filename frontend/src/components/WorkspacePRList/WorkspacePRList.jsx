@@ -44,7 +44,6 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
           setReviewingPR(null);
         }
       );
-      return () => cancel();
     } catch (err) {
       setError(err.response?.data?.error || 'Review failed');
       setReviewingPR(null);

@@ -35,7 +35,7 @@ export default function ReviewPanel({
       <div className="review-panel">
         <div className="suggestions">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="skeleton-card">
+            <div key={`skeleton-${i}`} className="skeleton-card">
               <div className="skeleton-line title" />
               <div className="skeleton-line body w90" />
               <div className="skeleton-line body w75" />

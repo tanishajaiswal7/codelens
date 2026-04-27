@@ -103,7 +103,7 @@ export default function FileTree({
           // Skeleton loading state
           <>
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="fileSkeleton">
+              <div key={`skeleton-${i}`} className="fileSkeleton">
                 <div className="skeletonIcon"></div>
                 <div className="skeletonName"></div>
               </div>

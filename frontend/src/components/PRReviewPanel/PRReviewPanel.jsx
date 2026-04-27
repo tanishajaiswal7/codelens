@@ -87,7 +87,7 @@ export default function PRReviewPanel({ review, onBack, hideBackButton = true })
                 {file.suggestions && file.suggestions.length > 0 ? (
                   <div className="suggestions-list">
                     {file.suggestions.map((suggestion, idx) => (
-                      <div key={idx} className="suggestion-wrapper">
+                      <div key={suggestion.id || idx} className="suggestion-wrapper">
                         <ConfidenceBadge
                           confidence={suggestion.confidence}
                         />

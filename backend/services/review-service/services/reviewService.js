@@ -201,12 +201,12 @@ export const reviewService = {
   },
 
   /**
-   * Get all reviews for a user
+   * Get all reviews for a user (personal reviews only, not workspace reviews)
    * @param {string} userId - User ID to fetch reviews for
-   * @returns {Promise<Array>} Array of reviews sorted by creation date (newest first)
+   * @returns {Promise<Array>} Array of personal reviews sorted by creation date (newest first)
    */
   async getReviewsByUserId(userId) {
-    return await Review.find({ userId }).sort({ createdAt: -1 });
+    return await Review.find({ userId, workspaceId: null }).sort({ createdAt: -1 });
   },
 
   /**
