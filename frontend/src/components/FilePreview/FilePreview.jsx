@@ -15,6 +15,8 @@ export default function FilePreview({
   isSocraticLoading = false,
 }) {
   const [selectedPersona, setSelectedPersona] = useState('faang');
+  const fileLineCount = file?.content ? file.content.split('\n').length : file?.lineCount || 0;
+  const editorHeight = `${Math.max(420, fileLineCount * 21 + 32)}px`;
 
   if (isLoading) {
     return (
@@ -108,6 +110,7 @@ export default function FilePreview({
           value={file.content}
           language={file.language || 'plaintext'}
           theme="vs-dark"
+          height={editorHeight}
           options={{
             readOnly: true,
             minimap: { enabled: false },
@@ -115,6 +118,7 @@ export default function FilePreview({
             lineHeight: 21,
             scrollBeyondLastLine: false,
             wordWrap: 'on',
+            automaticLayout: true,
           }}
         />
       </div>
