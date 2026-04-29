@@ -10,6 +10,13 @@ const tokenCookieOptions = () => ({
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 });
 
+const githubOAuthStateCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: 15 * 60 * 1000,
+});
+
 /**
  * Initiates GitHub OAuth flow
  * Generates state token and redirects to GitHub
@@ -21,18 +28,17 @@ export const initiateGitHubOAuth = (req, res) => {
     const state = crypto.randomBytes(32).toString('hex');
     
     // Store state in cookie (15 min expiry)
-    res.cookie('github_oauth_state', state, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 15 * 60 * 1000,
-    });
+    res.cookie('github_oauth_state', state, githubOAuthStateCookieOptions());
 
     const params = new URLSearchParams({
       client_id: process.env.GITHUB_CLIENT_ID,
       scope: 'repo read:user',
       state,
     });
+
+    if (process.env.GITHUB_CALLBACK_URL) {
+      params.set('redirect_uri', process.env.GITHUB_CALLBACK_URL);
+    }
 
     const redirectUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;
     res.redirect(redirectUrl);
