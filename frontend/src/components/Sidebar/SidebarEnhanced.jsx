@@ -60,6 +60,9 @@ export default function SidebarEnhanced({
     if (sortBy === 'recent') {
       filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (sortBy === 'oldest') {
+      // Exclude any reviews created within the last 24 hours when showing oldest
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000; // 24 hours in ms
+      filtered = filtered.filter(item => new Date(item.createdAt).getTime() < cutoff);
       filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
     }
 
