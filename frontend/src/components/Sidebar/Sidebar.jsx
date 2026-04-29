@@ -10,6 +10,7 @@ export default function Sidebar({
   onReviewSelect, 
   rateLimitUsed = 0,
   rateLimitTotal = 20,
+  refreshKey = 0,
 }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +32,7 @@ export default function Sidebar({
     };
 
     fetchHistory();
-  }, []);
+  }, [refreshKey]);
 
   const handleSelectReview = (reviewId) => {
     onReviewSelect(reviewId);
@@ -102,4 +103,5 @@ Sidebar.propTypes = {
   onReviewSelect: PropTypes.func.isRequired,
   rateLimitUsed: PropTypes.number,
   rateLimitTotal: PropTypes.number,
+  refreshKey: PropTypes.number,
 };

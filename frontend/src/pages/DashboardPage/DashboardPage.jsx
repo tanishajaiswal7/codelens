@@ -36,6 +36,7 @@ function DashboardContent({ user }) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [splitRatio, setSplitRatio] = useState(50);
   const [isResizing, setIsResizing] = useState(false);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const splitContainerRef = useRef(null);
   const pollCancelRef = useRef(null);
 
@@ -217,6 +218,7 @@ function DashboardContent({ user }) {
         setCurrentReview(response.review);
         setPreviousReview(null);
         setOriginalReviewCode(code);
+        setHistoryRefreshKey((prev) => prev + 1);
         
         // Update rate limit - increment by 1 after successful review
         setRateLimitUsed((prev) => {
@@ -401,6 +403,7 @@ function DashboardContent({ user }) {
             onReviewSelect={handleSelectReview}
             rateLimitUsed={rateLimitUsed}
             rateLimitTotal={20}
+            refreshKey={historyRefreshKey}
           />
         )}
 

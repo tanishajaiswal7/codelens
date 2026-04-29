@@ -10,6 +10,7 @@ export default function SidebarEnhanced({
   onReviewSelect, 
   rateLimitUsed = 0,
   rateLimitTotal = 20,
+  refreshKey = 0,
 }) {
   const [history, setHistory] = useState([]);
   const [filteredHistory, setFilteredHistory] = useState([]);
@@ -36,7 +37,7 @@ export default function SidebarEnhanced({
     };
 
     fetchHistory();
-  }, []);
+  }, [refreshKey]);
 
   // Apply search and filters
   useEffect(() => {
@@ -232,4 +233,5 @@ SidebarEnhanced.propTypes = {
   onReviewSelect: PropTypes.func.isRequired,
   rateLimitUsed: PropTypes.number,
   rateLimitTotal: PropTypes.number,
+  refreshKey: PropTypes.number,
 };
