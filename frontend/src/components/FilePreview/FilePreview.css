@@ -173,7 +173,6 @@
 }
 
 /* Force Monaco to fill the container */
-.fp-editor > section,
 .fp-editor .monaco-editor,
 .fp-editor .monaco-editor-background,
 .fp-editor .overflow-guard {
