@@ -102,8 +102,8 @@ function DashboardContent({ user }) {
     const loadRateLimitCount = async () => {
       try {
         const response = await historyApi.getHistory();
-        if (response.data.reviewsUsedToday !== undefined) {
-          setRateLimitUsed(response.data.reviewsUsedToday);
+        if (response.reviewsUsedToday !== undefined) {
+          setRateLimitUsed(response.reviewsUsedToday);
         }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
@@ -214,7 +214,7 @@ function DashboardContent({ user }) {
           selectedPersona,
           'standard'
         );
-        setCurrentReview(response.data.review);
+        setCurrentReview(response.review);
         setPreviousReview(null);
         setOriginalReviewCode(code);
         
@@ -311,10 +311,10 @@ function DashboardContent({ user }) {
       setIsLoading(true);
       setError(null);
       const response = await historyApi.getReview(reviewId);
-      setCurrentReview(response.data.review);
+      setCurrentReview(response.review);
       setPreviousReview(null);
-      setOriginalReviewCode(response.data.review?.code || null);
-      setCurrentCode(response.data.review?.code || '');
+      setOriginalReviewCode(response.review?.code || null);
+      setCurrentCode(response.review?.code || '');
       setSocraticMode(false);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {

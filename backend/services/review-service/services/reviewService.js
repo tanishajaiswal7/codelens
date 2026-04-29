@@ -10,6 +10,28 @@ const REVIEW_TEMPERATURE = Number.isFinite(Number(process.env.REVIEW_TEMPERATURE
   ? Number(process.env.REVIEW_TEMPERATURE)
   : 0.1;
 
+const createFallbackReview = (reason, code, persona) => ({
+  summary: `Review service fallback: ${reason}`,
+  verdict: 'needs_revision',
+  suggestions: [
+    {
+      id: `fallback-${Date.now()}`,
+      title: 'AI review unavailable',
+      description: `The AI reviewer could not complete the request. Reason: ${reason}. Check the backend Groq configuration and try again.`,
+      lineRef: null,
+      severity: 'high',
+      confidence: 100,
+      confidenceReason: 'System fallback response',
+      category: 'system',
+    },
+  ],
+  meta: {
+    fallback: true,
+    persona,
+    codeLength: code?.length || 0,
+  },
+});
+
 /**
  * Review service
  * Orchestrates code review workflow: prompt building, AI API calls, response parsing, and storage
@@ -37,11 +59,20 @@ export const reviewService = {
         console.log('System Prompt:', systemPrompt);
       }
 
-      // Call Groq API
-      const aiResponse = await this.callGroqAPI(systemPrompt, userMessage);
+      let review;
 
-      // Parse and validate response
-      const review = parseAIResponse(aiResponse);
+      try {
+        // Call Groq API
+        const aiResponse = await this.callGroqAPI(systemPrompt, userMessage);
+
+        // Parse and validate response
+        review = parseAIResponse(aiResponse);
+      } catch (aiError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Groq review failed, using fallback review:', aiError.message);
+        }
+        review = createFallbackReview(aiError.message || 'AI review unavailable', code, persona);
+      }
 
       // Save to MongoDB
       const savedReview = await Review.create({
@@ -101,11 +132,20 @@ export const reviewService = {
         console.log('System Prompt (with context):', systemPrompt);
       }
 
-      // Call Groq API
-      const aiResponse = await this.callGroqAPI(systemPrompt, userMessage);
+      let review;
 
-      // Parse and validate response
-      const review = parseAIResponse(aiResponse);
+      try {
+        // Call Groq API
+        const aiResponse = await this.callGroqAPI(systemPrompt, userMessage);
+
+        // Parse and validate response
+        review = parseAIResponse(aiResponse);
+      } catch (aiError) {
+        if (process.env.NODE_ENV === 'development') {
+          console.error('Groq review failed, using fallback review:', aiError.message);
+        }
+        review = createFallbackReview(aiError.message || 'AI review unavailable', content, persona);
+      }
 
       // Prepare review data
       const reviewData = {

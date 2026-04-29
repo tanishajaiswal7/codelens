@@ -20,7 +20,7 @@ export default function Sidebar({
       try {
         setLoading(true);
         const response = await historyApi.getHistory();
-        setHistory(response.data.history);
+        setHistory(response.history || []);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
           console.error('Failed to fetch history:', error);
