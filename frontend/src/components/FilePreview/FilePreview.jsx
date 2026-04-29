@@ -13,8 +13,10 @@ export default function FilePreview({
   onModeChange = null,
   onStartSocratic = null,
   isSocraticLoading = false,
+  onCodeChange = null,
 }) {
   const [selectedPersona, setSelectedPersona] = useState('faang');
+  const [editedCode, setEditedCode] = useState(null);
 
   if (isLoading) {
     return (
@@ -106,16 +108,21 @@ export default function FilePreview({
       <div className="fp-editor">
         <Editor
           key={file.path || file.filename || file.content}
-          value={file.content}
+          value={editedCode !== null ? editedCode : file.content}
           language={file.language || 'plaintext'}
           theme="vs-dark"
           height="100%"
+          onChange={(value) => {
+            const nextCode = value || '';
+            setEditedCode(nextCode);
+            onCodeChange?.(nextCode);
+          }}
           onMount={(editor) => {
             editor.setPosition({ lineNumber: 1, column: 1 });
             editor.revealLine(1);
           }}
           options={{
-            readOnly: true,
+            readOnly: mode !== 'socratic',
             minimap: { enabled: false },
             fontSize: 12,
             lineHeight: 21,
@@ -125,6 +132,12 @@ export default function FilePreview({
           }}
         />
       </div>
+
+      {mode === 'socratic' && editedCode !== null && editedCode !== file.content && (
+        <div className="socratic-code-notice">
+          Code changed — AI will notice on your next reply
+        </div>
+      )}
     </div>
   );
 }

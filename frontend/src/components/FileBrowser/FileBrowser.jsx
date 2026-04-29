@@ -26,6 +26,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
   const [socraticMaxTurns, setSocraticMaxTurns] = useState(10)
   const [socraticCompleted, setSocraticCompleted] = useState(false)
   const [isSocraticLoading, setIsSocraticLoading] = useState(false)
+  const [editedFileContent, setEditedFileContent] = useState(null)
 
   useEffect(() => {
     loadBranches()
@@ -76,6 +77,8 @@ export default function FileBrowser({ owner, repo, onBack }) {
     setIsLoadingFile(true)
     setSelectedFile(null)
     setReviewResult(null)
+    setSocraticSessionId(null)
+    setEditedFileContent(null)
     try {
       const content = await fileBrowserApi.getFileContent(
         owner, repo, file.path, currentRef
@@ -108,6 +111,11 @@ export default function FileBrowser({ owner, repo, onBack }) {
   const handleModeChange = (newMode) => {
     setMode(newMode)
     setReviewResult(null)
+    setEditedFileContent(null)
+  }
+
+  const handleFileCodeChange = (code) => {
+    setEditedFileContent(code)
   }
 
   const handleStartSocratic = async (persona) => {
@@ -117,6 +125,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
     setSocraticMessages([])
     setSocraticTurnCount(0)
     setSocraticCompleted(false)
+    setEditedFileContent(null)
     try {
       const context = {
         source: 'github_file',
@@ -154,6 +163,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
 
   const handleSocraticReply = async (userMessage) => {
     if (!socraticSessionId) return
+    setIsSocraticLoading(true)
     try {
       setSocraticMessages((prev) => [
         ...prev,
@@ -164,10 +174,13 @@ export default function FileBrowser({ owner, repo, onBack }) {
         },
       ])
       
+      // Send edited code if it changed, otherwise send original
+      const codeToSend = editedFileContent || selectedFile?.content || null
+      
       const response = await socraticApi.sendReply(
         socraticSessionId,
         userMessage,
-        selectedFile?.content || null
+        codeToSend
       )
       
       if (import.meta.env.DEV) {
@@ -191,6 +204,8 @@ export default function FileBrowser({ owner, repo, onBack }) {
       }
     } catch (err) {
       console.error('Socratic reply failed:', err.response?.data || err.message)
+    } finally {
+      setIsSocraticLoading(false)
     }
   }
 
@@ -241,6 +256,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
               onModeChange={handleModeChange}
               onStartSocratic={handleStartSocratic}
               isSocraticLoading={isSocraticLoading}
+              onCodeChange={handleFileCodeChange}
             />
           ) : (
             <div className="fb-empty-editor">
@@ -267,6 +283,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
                   setSocraticMessages([])
                   setSocraticTurnCount(0)
                   setSocraticCompleted(false)
+                  setEditedFileContent(null)
                 }}
                 title="Close panel"
               >

@@ -200,3 +200,17 @@
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
+
+/* Socratic mode notice */
+.socratic-code-notice {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  background: rgba(59, 130, 246, 0.1);
+  border-top: 1px solid rgba(59, 130, 246, 0.2);
+  color: var(--accent);
+  font-size: 12px;
+  font-family: 'Instrument Sans', sans-serif;
+}
