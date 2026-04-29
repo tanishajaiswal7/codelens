@@ -2,6 +2,13 @@ import { authService } from '../services/authService.js';
 import { emailService } from '../services/emailService.js';
 import { validationResult } from 'express-validator';
 
+const tokenCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+});
+
 export const authController = {
   async register(req, res, next) {
     try {
@@ -20,12 +27,7 @@ export const authController = {
       const user = await authService.createUser({ name, email, password });
       const token = authService.generateToken(user._id);
 
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
+      res.cookie('token', token, tokenCookieOptions());
 
       res.status(201).json({
         message: 'User registered successfully',
@@ -61,12 +63,7 @@ export const authController = {
 
       const token = authService.generateToken(user._id);
 
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
+      res.cookie('token', token, tokenCookieOptions());
 
       res.json({
         message: 'Login successful',

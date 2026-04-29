@@ -3,6 +3,13 @@ import * as githubAuthService from '../services/githubAuthService.js';
 import { authService } from '../../auth-service/services/authService.js';
 import { User } from '../../auth-service/models/User.js';
 
+const tokenCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+});
+
 /**
  * Initiates GitHub OAuth flow
  * Generates state token and redirects to GitHub
@@ -67,12 +74,7 @@ export const handleGitHubCallback = async (req, res) => {
     const token = authService.generateToken(user._id);
 
     // Set JWT cookie
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
+    res.cookie('token', token, tokenCookieOptions());
 
     // Redirect to dashboard
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';

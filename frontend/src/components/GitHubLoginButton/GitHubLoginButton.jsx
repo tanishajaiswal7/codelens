@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { getApiBaseUrl } from '../../utils/apiBaseUrl.js';
 import './GitHubLoginButton.css';
 
 /**
@@ -7,9 +8,7 @@ import './GitHubLoginButton.css';
  */
 const GitHubLoginButton = ({ label = 'Continue with GitHub' }) => {
   const handleClick = () => {
-    // Redirect to backend OAuth login endpoint
-    // Using full URL to ensure it goes to localhost:5000, not the frontend origin
-    window.location.href = 'http://localhost:5000/api/github/auth/login';
+    window.location.href = `${getApiBaseUrl()}/api/github/auth/login`;
   };
 
   return (
