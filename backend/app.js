@@ -22,6 +22,11 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+// Trust proxy headers when running behind a reverse proxy (e.g., Render, Heroku)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', true);
+}
+
 // Security: Helmet to set security headers
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
