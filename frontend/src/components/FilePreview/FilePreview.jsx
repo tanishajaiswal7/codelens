@@ -107,10 +107,15 @@ export default function FilePreview({
       {/* Monaco Editor — takes remaining height */}
       <div className="fp-editor">
         <Editor
+          key={file.path || file.filename || file.content}
           value={file.content}
           language={file.language || 'plaintext'}
           theme="vs-dark"
           height={editorHeight}
+          onMount={(editor) => {
+            editor.setPosition({ lineNumber: 1, column: 1 });
+            editor.revealLine(1);
+          }}
           options={{
             readOnly: true,
             minimap: { enabled: false },
