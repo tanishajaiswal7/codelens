@@ -36,12 +36,6 @@ export const initiateGitHubOAuth = (req, res) => {
       state,
     });
 
-    // Determine callback URL: prefer explicit env, otherwise derive from request
-    const callbackUrl = process.env.GITHUB_CALLBACK_URL || `${req.protocol}://${req.get('host')}/api/github/auth/callback`;
-    if (callbackUrl) {
-      params.set('redirect_uri', callbackUrl);
-    }
-
     const redirectUrl = `https://github.com/login/oauth/authorize?${params.toString()}`;
     res.redirect(redirectUrl);
   } catch (error) {
