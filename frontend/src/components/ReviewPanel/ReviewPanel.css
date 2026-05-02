@@ -7,6 +7,66 @@
   background: var(--bg);
 }
 
+.review-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 12px 0;
+  flex-shrink: 0;
+}
+
+.re-review-btn {
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--text-2);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.re-review-btn:hover:not(:disabled) {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+  background: var(--accent-glow);
+}
+
+.re-review-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.rr-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.rr-stat {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.rr-stat.resolved {
+  background: var(--green-bg);
+  color: var(--green);
+}
+
+.rr-stat.new {
+  background: var(--accent-glow);
+  color: var(--accent-2);
+}
+
+.rr-stat.persistent {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+
 .verdict-strip {
   margin: 10px 12px 0;
   padding: 9px 11px;

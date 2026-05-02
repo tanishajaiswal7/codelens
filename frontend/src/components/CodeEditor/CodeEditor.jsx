@@ -14,10 +14,10 @@ export default function CodeEditor({
   isReReviewing,
   onReReview,
   socraticCodeChanged,
+  isLoading,
 }) {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
-  const [isLoading, setIsLoading] = useState(false);
 
   // Load preferred language from localStorage on mount
   useEffect(() => {
@@ -29,12 +29,7 @@ export default function CodeEditor({
   const canSubmit = code.trim().length > 0 && lineCount >= 5;
 
   const handleSubmit = async () => {
-    setIsLoading(true);
-    try {
-      await onSubmit(code, socraticMode);
-    } finally {
-      setIsLoading(false);
-    }
+    await onSubmit(code, socraticMode)
   };
 
   return (
@@ -101,28 +96,19 @@ export default function CodeEditor({
       )}
 
       <div className="editor-footer">
-        <div className="editor-footer-right">
-          {reviewExists && (
-            <ReReviewButton
-              hasChanges={hasChanges}
-              isLoading={isReReviewing}
-              onClick={onReReview}
-            />
-          )}
+        {!socraticMode ? (
           <button
-            className={`review-btn ${isLoading ? 'loading' : ''}`}
-            onClick={handleSubmit}
-            disabled={!canSubmit || isLoading}
+            className="review-btn"
+            onClick={() => {
+              const codeValue = code || ''
+              onSubmit(codeValue, false)
+            }}
+            disabled={isLoading || !canSubmit}
           >
-            {isLoading
-              ? socraticMode ? 'Starting Socratic...' : 'Reviewing...'
-              : socraticMode ? 'Learn via Socratic' : 'Review my code'}
+            {isLoading ? 'Reviewing...' : '▶ Review Code'}
           </button>
-        </div>
-        {!canSubmit && code.trim().length > 0 && (
-          <div className="editor-min-lines">
-            Minimum 5 lines required
-          </div>
+        ) : (
+          <div />
         )}
       </div>
     </div>

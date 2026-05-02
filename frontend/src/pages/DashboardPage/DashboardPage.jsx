@@ -15,6 +15,8 @@ import ProtectedRoute from '../../components/ProtectedRoute/ProtectedRoute.jsx';
 import Topbar from '../../components/Topbar/Topbar.jsx';
 import { OnboardingModal } from '../../components/HelpModals';
 import { reviewApi } from '../../api/reviewApi.js';
+import socraticApi from '../../api/socraticApi'
+import { pollJob } from '../../utils/jobPoller'
 import { historyApi } from '../../api/historyApi.js';
 import { applyTheme } from '../../utils/themeUtils.js';
 import './DashboardPage.css';
@@ -24,13 +26,20 @@ function DashboardContent({ user }) {
   const [selectedPersona, setSelectedPersona] = useState('faang');
   const [currentReview, setCurrentReview] = useState(null);
   const [previousReview, setPreviousReview] = useState(null);
-  const [originalReviewCode, setOriginalReviewCode] = useState(null);
+  const [originalCode, setOriginalCode] = useState(null);
   const [isReReviewing, setIsReReviewing] = useState(false);
+  const [reReviewMeta, setReReviewMeta] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [socraticMode, setSocraticMode] = useState(false);
   const [socraticCodeChanged, setSocraticCodeChanged] = useState(false);
+  const [socraticSession, setSocraticSession] = useState(null);
+  const [socraticCompleted, setSocraticCompleted] = useState(false);
+  const [socraticCompletionData, setCompletionData] = useState(null);
+  const [socraticKnownBugs, setSocraticKnownBugs] = useState([])
+  const [isSocraticLoading, setIsSocraticLoading] = useState(false);
   const [currentCode, setCurrentCode] = useState('');
+  const [socraticOptimizedCode, setSocraticOptimizedCode] = useState(null);
   const [rateLimitUsed, setRateLimitUsed] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -38,7 +47,6 @@ function DashboardContent({ user }) {
   const [isResizing, setIsResizing] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const splitContainerRef = useRef(null);
-  const pollCancelRef = useRef(null);
 
   // GitHub PR flow state
   const [gitHubStep, setGitHubStep] = useState('repos'); // 'repos', 'prs', 'filebrowser', 'files', 'review'
@@ -116,6 +124,19 @@ function DashboardContent({ user }) {
     loadRateLimitCount();
   }, []);
 
+  // If persona changes during Socratic Mode, start a fresh session with the new mentor style.
+  useEffect(() => {
+    if (!socraticMode) return;
+    if (!currentCode || currentCode.trim().length < 10) return;
+
+    setSocraticSession(null);
+    setSocraticCompleted(false);
+    setSocraticOptimizedCode(null);
+    setError(null);
+
+    handleStartSocraticSession(currentCode);
+  }, [selectedPersona]);
+
   // Handle drag-resize for editor/review split panel.
   useEffect(() => {
     if (!isResizing) return undefined;
@@ -160,104 +181,196 @@ function DashboardContent({ user }) {
     }
   };
 
-  const pollJob = (jobId, onResult, onError) => {
-    const intervalId = setInterval(async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/jobs/${jobId}`, {
-          credentials: 'include',
-        });
+  const runStandardReview = async (code) => {
+    setIsLoading(true);
+    setError(null);
 
-        if (!response.ok) {
-          throw new Error('Failed to poll job status');
-        }
+    try {
+      const response = await reviewApi.submitReview(code, selectedPersona, 'standard');
+      setCurrentReview(response.review);
+      setPreviousReview(null);
+      setOriginalCode(code);
+      setReReviewMeta(null);
+      setHistoryRefreshKey((prev) => prev + 1);
 
-        const data = await response.json();
+      setRateLimitUsed((prev) => {
+        const updated = prev + 1;
+        return Math.min(updated, 20);
+      });
 
-        if (data.status === 'done') {
-          clearInterval(intervalId);
-          onResult(data.result);
-        } else if (data.status === 'failed') {
-          clearInterval(intervalId);
-          onError(data.error || 'Re-review failed');
-        }
-      } catch (pollError) {
-        clearInterval(intervalId);
-        onError(pollError.message || 'Failed to poll re-review job');
+      return response.review;
+    } catch (reviewError) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Review submission failed:', reviewError);
       }
-    }, 1200);
-
-    return () => clearInterval(intervalId);
+      const errorMessage = reviewError.response?.data?.error || 'Failed to get review. Please try again.';
+      setError(errorMessage);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  useEffect(() => {
-    return () => {
-      if (pollCancelRef.current) {
-        pollCancelRef.current();
-      }
-    };
-  }, []);
-
   const handleSubmitReview = async (code, isSocratic) => {
-    setCurrentCode(code);
-    
+    setCurrentCode(code)
+
     if (isSocratic) {
-      setSocraticMode(true);
-      setSocraticCodeChanged(false);
-      setError(null);
-    } else {
-      setSocraticMode(false);
-      setSocraticCodeChanged(false);
-      setIsLoading(true);
-      setError(null);
-      try {
-        const response = await reviewApi.submitReview(
-          code,
-          selectedPersona,
-          'standard'
-        );
-        setCurrentReview(response.review);
-        setPreviousReview(null);
-        setOriginalReviewCode(code);
-        setHistoryRefreshKey((prev) => prev + 1);
-        
-        // Update rate limit - increment by 1 after successful review
-        setRateLimitUsed((prev) => {
-          const updated = prev + 1;
-          return Math.min(updated, 20); // Cap at 20
-        });
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Review submission failed:', error);
-        }
-        const errorMessage = error.response?.data?.error || 'Failed to get review. Please try again.';
-        setError(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
+      setSocraticMode(true)
+      setSocraticCodeChanged(false)
+      setError(null)
+      setSocraticCompleted(false)
+      setCompletionData(null)
+      setSocraticSession(null)
+      return
     }
+
+    // Standard review flow
+    setSocraticMode(false)
+    setSocraticCodeChanged(false)
+    setSocraticSession(null)
+    setSocraticCompleted(false)
+    setCompletionData(null)
+    await runStandardReview(code)
   };
 
   const handleSwitchMode = () => {
     setSocraticMode(false);
     setSocraticCodeChanged(false);
+    setSocraticSession(null);
+    setSocraticCompleted(false);
   };
 
-  const handleSocraticToggle = (enabled) => {
+  const handleStartSocraticSession = async (code) => {
+    if (!code || code.trim().length < 10) {
+      setError('Please paste at least 10 characters of code to begin.');
+      return;
+    }
+
+    setIsSocraticLoading(true);
+    setError(null);
+
+    try {
+      console.log('[Socratic] Starting session with persona:', selectedPersona);
+      
+      const response = await socraticApi.startSession(code, selectedPersona);
+      console.log('[Socratic] API Response:', response);
+
+      if (!response.jobId) {
+        throw new Error('No jobId returned from API');
+      }
+
+      const { jobId } = response;
+
+      const cancel = pollJob(
+        jobId,
+        (result) => {
+          console.log('[Socratic] Job completed with result:', result);
+          
+          setSocraticSession({
+            sessionId: result.sessionId,
+            messages: result.messages || [],
+            turnCount: result.turnCount || 0,
+            maxTurns: result.maxTurns || 10,
+            totalBugs: result.totalBugs || 0,
+            discoveredCount: result.discoveredCount || 0,
+            language: result.language || 'javascript',
+          });
+          setIsSocraticLoading(false);
+        },
+        (error) => {
+          console.error('[Socratic] Session failed:', error);
+          setIsSocraticLoading(false);
+          setError('Failed to start session: ' + (error?.message || 'Unknown error'));
+        }
+      );
+
+      return () => cancel();
+    } catch (err) {
+      console.error('[Socratic] Error:', err);
+      setIsSocraticLoading(false);
+      setError('Failed to start session: ' + (err?.message || 'Please try again'));
+    }
+  };
+
+  const handleSocraticToggle = async (enabled) => {
     setSocraticMode(enabled);
     if (!enabled) {
       setSocraticCodeChanged(false);
+      setSocraticCompleted(false);
+      setSocraticSession(null);
+      setSocraticOptimizedCode(null);
+      return;
     }
+
+    setSocraticCodeChanged(false);
+    setSocraticCompleted(false);
+    setSocraticSession(null);
+    setSocraticOptimizedCode(null);
+    setError(null);
   };
 
   const handleCodeChange = (nextCode) => {
     setCurrentCode(nextCode);
-    if (socraticMode && nextCode !== originalReviewCode) {
+    if (socraticMode && nextCode !== originalCode) {
       setSocraticCodeChanged(true);
     }
   };
 
+  const handleSocraticReply = async (userMessage) => {
+    if (!socraticSession?.sessionId || isSocraticLoading) return
+
+    // Optimistically show user message
+    setSocraticSession(prev => ({
+      ...prev,
+      messages: [...prev.messages, { role: 'user', content: userMessage }],
+      isWaiting: true,
+    }))
+
+    try {
+      const { jobId } = await socraticApi.sendReply(
+        socraticSession.sessionId,
+        userMessage,
+        currentCode || null
+      )
+
+      const cancel = pollJob(
+        jobId,
+        (result) => {
+          setSocraticSession(prev => ({
+            ...prev,
+            messages: [
+              ...prev.messages,
+              { role: 'ai', content: result.aiMessage }
+            ],
+            turnCount: result.turnCount,
+            totalBugs: result.totalBugs,
+            discoveredCount: result.discoveredCount,
+            maxTurns: result.maxTurns || prev.maxTurns,
+            isWaiting: false,
+          }))
+
+          if (result.completed) {
+            setSocraticCompleted(true)
+            if (result.optimizedCode) {
+              setSocraticOptimizedCode(result.optimizedCode)
+            }
+          }
+        },
+        (error) => {
+          console.error('Reply failed:', error)
+          setSocraticSession(prev => ({ ...prev, isWaiting: false }))
+        }
+      )
+
+      return () => cancel()
+    } catch (err) {
+      console.error('Reply error:', err)
+      setSocraticSession(prev => ({ ...prev, isWaiting: false }))
+    }
+  }
+
   const handleReReview = async () => {
-    if (!currentReview || currentCode === originalReviewCode) {
+    if (!currentReview || currentCode === originalCode) {
       return;
     }
 
@@ -265,45 +378,29 @@ function DashboardContent({ user }) {
     setError(null);
 
     try {
-      const { jobId } = await reviewApi.submitReReview(
-        originalReviewCode,
+      const result = await reviewApi.reReview(
+        originalCode,
         currentCode,
-        selectedPersona,
         currentReview.suggestions,
-        currentReview.reviewId || currentReview._id || null
+        selectedPersona
       );
 
-      if (pollCancelRef.current) {
-        pollCancelRef.current();
-      }
-
-      pollCancelRef.current = pollJob(
-        jobId,
-        (result) => {
-          setPreviousReview(currentReview);
-          setCurrentReview({
-            ...result,
-            summary: currentReview.summary,
-            verdict: currentReview.verdict,
-            suggestions: [
-              ...result.unchangedSuggestions,
-              ...result.newSuggestions,
-            ],
-          });
-          setOriginalReviewCode(currentCode);
-          setIsReReviewing(false);
-          pollCancelRef.current = null;
-        },
-        (pollError) => {
-          console.error('Re-review failed:', pollError);
-          setError(typeof pollError === 'string' ? pollError : 'Failed to complete re-review. Please try again.');
-          setIsReReviewing(false);
-          pollCancelRef.current = null;
-        }
-      );
+      setPreviousReview(currentReview);
+      setCurrentReview((previous) => ({
+        ...previous,
+        summary: result.summary || previous.summary,
+        suggestions: result.suggestions || previous.suggestions,
+      }));
+      setReReviewMeta({
+        resolved: result.resolved || 0,
+        newCount: result.newCount || 0,
+        persistent: result.persistent || 0,
+      });
+      setOriginalCode(currentCode);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'Failed to submit re-review. Please try again.');
+    } finally {
       setIsReReviewing(false);
     }
   };
@@ -315,9 +412,12 @@ function DashboardContent({ user }) {
       const response = await historyApi.getReview(reviewId);
       setCurrentReview(response.review);
       setPreviousReview(null);
-      setOriginalReviewCode(response.review?.code || null);
+      setOriginalCode(response.review?.code || null);
+      setReReviewMeta(null);
       setCurrentCode(response.review?.code || '');
       setSocraticMode(false);
+      setSocraticCompleted(false);
+      setSocraticSession(null);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Failed to load review:', error);
@@ -443,10 +543,11 @@ function DashboardContent({ user }) {
                     onSocraticToggle={handleSocraticToggle}
                     onCodeChange={handleCodeChange}
                     reviewExists={!!currentReview}
-                    hasChanges={currentCode !== originalReviewCode}
+                    hasChanges={currentCode !== originalCode}
                     isReReviewing={isReReviewing}
                     onReReview={handleReReview}
                     socraticCodeChanged={socraticCodeChanged}
+                    isLoading={isSocraticLoading || isLoading}
                   />
                 </div>
 
@@ -465,13 +566,25 @@ function DashboardContent({ user }) {
 
                 <div className="paste-column panel-column">
                   {socraticMode ? (
-                    <SocraticPanel 
-                      code={currentCode} 
-                      persona={selectedPersona}
-                      codeSnapshot={currentCode}
-                      codeChanged={socraticCodeChanged}
-                      onReplySent={() => setSocraticCodeChanged(false)}
-                      onSwitchMode={handleSwitchMode}
+                    <SocraticPanel
+                      messages={socraticSession?.messages || []}
+                      turnCount={socraticSession?.turnCount || 0}
+                      maxTurns={socraticSession?.maxTurns || 10}
+                      totalBugs={socraticSession?.totalBugs || 0}
+                      discoveredCount={socraticSession?.discoveredCount || 0}
+                      isWaiting={isSocraticLoading || socraticSession?.isWaiting || false}
+                      completed={socraticCompleted}
+                      optimizedCode={socraticOptimizedCode}
+                      originalCode={originalCode}
+                      error={error}
+                      language={socraticSession?.language || 'javascript'}
+                      onReply={handleSocraticReply}
+                      onStartSession={() => handleStartSocraticSession(currentCode)}
+                      onSwitchToReview={() => {
+                        setSocraticMode(false)
+                        setSocraticCompleted(false)
+                        setSocraticOptimizedCode(null)
+                      }}
                     />
                   ) : (
                     <ReviewPanel 
@@ -481,6 +594,10 @@ function DashboardContent({ user }) {
                       isLoading={isLoading}
                       error={error}
                       onRetry={() => handleSubmitReview(currentCode, false)}
+                      onReReview={handleReReview}
+                      isReReviewing={isReReviewing}
+                      reReviewMeta={reReviewMeta}
+                      originalCode={originalCode}
                     />
                   )}
                 </div>

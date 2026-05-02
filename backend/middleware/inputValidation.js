@@ -3,9 +3,11 @@ import validator from 'validator';
 /**
  * Validates and sanitizes code input
  * - Min length: 10 characters
- * - Max length: 5000 characters
+ * - Max length: configurable via env `CODE_MAX_LENGTH` (default 50000)
  * - Wraps code in triple backtick block to prevent prompt injection
  */
+const CODE_MAX_LENGTH = process.env.CODE_MAX_LENGTH ? parseInt(process.env.CODE_MAX_LENGTH, 10) : 50000;
+
 export const validateCode = (code) => {
   if (!code || typeof code !== 'string') {
     throw new Error('Code must be a non-empty string');
@@ -17,8 +19,8 @@ export const validateCode = (code) => {
     throw new Error('Code must be at least 10 characters');
   }
 
-  if (trimmedCode.length > 5000) {
-    throw new Error('Code must not exceed 5000 characters');
+  if (trimmedCode.length > CODE_MAX_LENGTH) {
+    throw new Error(`Code must not exceed ${CODE_MAX_LENGTH} characters`);
   }
 
   // Wrap code in triple backticks to prevent prompt injection

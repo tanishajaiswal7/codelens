@@ -127,7 +127,18 @@ export const getStatus = async (req, res) => {
     // Get user from database with GitHub data
     const user = await User.findById(userId);
 
-    if (!user || !user.githubToken) {
+    if (!user) {
+      return res.json({
+        connected: false,
+        username: null,
+        avatar: null,
+        method: null,
+      });
+    }
+
+    const connected = Boolean(user.githubToken || user.githubId || user.githubUsername);
+
+    if (!connected) {
       return res.json({
         connected: false,
         username: null,
@@ -138,9 +149,9 @@ export const getStatus = async (req, res) => {
 
     res.json({
       connected: true,
-      username: user.githubUsername,
-      avatar: user.githubAvatar,
-      method: 'oauth', // In a real app, you'd track which method was used
+      username: user.githubUsername || null,
+      avatar: user.githubAvatar || null,
+      method: user.githubToken ? 'oauth' : 'linked',
     });
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {

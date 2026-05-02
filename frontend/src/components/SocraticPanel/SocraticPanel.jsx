@@ -1,255 +1,226 @@
-import { useState, useEffect, useRef } from 'react';
-import PropTypes from 'prop-types';
-import ChatBubble from '../ChatBubble/ChatBubble.jsx';
-import { socraticApi } from '../../api/socraticApi.js';
-import './SocraticPanel.css';
+import { useState, useEffect, useRef } from 'react'
+import './SocraticPanel.css'
 
 export default function SocraticPanel({
-  // Uncontrolled mode (DashboardPage)
-  code,
-  persona,
-  
-  // Controlled mode (FileBrowser)
-  messages: controlledMessages,
-  turnCount: controlledTurnCount,
-  maxTurns: controlledMaxTurns,
-  isWaiting,
-  completed,
+  messages = [],
+  turnCount = 0,
+  maxTurns = 10,
+  totalBugs = 0,
+  discoveredCount = 0,
+  isWaiting = false,
+  completed = false,
+  optimizedCode = null,
+  originalCode = null,
+  error = null,
   onReply,
-  codeSnapshot,
-  codeChanged,
-  onReplySent,
-  
-  // Both modes
-  onSwitchMode,
+  onStartSession,
+  onSwitchToReview,
+  language = 'javascript',
 }) {
-  // Determine if we're in controlled or uncontrolled mode
-  const isControlled = controlledMessages !== undefined;
-
-  // Uncontrolled mode state (for DashboardPage)
-  const [sessionId, setSessionId] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [isCompleted, setIsCompleted] = useState(false);
-  const [turnNumber, setTurnNumber] = useState(0);
-  const [maxTurns] = useState(10);
-  
-  const messagesEndRef = useRef(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const [input, setInput] = useState('')
+  const [showOptimized, setShowOptimized] = useState(false)
+  const [sessionStarted, setSessionStarted] = useState(false)
+  const bottomRef = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => {
-    scrollToBottom();
-  }, [messages, controlledMessages]);
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, isWaiting])
 
-  // Uncontrolled mode: Initialize session
   useEffect(() => {
-    if (isControlled) return; // Skip if in controlled mode
-
-    const startSession = async () => {
-      try {
-        setLoading(true);
-        if (import.meta.env.DEV) {
-          console.log('Starting Socratic session with code length:', code.length, 'persona:', persona);
-        }
-        const response = await socraticApi.startSession(code, persona);
-        if (import.meta.env.DEV) {
-          console.log('Socratic start response:', response);
-        }
-        const { session } = response;
-
-        if (import.meta.env.DEV) {
-          console.log('Session data:', session);
-        }
-        setSessionId(session.sessionId);
-        
-        const questionText = session.question || 'No question received';
-        
-        setMessages([
-          {
-            role: 'ai',
-            content: questionText,
-            timestamp: new Date(),
-          },
-        ]);
-        setTurnNumber(session.turnNumber || 1);
-        setLoading(false);
-      } catch (error) {
-        if (import.meta.env.DEV) {
-          console.error('Failed to start session:', error.response?.data || error.message);
-        }
-        setLoading(false);
-      }
-    };
-
-    startSession();
-  }, [code, persona, isControlled]);
-
-  // Uncontrolled mode: Handle send message
-  const handleSendMessage = async () => {
-    if (!input.trim() || !sessionId || isCompleted) return;
-
-    const userMessage = input.trim();
-    setInput('');
-
-    // Add user message to UI
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: 'user',
-        content: userMessage,
-        timestamp: new Date(),
-      },
-    ]);
-
-    try {
-      setLoading(true);
-      const response = await socraticApi.sendReply(sessionId, userMessage, codeSnapshot ?? code);
-      const { session } = response;
-
-      // Display single question
-      const questionText = session.question || 'No question received';
-
-      // Add AI response
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'ai',
-          content: questionText,
-          timestamp: new Date(),
-        },
-      ]);
-
-      setTurnNumber(session.turnNumber);
-
-      if (session.isCompleted) {
-        setIsCompleted(true);
-      }
-
-      if (onReplySent) {
-        onReplySent();
-      }
-
-      setLoading(false);
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Failed to send message:', error);
-      }
-      setLoading(false);
+    if (messages.length > 0 || completed) {
+      setSessionStarted(true)
     }
-  };
+  }, [messages, completed])
 
-  // Controlled mode: Handle send message
-  const handleSendMessageControlled = async () => {
-    if (!input.trim() || isWaiting || completed) return;
-
-    const userMessage = input.trim();
-    setInput('');
-    
-    // Call parent handler
-    if (onReply) {
-      await onReply(userMessage);
-    }
-  };
+  const handleSend = () => {
+    const trimmed = input.trim()
+    if (!trimmed || isWaiting || completed) return
+    onReply(trimmed)
+    setInput('')
+    inputRef.current?.focus()
+  }
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (isControlled) {
-        handleSendMessageControlled();
-      } else {
-        handleSendMessage();
-      }
+      e.preventDefault()
+      handleSend()
     }
-  };
-
-  // Use appropriate state based on mode
-  const displayMessages = isControlled ? controlledMessages : messages;
-  const displayTurnCount = isControlled ? controlledTurnCount : turnNumber;
-  const displayMaxTurns = isControlled ? controlledMaxTurns : maxTurns;
-  const displayLoading = isControlled ? isWaiting : loading;
-  const displayCompleted = isControlled ? completed : isCompleted;
-
-  if (!isControlled && loading && messages.length === 0) {
-    return (
-      <div className="socratic-panel">
-        <div className="loading-indicator">
-          Starting Socratic session
-          <div className="loading-dot delay-0" />
-          <div className="loading-dot delay-1" />
-          <div className="loading-dot delay-2" />
-        </div>
-      </div>
-    );
   }
 
+  const sessionProgress = maxTurns > 0 ? (turnCount / maxTurns) * 100 : 0
+  const bugsProgress = totalBugs > 0 ? (discoveredCount / totalBugs) * 100 : 0
+  const isFirstMessage = messages.length === 0 && !isWaiting
+  const showInput = !completed && messages.length > 0
+
   return (
-    <div className="socratic-panel">
-      <div className="socratic-header">
-        Socratic Mode
-        <span className="turn-counter">
-          Turn {displayTurnCount} / {displayMaxTurns}
-        </span>
+    <div className="sp-container">
+
+      {/* ── Header with turn badge and progress bars ── */}
+      <div className="sp-header">
+        <div className="sp-title-group">
+          <h3 className="sp-title">Socratic Session</h3>
+          <span className="sp-subtitle">Learn by discovering bugs</span>
+        </div>
+        <div className="sp-turn-badge">
+          Turn {turnCount}/{maxTurns}
+        </div>
       </div>
 
-      <div className="socratic-messages">
-        {displayCompleted ? (
-          <div className="completed-state">
-            <div className="completed-title">✓ Insight reached!</div>
-            <div className="completed-desc">
-              You've completed the Socratic learning journey. Ready to verify your fixes? Switch to Review Mode and click Check My Fix.
-            </div>
-            <button className="switch-mode-btn" onClick={onSwitchMode}>
-              Verify My Fixes
-            </button>
+      {/* ── Error message ── */}
+      {error && (
+        <div className="sp-error-banner">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {/* ── Progress bars ── */}
+      <div className="sp-progress-group">
+        <div className="sp-progress-item">
+          <label className="sp-progress-label">Session Progress</label>
+          <div className="sp-progress-bar">
+            <div 
+              className="sp-progress-fill" 
+              style={{ width: `${sessionProgress}%` }}
+            />
           </div>
-        ) : (
-          <div>
-            {displayMessages.map((msg, idx) => (
-              <ChatBubble
-                key={`${msg.role}-${idx}`}
-                role={msg.role}
-                content={msg.content}
-                timestamp={msg.timestamp}
-              />
-            ))}
-            {displayLoading && (
-              <div className="loading-indicator">
-                Thinking
-                <div className="loading-dot delay-0" />
-                <div className="loading-dot delay-1" />
-                <div className="loading-dot delay-2" />
+        </div>
+        <div className="sp-progress-item">
+          <label className="sp-progress-label">
+            Bugs Found ({discoveredCount}/{totalBugs})
+          </label>
+          <div className="sp-progress-bar">
+            <div 
+              className="sp-progress-fill sp-bugs-fill"
+              style={{ width: `${bugsProgress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Empty state ── */}
+      {isFirstMessage && !sessionStarted && (
+        <div className="sp-empty">
+          <div className="sp-empty-icon">🔍</div>
+          <div className="sp-empty-title">Socratic Mode is ready</div>
+          <div className="sp-empty-text">
+            Click Start Session and I’ll analyze your code, ask the first question,
+            and guide you step by step.
+          </div>
+          <button
+            className="sp-start-btn"
+            onClick={() => {
+              setSessionStarted(true)
+              onStartSession?.()
+            }}
+            disabled={isWaiting}
+          >
+            {isWaiting ? 'Starting...' : 'Start Session'}
+          </button>
+        </div>
+      )}
+
+      {/* ── Loading state ── */}
+      {sessionStarted && isWaiting && messages.length === 0 && (
+        <div className="sp-loading">
+          <div className="sp-loading-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div className="sp-loading-text">Analysing your code...</div>
+        </div>
+      )}
+
+      {/* ── Messages ── */}
+      {sessionStarted && (
+        <div className="sp-messages">
+          {messages.map((msg, i) => (
+            <div 
+              key={i} 
+              className={`sp-bubble sp-bubble-${msg.role}`}
+            >
+              <div className="sp-bubble-label">
+                {msg.role === 'ai' ? '🤖 Me' : '👤 You'}
               </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
+              <div className="sp-bubble-content">
+                {msg.content}
+              </div>
+            </div>
+          ))}
 
-      {!displayCompleted && (
-        <div className="socratic-input-wrap">
-          {codeChanged && (
-            <div className="socratic-code-changed-banner">
-              You edited the code — AI will ask about your change
+          {/* ── Thinking indicator ── */}
+          {isWaiting && messages.length > 0 && (
+            <div className="sp-thinking">
+              <div className="sp-thinking-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
             </div>
           )}
-          <div className="socratic-input-row">
-            <input
-              className="socratic-input"
-              type="text"
+
+          {/* ── Completion card ── */}
+          {completed && (
+            <div className="sp-complete-card">
+              <div className="sp-complete-emoji">🎉</div>
+              <div className="sp-complete-title">Session Complete!</div>
+              <div className="sp-complete-body">
+                Outstanding work! You discovered and understood all 
+                {totalBugs > 1 ? ' ' + totalBugs + ' issues' : ' 1 issue'} in this code
+                through your own reasoning. That's exactly how great engineers think!
+              </div>
+
+              {optimizedCode && (
+                <div className="sp-optimized-section">
+                  <button
+                    className="sp-toggle-code-btn"
+                    onClick={() => setShowOptimized(!showOptimized)}
+                  >
+                    {showOptimized ? '✕ Hide' : '▶ Show'} Optimized Code
+                  </button>
+                  {showOptimized && (
+                    <pre className="sp-code-block">
+                      <code>{optimizedCode}</code>
+                    </pre>
+                  )}
+                </div>
+              )}
+
+              <button
+                className="sp-review-btn"
+                onClick={onSwitchToReview}
+              >
+                See Full Review →
+              </button>
+            </div>
+          )}
+
+          <div ref={bottomRef} />
+        </div>
+      )}
+
+      {/* ── Input area ── */}
+      {sessionStarted && showInput && (
+        <div className="sp-input-area">
+          <div className="sp-input-hint">
+            {isWaiting ? 'Waiting for response...' : 'Answer or ask a doubt'}
+          </div>
+          <div className="sp-input-row">
+            <textarea
+              ref={inputRef}
+              className="sp-textarea"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Share your thoughts..."
-              disabled={displayLoading}
+              placeholder="Type your answer..."
+              disabled={isWaiting || completed}
+              rows={2}
             />
             <button
-              className="socratic-send-btn"
-              onClick={isControlled ? handleSendMessageControlled : handleSendMessage}
-              disabled={!input.trim() || displayLoading}
+              className="sp-send-btn"
+              onClick={handleSend}
+              disabled={!input.trim() || isWaiting || completed}
             >
               Send
             </button>
@@ -257,44 +228,5 @@ export default function SocraticPanel({
         </div>
       )}
     </div>
-  );
+  )
 }
-
-SocraticPanel.propTypes = {
-  // Uncontrolled mode props
-  code: PropTypes.string,
-  persona: PropTypes.oneOf(['faang', 'startup', 'security']),
-  
-  // Controlled mode props
-  messages: PropTypes.arrayOf(PropTypes.shape({
-    role: PropTypes.oneOf(['ai', 'user']),
-    content: PropTypes.string,
-    timestamp: PropTypes.instanceOf(Date),
-  })),
-  turnCount: PropTypes.number,
-  maxTurns: PropTypes.number,
-  isWaiting: PropTypes.bool,
-  completed: PropTypes.bool,
-  onReply: PropTypes.func,
-  codeSnapshot: PropTypes.string,
-  codeChanged: PropTypes.bool,
-  onReplySent: PropTypes.func,
-  
-  // Both modes
-  onSwitchMode: PropTypes.func,
-};
-
-SocraticPanel.defaultProps = {
-  code: '',
-  persona: 'faang',
-  messages: undefined,
-  turnCount: 0,
-  maxTurns: 10,
-  isWaiting: false,
-  completed: false,
-  onReply: null,
-  codeSnapshot: null,
-  codeChanged: false,
-  onReplySent: null,
-  onSwitchMode: null,
-};

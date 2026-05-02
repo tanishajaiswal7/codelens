@@ -17,6 +17,20 @@ router.post(
   reviewController.createReview
 );
 
+router.post(
+  '/re-review',
+  verifyToken,
+  [
+    body('oldCode').trim().notEmpty().withMessage('oldCode is required'),
+    body('newCode').trim().notEmpty().withMessage('newCode is required'),
+    body('previousSuggestions').optional({ nullable: true }).isArray().withMessage('previousSuggestions must be an array'),
+    body('persona')
+      .isIn(['faang', 'startup', 'security'])
+      .withMessage('Valid persona is required'),
+  ],
+  reviewController.reReview
+);
+
 router.get('/', verifyToken, reviewController.getReviewsByUser);
 
 router.get('/:reviewId', verifyToken, reviewController.getReviewById);

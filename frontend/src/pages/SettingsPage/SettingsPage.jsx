@@ -28,6 +28,12 @@ function SettingsContent({ user }) {
     emailNotifications: { enabled: false, frequency: 'daily' },
   });
 
+  const effectiveGitHubConnected = Boolean(
+    gitHubStatus?.connected || user?.githubId || user?.githubUsername
+  );
+  const effectiveGitHubUsername = gitHubStatus?.username || user?.githubUsername || user?.name || 'GitHub User';
+  const effectiveGitHubAvatar = gitHubStatus?.avatar || user?.githubAvatar || null;
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -166,7 +172,12 @@ function SettingsContent({ user }) {
   const handleDisconnectGitHub = async () => {
     try {
       await githubApi.disconnect();
-      setGitHubStatus(null);
+      setGitHubStatus({
+        connected: false,
+        username: null,
+        avatar: null,
+        method: null,
+      });
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Failed to disconnect GitHub:', error);
@@ -361,17 +372,17 @@ function SettingsContent({ user }) {
           {/* GitHub Integration Section */}
           <section className="settings-section">
             <h2>GitHub Integration</h2>
-            {gitHubStatus && gitHubStatus.connected ? (
+            {effectiveGitHubConnected ? (
               <div className="github-connected-card">
-                {gitHubStatus.avatar && (
+                {effectiveGitHubAvatar && (
                   <img
-                    src={gitHubStatus.avatar}
-                    alt={gitHubStatus.username}
+                    src={effectiveGitHubAvatar}
+                    alt={effectiveGitHubUsername}
                     className="github-avatar"
                   />
                 )}
                 <div className="github-info">
-                  <p className="github-username">@{gitHubStatus.username}</p>
+                  <p className="github-username">@{effectiveGitHubUsername}</p>
                   <p className="github-status">Connected</p>
                 </div>
                 <button

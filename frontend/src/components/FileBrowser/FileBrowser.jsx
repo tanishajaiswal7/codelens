@@ -5,7 +5,9 @@ import FilePreview from '../FilePreview/FilePreview.jsx'
 import ReviewPanel from '../ReviewPanel/ReviewPanel.jsx'
 import SocraticPanel from '../SocraticPanel/SocraticPanel.jsx'
 import * as fileBrowserApi from '../../api/fileBrowserApi.js'
+import { reviewApi } from '../../api/reviewApi.js'
 import { socraticApi } from '../../api/socraticApi.js'
+import { pollJob } from '../../utils/jobPoller'
 import './FileBrowser.css'
 
 export default function FileBrowser({ owner, repo, onBack }) {
@@ -19,12 +21,20 @@ export default function FileBrowser({ owner, repo, onBack }) {
   const [treeError, setTreeError] = useState(null)
   const [reviewResult, setReviewResult] = useState(null)
   const [isReviewing, setIsReviewing] = useState(false)
+  const [reviewPersona, setReviewPersona] = useState('faang')
+  const [originalCode, setOriginalCode] = useState(null)
+  const [isReReviewing, setIsReReviewing] = useState(false)
+  const [reReviewMeta, setReReviewMeta] = useState(null)
   const [mode, setMode] = useState('review')
   const [socraticSessionId, setSocraticSessionId] = useState(null)
   const [socraticMessages, setSocraticMessages] = useState([])
   const [socraticTurnCount, setSocraticTurnCount] = useState(0)
   const [socraticMaxTurns, setSocraticMaxTurns] = useState(10)
+  const [socraticTotalBugs, setSocraticTotalBugs] = useState(0)
+  const [socraticDiscoveredCount, setSocraticDiscoveredCount] = useState(0)
   const [socraticCompleted, setSocraticCompleted] = useState(false)
+  const [socraticOptimizedCode, setSocraticOptimizedCode] = useState(null)
+  const [socraticError, setSocraticError] = useState(null)
   const [isSocraticLoading, setIsSocraticLoading] = useState(false)
   const [editedFileContent, setEditedFileContent] = useState(null)
 
@@ -78,6 +88,8 @@ export default function FileBrowser({ owner, repo, onBack }) {
     setSelectedFile(null)
     setReviewResult(null)
     setSocraticSessionId(null)
+    setOriginalCode(null)
+    setReReviewMeta(null)
     setEditedFileContent(null)
     try {
       const content = await fileBrowserApi.getFileContent(
@@ -95,10 +107,13 @@ export default function FileBrowser({ owner, repo, onBack }) {
     if (!selectedFile) return
     setIsReviewing(true)
     setReviewResult(null)
+    setReviewPersona(persona)
+    setOriginalCode(editedFileContent || selectedFile.content)
+    setReReviewMeta(null)
     try {
       const result = await fileBrowserApi.reviewFile(
         owner, repo, selectedFile.path,
-        currentRef, selectedFile.content, persona
+        currentRef, editedFileContent || selectedFile.content, persona
       )
       setReviewResult(result)
     } catch (err) {
@@ -108,9 +123,44 @@ export default function FileBrowser({ owner, repo, onBack }) {
     }
   }
 
+  const handleReReview = async () => {
+    const currentCode = editedFileContent || selectedFile?.content || ''
+    if (!reviewResult || !originalCode || currentCode === originalCode) {
+      alert('No changes detected since last review.')
+      return
+    }
+
+    setIsReReviewing(true)
+    try {
+      const result = await reviewApi.reReview(
+        originalCode,
+        currentCode,
+        reviewResult.suggestions,
+        reviewPersona
+      )
+
+      setReviewResult((previous) => ({
+        ...previous,
+        summary: result.summary || previous.summary,
+        suggestions: result.suggestions || previous.suggestions,
+      }))
+      setReReviewMeta({
+        resolved: result.resolved || 0,
+        newCount: result.newCount || 0,
+        persistent: result.persistent || 0,
+      })
+      setOriginalCode(currentCode)
+    } catch (err) {
+      console.error('Re-review failed:', err)
+    } finally {
+      setIsReReviewing(false)
+    }
+  }
+
   const handleModeChange = (newMode) => {
     setMode(newMode)
     setReviewResult(null)
+    setReReviewMeta(null)
     setEditedFileContent(null)
   }
 
@@ -120,21 +170,27 @@ export default function FileBrowser({ owner, repo, onBack }) {
 
   const handleStartSocratic = async (persona) => {
     if (!selectedFile) return
+    setMode('socratic')
     setIsSocraticLoading(true)
+    setSocraticError(null)
+    setReviewPersona(persona)
     setSocraticSessionId(null)
     setSocraticMessages([])
     setSocraticTurnCount(0)
+    setSocraticMaxTurns(10)
+    setSocraticTotalBugs(0)
+    setSocraticDiscoveredCount(0)
     setSocraticCompleted(false)
-    setEditedFileContent(null)
+    setSocraticOptimizedCode(null)
     try {
       const context = {
         source: 'github_file',
         repoFullName: `${owner}/${repo}`,
         filePath: selectedFile.path,
-        ref: currentRef,
+        repoRef: currentRef,
       }
       const response = await socraticApi.startSession(
-        selectedFile.content,
+        editedFileContent || selectedFile.content,
         persona,
         context
       )
@@ -142,70 +198,95 @@ export default function FileBrowser({ owner, repo, onBack }) {
         console.log('Socratic start response:', response)
       }
       
-      const { sessionId, question, turnNumber, maxTurns } = response.session
-      setSocraticSessionId(sessionId)
-      setSocraticMessages([
-        {
-          role: 'ai',
-          content: question,
-          timestamp: new Date(),
+      if (!response?.jobId) {
+        throw new Error('Unable to queue Socratic session start.')
+      }
+
+      const cancel = pollJob(
+        response.jobId,
+        (result) => {
+          setSocraticSessionId(result.sessionId)
+          setSocraticMessages(result.messages || [])
+          setSocraticTurnCount(result.turnCount || 0)
+          setSocraticMaxTurns(result.maxTurns || 10)
+          setSocraticTotalBugs(result.totalBugs || 0)
+          setSocraticDiscoveredCount(result.discoveredCount || 0)
+          setSocraticCompleted(Boolean(result.completed))
+          setMode('socratic')
+          setIsSocraticLoading(false)
         },
-      ])
-      setSocraticTurnCount(turnNumber)
-      setSocraticMaxTurns(maxTurns)
-      setMode('socratic')
+        (error) => {
+          console.error('Socratic start polling failed:', error)
+          setSocraticError(error?.message || 'Failed to start Socratic session.')
+          setIsSocraticLoading(false)
+        }
+      )
+
+      return () => cancel()
     } catch (err) {
       console.error('Socratic start failed:', err.response?.data || err.message)
-    } finally {
+      setSocraticError(err.response?.data?.error || err.message || 'Failed to start Socratic session.')
+      setSocraticSessionId(null)
       setIsSocraticLoading(false)
+    } finally {
+      // Keep loading active until job polling callback resolves the request.
     }
   }
 
   const handleSocraticReply = async (userMessage) => {
     if (!socraticSessionId) return
     setIsSocraticLoading(true)
+    setSocraticError(null)
+
+    setSocraticMessages((prev) => [...prev, { role: 'user', content: userMessage }])
+
     try {
-      setSocraticMessages((prev) => [
-        ...prev,
-        {
-          role: 'user',
-          content: userMessage,
-          timestamp: new Date(),
-        },
-      ])
-      
-      // Send edited code if it changed, otherwise send original
-      const codeToSend = editedFileContent || selectedFile?.content || null
-      
       const response = await socraticApi.sendReply(
         socraticSessionId,
         userMessage,
-        codeToSend
+        editedFileContent || selectedFile?.content || null
       )
       
       if (import.meta.env.DEV) {
         console.log('Socratic reply response:', response)
       }
       
-      const { question, turnNumber, maxTurns, isCompleted } = response.session
-      
-      setSocraticMessages((prev) => [
-        ...prev,
-        {
-          role: 'ai',
-          content: question,
-          timestamp: new Date(),
-        },
-      ])
-      setSocraticTurnCount(turnNumber)
-      setSocraticMaxTurns(maxTurns)
-      if (isCompleted) {
-        setSocraticCompleted(true)
+      if (!response?.jobId) {
+        throw new Error('Unable to queue Socratic reply.')
       }
+
+      const cancel = pollJob(
+        response.jobId,
+        async (result) => {
+          setSocraticMessages((prev) => [...prev, { role: 'ai', content: result.aiMessage || 'Let us continue.' }])
+          setSocraticTurnCount(result.turnCount || 0)
+          setSocraticMaxTurns(result.maxTurns || socraticMaxTurns)
+          setSocraticTotalBugs(result.totalBugs || 0)
+          setSocraticDiscoveredCount(result.discoveredCount || 0)
+
+          if (result.completed) {
+            setSocraticCompleted(true)
+            setSocraticOptimizedCode(result.optimizedCode || null)
+            await handleReviewFile(reviewPersona)
+          }
+
+          setIsSocraticLoading(false)
+        },
+        (error) => {
+          console.error('Socratic reply polling failed:', error)
+          setSocraticError(error?.message || 'Failed to continue Socratic session.')
+          setIsSocraticLoading(false)
+        }
+      )
+
+      return () => cancel()
     } catch (err) {
       console.error('Socratic reply failed:', err.response?.data || err.message)
+      setSocraticError(err.response?.data?.error || err.message || 'Failed to continue Socratic session.')
     } finally {
-      setIsSocraticLoading(false)
+      if (!isSocraticLoading) {
+        setIsSocraticLoading(false)
+      }
     }
   }
 
@@ -269,7 +350,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
         </div>
 
         {/* Column 3: Review or Socratic Panel */}
-        {(reviewResult || socraticSessionId) && (
+        {(reviewResult || socraticSessionId || (mode === 'socratic' && isSocraticLoading)) && (
           <div className="fb-col-review">
             <div className="fb-review-topbar">
               <span className="fb-review-label">
@@ -282,8 +363,15 @@ export default function FileBrowser({ owner, repo, onBack }) {
                   setSocraticSessionId(null)
                   setSocraticMessages([])
                   setSocraticTurnCount(0)
+                  setSocraticMaxTurns(10)
+                  setSocraticTotalBugs(0)
+                  setSocraticDiscoveredCount(0)
                   setSocraticCompleted(false)
+                  setSocraticOptimizedCode(null)
+                  setSocraticError(null)
                   setEditedFileContent(null)
+                  setOriginalCode(null)
+                  setReReviewMeta(null)
                 }}
                 title="Close panel"
               >
@@ -296,15 +384,26 @@ export default function FileBrowser({ owner, repo, onBack }) {
                   messages={socraticMessages}
                   turnCount={socraticTurnCount}
                   maxTurns={socraticMaxTurns}
+                  totalBugs={socraticTotalBugs}
+                  discoveredCount={socraticDiscoveredCount}
                   completed={socraticCompleted}
+                  optimizedCode={socraticOptimizedCode}
+                  error={socraticError}
                   onReply={handleSocraticReply}
                   isWaiting={isSocraticLoading}
-                  onSwitchMode={() => setMode('review')}
+                  onSwitchToReview={() => {
+                    setMode('review')
+                    setSocraticCompleted(false)
+                  }}
                 />
               ) : reviewResult ? (
                 <ReviewPanel
                   review={reviewResult}
                   isLoading={false}
+                  onReReview={handleReReview}
+                  isReReviewing={isReReviewing}
+                  reReviewMeta={reReviewMeta}
+                  originalCode={originalCode}
                 />
               ) : null}
             </div>

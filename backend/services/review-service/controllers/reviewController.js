@@ -65,4 +65,55 @@ export const reviewController = {
       next(error);
     }
   },
+
+  async reReview(req, res, next) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ 
+          error: 'Validation failed', 
+          details: errors.array() 
+        });
+      }
+
+      const userId = req.userId;
+      const {
+        oldCode,
+        newCode,
+        previousSuggestions,
+        persona,
+        originalCode,
+        updatedCode,
+        originalSuggestions,
+      } = req.body;
+
+      const codeBefore = oldCode || originalCode;
+      const codeAfter = newCode || updatedCode;
+      const suggestions = previousSuggestions || originalSuggestions || [];
+
+      if (!codeBefore || !codeAfter) {
+        return res.status(400).json({ 
+          error: 'oldCode and newCode are required' 
+        });
+      }
+
+      console.log('Re-review request:', { userId, persona, codeLength: codeAfter.length });
+
+      const result = await reviewService.runReReview(
+        userId, 
+        codeBefore, 
+        codeAfter, 
+        suggestions, 
+        persona
+      );
+
+      res.json(result);
+    } catch (error) {
+      console.error('Re-review controller error:', error.message);
+      res.status(400).json({
+        error: error.message || 'Failed to process re-review',
+      });
+      next(error);
+    }
+  },
 };

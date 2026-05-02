@@ -3,7 +3,7 @@ import app from './app.js';
 import { connectDB } from './config/db.js';
 import { connectRabbitMQ, closeConnection } from './rabbitmq/connection.js'
 import { startReviewConsumer } from './services/review-service/consumers/reviewConsumer.js'
-import { startSocraticConsumer } from './services/socratic-service/consumers/socraticConsumer.js'
+import { startSocraticConsumer } from './rabbitmq/consumers/socraticConsumer.js'
 import { startHistoryConsumer } from './rabbitmq/consumers/historyConsumer.js'
 import { startDashboardConsumer } from './rabbitmq/consumers/dashboardConsumer.js'
 import { startNotificationConsumer } from './rabbitmq/consumers/notificationConsumer.js'

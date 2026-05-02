@@ -598,12 +598,12 @@
 .issue-count {
   display: inline-block;
   font-size: 0.8rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
   white-space: nowrap;
 }
 
 .no-reviews {
-  color: var(--text-secondary);
+  color: var(--text-2);
   font-style: italic;
   font-size: 0.85rem;
 }
@@ -611,7 +611,7 @@
 .error-state {
   text-align: center;
   padding: 3rem;
-  color: var(--text-secondary);
+  color: var(--text-2);
 }
 
 @media (max-width: 768px) {
@@ -634,7 +634,7 @@
   .col-reviews::before,
   .col-joined::before {
     font-weight: 600;
-    color: var(--text-secondary);
+    color: var(--text-2);
     display: block;
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -691,7 +691,7 @@
 
 .repo-setup p {
   margin: 0 0 1rem 0;
-  color: var(--text-secondary);
+  color: var(--text-2);
 }
 
 .repo-input-section {
@@ -849,5 +849,122 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+/* ===== LIGHT THEME OVERRIDES ===== */
+[data-theme="light"] .workspace-detail-page {
+  color: var(--text);
+}
+
+[data-theme="light"] .detail-header {
+  border: 1px solid var(--border-2);
+  background: linear-gradient(180deg, #ffffff, #f7f6f2);
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .detail-meta,
+[data-theme="light"] .action-description,
+[data-theme="light"] .persistent-label,
+[data-theme="light"] .col-email,
+[data-theme="light"] .col-reviews,
+[data-theme="light"] .col-latest,
+[data-theme="light"] .col-joined,
+[data-theme="light"] .pending-col-uses,
+[data-theme="light"] .pending-col-expires,
+[data-theme="light"] .pending-col-sent,
+[data-theme="light"] .no-reviews {
+  color: var(--text-2);
+}
+
+[data-theme="light"] .workspace-action-card,
+[data-theme="light"] .detail-section,
+[data-theme="light"] .members-table,
+[data-theme="light"] .repo-display,
+[data-theme="light"] .repo-setup,
+[data-theme="light"] .repo-input-section,
+[data-theme="light"] .mv-welcome,
+[data-theme="light"] .mv-how-it-works,
+[data-theme="light"] .mv-repo-info {
+  border: 1px solid var(--border-2);
+  background: var(--bg-1);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="light"] .table-header,
+[data-theme="light"] .pending-table-header {
+  background: rgba(79, 70, 229, 0.08);
+  color: #3f3a58;
+}
+
+[data-theme="light"] .table-row:hover,
+[data-theme="light"] .pending-table-row:hover {
+  background: rgba(79, 70, 229, 0.05);
+}
+
+[data-theme="light"] .btn-secondary,
+[data-theme="light"] .btn-tertiary {
+  border: 1px solid var(--border-2);
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+[data-theme="light"] .btn-secondary:hover,
+[data-theme="light"] .btn-tertiary:hover {
+  background: var(--bg-3);
+  border-color: var(--border-3);
+}
+
+[data-theme="light"] .persistent-link-box,
+[data-theme="light"] .invite-link-box {
+  border-color: rgba(79, 70, 229, 0.2);
+  background: rgba(79, 70, 229, 0.04);
+}
+
+[data-theme="light"] .copy-btn {
+  background: var(--accent);
+}
+
+[data-theme="light"] .copy-btn:hover {
+  background: var(--accent-2);
+}
+
+[data-theme="light"] .role-owner {
+  background: rgba(217, 119, 6, 0.16);
+  color: #b45309;
+}
+
+[data-theme="light"] .role-admin {
+  background: rgba(234, 88, 12, 0.14);
+  color: #c2410c;
+}
+
+[data-theme="light"] .role-member {
+  background: rgba(5, 150, 105, 0.12);
+  color: #047857;
+}
+
+[data-theme="light"] .verdict-badge {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+
+[data-theme="light"] .critical-badge {
+  background: rgba(234, 88, 12, 0.13);
+  color: #c2410c;
+}
+
+[data-theme="light"] .issue-count {
+  background: rgba(37, 99, 235, 0.11);
+  color: #1d4ed8;
+}
+
+[data-theme="light"] .repo-url-input {
+  border: 1px solid var(--border-2);
+  background: #ffffff;
+  color: var(--text);
+}
+
+[data-theme="light"] .repo-url-input::placeholder {
+  color: var(--text-3);
 }
 

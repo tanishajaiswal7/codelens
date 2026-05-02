@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { buildPersonaPrompt } from './promptService.js';
 import { promptService } from './promptService.js';
 import { parseAIResponse } from './confidenceParser.js';
@@ -5,7 +6,7 @@ import { Review } from '../models/Review.js';
 import { diffService } from './diffService.js';
 
 const MODEL = 'llama-3.3-70b-versatile';
-const ANTHROPIC_MODEL = 'claude-opus-4-6';
+const ANTHROPIC_MODEL = 'claude-opus-4-20250514';
 const REVIEW_TEMPERATURE = Number.isFinite(Number(process.env.REVIEW_TEMPERATURE))
   ? Number(process.env.REVIEW_TEMPERATURE)
   : 0.1;
@@ -259,96 +260,158 @@ export const reviewService = {
     return await Review.findOne({ _id: reviewId, userId });
   },
 
-  async runReReview(userId, originalCode, updatedCode, persona, originalSuggestions, parentReviewId) {
-    const changedContext = diffService.buildChangedContext(originalCode, updatedCode);
+  async runReReview(userId, oldCode, newCode, previousSuggestions = [], persona) {
+    const oldLines = oldCode.split('\n');
+    const newLines = newCode.split('\n');
 
-    if (!changedContext || changedContext.totalChangedLines === 0) {
+    const changedLineNumbers = []; 
+    const maxLen = Math.max(oldLines.length, newLines.length);
+
+    for (let index = 0; index < maxLen; index += 1) {
+      if (oldLines[index] !== newLines[index]) {
+        for (let offset = Math.max(0, index - 5); offset <= Math.min(maxLen - 1, index + 5); offset += 1) {
+          if (!changedLineNumbers.includes(offset)) {
+            changedLineNumbers.push(offset);
+          }
+        }
+      }
+    }
+
+    if (changedLineNumbers.length === 0) {
       return {
-        resolvedSuggestionIds: [],
-        newSuggestions: [],
-        unchangedSuggestions: originalSuggestions,
-        message: 'No changes detected',
-        totalBefore: originalSuggestions.length,
-        totalAfter: originalSuggestions.length,
+        noChanges: true,
+        message: 'No changes detected since last review.',
+        suggestions: previousSuggestions.map((suggestion) => ({
+          ...suggestion,
+          status: 'unchanged',
+        })),
+        summary: 'No changes detected since last review.',
+        resolved: 0,
+        newCount: 0,
+        persistent: 0,
+        changedLines: 0,
       };
     }
 
-    const { systemPrompt, userMessage } = promptService.buildReReviewPrompt(
-      persona,
-      changedContext,
-      originalSuggestions
-    );
+    const changedSection = changedLineNumbers
+      .map((lineIndex) => `L${lineIndex + 1}: ${newLines[lineIndex] || ''}`)
+      .join('\n');
 
-    const rawText = await this.callReReviewAI(systemPrompt, userMessage);
+    const { systemPrompt } = promptService.buildPersonaPrompt(persona, '');
+
+    const reReviewPrompt = `You are doing a TARGETED re-review.
+The developer has made changes to their code.
+Only review the CHANGED lines provided below.
+
+CHANGED LINES (with context):
+${changedSection}
+
+FULL NEW CODE (for context only):
+${newCode}
+
+PREVIOUS ISSUES FOUND:
+${JSON.stringify(previousSuggestions.map((suggestion) => ({
+  id: suggestion.id,
+  title: suggestion.title,
+  lineRef: suggestion.lineRef,
+  severity: suggestion.severity,
+})))}
+
+For your response, check:
+1. Are any previous issues now FIXED in the changed lines?
+2. Are there any NEW issues in the changed lines?
+
+Return ONLY this JSON:
+{
+  "resolvedIssueIds": ["id1", "id2"],
+  "newIssues": [
+    {
+      "id": "new_1",
+      "title": "...",
+      "description": "...",
+      "lineRef": "...",
+      "severity": "critical|high|medium|low",
+      "confidence": 85,
+      "confidenceReason": "...",
+      "status": "new"
+    }
+  ],
+  "summary": "2 issues resolved, 1 new issue found"
+}`;
+
+    const aiResponse = await this.callAIForReReview(systemPrompt, reReviewPrompt);
 
     let parsed;
     try {
-      const clean = rawText.replace(/```json|```/g, '').trim();
+      const clean = aiResponse.replace(/```json|```/g, '').trim();
       parsed = JSON.parse(clean);
-    } catch (err) {
-      parsed = { resolved: [], stillPresent: [], newIssues: [] };
+    } catch {
+      parsed = { resolvedIssueIds: [], newIssues: [], summary: '' };
     }
 
-    if (!Array.isArray(parsed.resolved)) {
-      parsed.resolved = [];
-    }
+    const resolvedIssueIds = Array.isArray(parsed.resolvedIssueIds)
+      ? parsed.resolvedIssueIds
+      : [];
+    const newIssues = Array.isArray(parsed.newIssues) ? parsed.newIssues : [];
 
-    if (!Array.isArray(parsed.stillPresent)) {
-      parsed.stillPresent = [];
-    }
+    const mergedSuggestions = previousSuggestions.map((suggestion) => {
+      if (resolvedIssueIds.includes(suggestion.id)) {
+        return { ...suggestion, status: 'resolved' };
+      }
 
-    if (!Array.isArray(parsed.newIssues)) {
-      parsed.newIssues = [];
-    }
+      const suggestionLineNumbers = this.parseLineRef(suggestion.lineRef);
+      const wasChanged = suggestionLineNumbers.some((lineNumber) => changedLineNumbers.includes(lineNumber - 1));
 
-    const newSuggestionsWithLabels = (parsed.newIssues || []).map((s) => ({
-      ...s,
-      confidenceLabel:
-        s.confidence >= 85
-          ? 'High'
-          : s.confidence >= 60
-            ? 'Moderate'
-            : s.confidence >= 35
-              ? 'Low'
-              : 'Speculative',
-      confidenceBand:
-        s.confidence >= 85
-          ? 'green'
-          : s.confidence >= 60
-            ? 'amber'
-            : s.confidence >= 35
-              ? 'orange'
-              : 'red',
-    }));
+      if (wasChanged) {
+        return { ...suggestion, status: 'persistent' };
+      }
 
-    const stillPresentIds = parsed.stillPresent || [];
-    const resolvedIds = parsed.resolved || [];
-
-    const reReview = await Review.create({
-      userId,
-      code: updatedCode,
-      persona,
-      mode: 'standard',
-      source: 'paste',
-      parentReviewId: parentReviewId || null,
-      suggestions: [
-        ...originalSuggestions
-          .filter((s) => stillPresentIds.includes(s.id))
-          .map((s) => ({ ...s, status: 'still_present' })),
-        ...newSuggestionsWithLabels.map((s) => ({ ...s, status: 'new' })),
-      ],
-      resolvedSuggestionIds: resolvedIds,
-      createdAt: new Date(),
+      return { ...suggestion, status: 'unchanged' };
     });
 
+    const allSuggestions = [
+      ...newIssues,
+      ...mergedSuggestions,
+    ];
+
+    const resolved = mergedSuggestions.filter((suggestion) => suggestion.status === 'resolved').length;
+    const persistent = mergedSuggestions.filter((suggestion) => suggestion.status === 'persistent').length;
+    const newCount = newIssues.length;
+
     return {
-      reviewId: reReview._id,
-      resolvedSuggestionIds: resolvedIds,
-      newSuggestions: newSuggestionsWithLabels,
-      unchangedSuggestions: originalSuggestions.filter((s) => stillPresentIds.includes(s.id)),
-      totalBefore: originalSuggestions.length,
-      totalAfter: stillPresentIds.length + newSuggestionsWithLabels.length,
+      suggestions: allSuggestions,
+      summary: parsed.summary || `${resolved} resolved · ${newCount} new · ${persistent} persistent`,
+      resolved,
+      newCount,
+      persistent,
+      changedLines: changedLineNumbers.length,
     };
+  },
+
+  parseLineRef(lineRef) {
+    if (!lineRef) return [];
+    const match = lineRef.match(/\d+/g);
+    return match ? match.map(Number) : [];
+  },
+
+  async callAIForReReview(systemPrompt, userMessage) {
+    const response = await axios.post(
+      'https://api.anthropic.com/v1/messages',
+      {
+        model: ANTHROPIC_MODEL,
+        max_tokens: 1500,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMessage }]
+      },
+      {
+        headers: {
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'Content-Type': 'application/json'
+        }
+      }
+    )
+    return response.data.content[0].text
   },
 
   async callReReviewAI(systemPrompt, userMessage) {

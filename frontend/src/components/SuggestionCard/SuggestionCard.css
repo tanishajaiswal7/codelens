@@ -18,6 +18,13 @@
   pointer-events: none;
 }
 
+.sug-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
 .sug-status-row {
   display: flex;
   gap: 6px;
@@ -43,6 +50,38 @@
   background: var(--green-bg);
   color: var(--green);
   border: 1px solid var(--border-2);
+}
+
+.status-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.sb-resolved {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid rgba(16,185,129,0.2);
+}
+
+.sb-new {
+  background: var(--accent-glow);
+  color: var(--accent-2);
+  border: 1px solid rgba(99,102,241,0.2);
+}
+
+.sb-persist {
+  background: var(--amber-bg);
+  color: var(--amber);
+  border: 1px solid rgba(245,158,11,0.2);
+}
+
+.sb-unchanged {
+  background: var(--bg-3);
+  color: var(--text-3);
+  border: 1px solid var(--border);
 }
 
 .sug-card:hover {

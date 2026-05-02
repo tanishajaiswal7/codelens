@@ -1,29 +1,56 @@
-export function pollJob(jobId, onResult, onError) {
-  const intervalId = setInterval(async () => {
+export function pollJob(
+  jobId,
+  onResult,
+  onError,
+  intervalMs = 1500,
+  maxAttempts = 60
+) {
+  let attempts = 0
+  let cancelled = false
+
+  const interval = setInterval(async () => {
+    if (cancelled) return
+
+    attempts++
+
+    if (attempts > maxAttempts) {
+      clearInterval(interval)
+      onError('Request timed out after 90 seconds. Please try again.')
+      return
+    }
+
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      const response = await fetch(`${apiUrl}/api/jobs/${jobId}`, {
+      const res = await fetch(`/api/jobs/${jobId}`, {
         credentials: 'include',
       })
 
-      if (!response.ok) {
-        throw new Error('Failed to poll job status')
+      if (!res.ok) {
+        if (res.status === 404) {
+          // Job not created yet — keep polling
+          return
+        }
+        throw new Error(`Job poll failed: ${res.status}`)
       }
 
-      const data = await response.json()
+      const job = await res.json()
 
-      if (data.status === 'done') {
-        clearInterval(intervalId)
-        onResult(data.result)
-      } else if (data.status === 'failed') {
-        clearInterval(intervalId)
-        onError(data.error || 'Job failed')
+      if (job.status === 'done') {
+        clearInterval(interval)
+        onResult(job.result)
+      } else if (job.status === 'failed') {
+        clearInterval(interval)
+        onError(job.error || 'Job failed')
       }
-    } catch (pollError) {
-      clearInterval(intervalId)
-      onError(pollError.message || 'Failed to poll job status')
+      // queued/processing: keep polling
+    } catch (err) {
+      console.error('[jobPoller] Error:', err.message)
+      // Don't stop polling on network errors — keep trying
     }
-  }, 1200)
+  }, intervalMs)
 
-  return () => clearInterval(intervalId)
+  // Return cancel function
+  return () => {
+    cancelled = true
+    clearInterval(interval)
+  }
 }

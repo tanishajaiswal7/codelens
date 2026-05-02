@@ -1,77 +1,88 @@
-import { socraticService } from '../services/socraticService.js';
-import { validationResult } from 'express-validator';
+import { v4 as uuidv4 } from 'uuid'
+import { socraticService } from '../services/socraticService.js'
+import { jobService } from '../../job-service/services/jobService.js'
+import { publishToQueue } from '../../../rabbitmq/publisher.js'
+import { QUEUES } from '../../../rabbitmq/queues.js'
 
-export const socraticController = {
-  async startSession(req, res, next) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
+export const startSession = async (req, res, next) => {
+  try {
+    const { code, persona, context } = req.body
 
-      const userId = req.userId;
-      const { code, persona, context } = req.body;
-
-      console.log('Start session request:', { userId, persona, codeLength: code.length, contextSource: context?.source });
-
-      const session = await socraticService.startSession(userId, code, persona, context || null);
-
-      res.status(201).json({
-        message: 'Socratic session started',
-        session,
-      });
-    } catch (error) {
-      console.error('Socratic controller error:', error.message);
-      res.status(500).json({
-        message: 'Failed to start Socratic session',
-        error: error.message,
-      });
+    if (!code || code.trim().length < 10) {
+      return res.status(400).json({
+        error: 'Code is required (minimum 10 characters)'
+      })
     }
-  },
 
-  async continueSession(req, res, next) {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-
-      const userId = req.userId;
-      const { sessionId, userMessage, codeSnapshot = null } = req.body;
-
-      console.log('Continue session request:', { sessionId, userId });
-
-      const session = await socraticService.continueSession(sessionId, userMessage, codeSnapshot);
-
-      res.json({
-        message: 'Session continued',
-        session,
-      });
-    } catch (error) {
-      console.error('Socratic controller error:', error.message);
-      res.status(500).json({
-        message: 'Failed to continue session',
-        error: error.message,
-      });
+    if (!persona || !['faang', 'startup', 'security'].includes(persona)) {
+      return res.status(400).json({
+        error: 'Invalid persona. Must be faang, startup, or security'
+      })
     }
-  },
 
-  async getSession(req, res, next) {
-    try {
-      const userId = req.userId;
-      const { sessionId } = req.params;
+    const jobId = uuidv4()
+    await jobService.createJob(jobId, req.userId, 'socratic_start')
 
-      const session = await socraticService.getSession(sessionId, userId);
+    await publishToQueue(QUEUES.SOCRATIC_JOBS, {
+      jobId,
+      userId: req.userId,
+      timestamp: new Date().toISOString(),
+      action: 'start',
+      code,
+      persona,
+      context: context || null,
+    })
 
-      res.json({
-        session,
-      });
-    } catch (error) {
-      console.error('Socratic controller error:', error.message);
-      res.status(404).json({
-        message: 'Session not found',
-        error: error.message,
-      });
+    res.status(202).json({
+      jobId,
+      status: 'queued',
+      pollUrl: `/api/jobs/${jobId}`,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const replyToSession = async (req, res, next) => {
+  try {
+    const { sessionId, userMessage, currentCode } = req.body
+
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId is required' })
     }
-  },
-};
+    if (!userMessage || userMessage.trim().length === 0) {
+      return res.status(400).json({ error: 'userMessage is required' })
+    }
+
+    const jobId = uuidv4()
+    await jobService.createJob(jobId, req.userId, 'socratic_reply')
+
+    await publishToQueue(QUEUES.SOCRATIC_JOBS, {
+      jobId,
+      userId: req.userId,
+      timestamp: new Date().toISOString(),
+      action: 'reply',
+      sessionId,
+      userMessage,
+      currentCode: currentCode || null,
+    })
+
+    res.status(202).json({
+      jobId,
+      status: 'queued',
+      pollUrl: `/api/jobs/${jobId}`,
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+
+export const getSession = async (req, res, next) => {
+  try {
+    const { id } = req.params
+    const session = await socraticService.getSession(id, req.userId)
+    res.json(session)
+  } catch (error) {
+    next(error)
+  }
+}

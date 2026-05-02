@@ -21,12 +21,26 @@ export default function SuggestionCard({ suggestion, isNew, isResolved }) {
     <div className={`sug-card ${isNew ? 'is-new' : ''} ${isResolved ? 'is-resolved' : ''}`}>
       <div className="sug-top">
         <div className="sug-main">
-          {(isNew || isResolved) && (
-            <div className="sug-status-row">
-              {isNew && <span className="sug-badge new">NEW</span>}
-              {isResolved && <span className="sug-badge fixed">FIXED</span>}
-            </div>
-          )}
+          <div className="sug-badges">
+            {(isNew || isResolved) && (
+              <div className="sug-status-row">
+                {isNew && <span className="sug-badge new">NEW</span>}
+                {isResolved && <span className="sug-badge fixed">FIXED</span>}
+              </div>
+            )}
+            {suggestion.status === 'resolved' && (
+              <span className="status-badge sb-resolved">✓ Resolved</span>
+            )}
+            {suggestion.status === 'new' && (
+              <span className="status-badge sb-new">🆕 New</span>
+            )}
+            {suggestion.status === 'persistent' && (
+              <span className="status-badge sb-persist">⚠ Still present</span>
+            )}
+            {suggestion.status === 'unchanged' && (
+              <span className="status-badge sb-unchanged">Not re-checked</span>
+            )}
+          </div>
           <h3 className="sug-title">{suggestion.title}</h3>
           <div className="sug-meta">
             {suggestion.lineRef && (
@@ -85,6 +99,7 @@ SuggestionCard.propTypes = {
     confidenceLabel: PropTypes.string,
     confidenceBand: PropTypes.string,
     category: PropTypes.string,
+    status: PropTypes.oneOf(['resolved', 'new', 'persistent', 'unchanged']),
   }).isRequired,
   isNew: PropTypes.bool,
   isResolved: PropTypes.bool,

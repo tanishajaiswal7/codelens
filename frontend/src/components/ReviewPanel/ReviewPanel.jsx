@@ -12,6 +12,10 @@ export default function ReviewPanel({
   isLoading,
   error,
   onRetry,
+  onReReview,
+  isReReviewing,
+  reReviewMeta,
+  originalCode,
 }) {
   const [filter, setFilter] = useState('all');
 
@@ -90,12 +94,39 @@ export default function ReviewPanel({
 
   return (
     <div className="review-panel">
+      {reReviewMeta && (
+        <div className="rr-summary">
+          <span className="rr-stat resolved">
+            ✓ {reReviewMeta.resolved} resolved
+          </span>
+          <span className="rr-stat new">
+            + {reReviewMeta.newCount} new
+          </span>
+          <span className="rr-stat persistent">
+            ⚠ {reReviewMeta.persistent} persistent
+          </span>
+        </div>
+      )}
+
       {previousReview && (
         <ScoreStrip
           previousCount={previousReview.suggestions.length}
           currentCount={review.suggestions.length}
         />
       )}
+
+      <div className="review-header-actions">
+        {onReReview && originalCode && (
+          <button
+            className="re-review-btn"
+            onClick={onReReview}
+            disabled={isReReviewing}
+            title="Re-review only the changed lines"
+          >
+            {isReReviewing ? '↻ Checking changes...' : '↻ Re-Review Changes'}
+          </button>
+        )}
+      </div>
 
       <div className="verdict-strip">
         <div>
@@ -188,6 +219,14 @@ ReviewPanel.propTypes = {
   isLoading: PropTypes.bool.isRequired,
   error: PropTypes.string,
   onRetry: PropTypes.func,
+  onReReview: PropTypes.func,
+  isReReviewing: PropTypes.bool,
+  reReviewMeta: PropTypes.shape({
+    resolved: PropTypes.number.isRequired,
+    newCount: PropTypes.number.isRequired,
+    persistent: PropTypes.number.isRequired,
+  }),
+  originalCode: PropTypes.string,
   previousReview: PropTypes.shape({
     suggestions: PropTypes.arrayOf(PropTypes.shape({
       id: PropTypes.string.isRequired,
@@ -199,4 +238,8 @@ ReviewPanel.propTypes = {
 ReviewPanel.defaultProps = {
   previousReview: null,
   resolvedSuggestionIds: [],
+  onReReview: null,
+  isReReviewing: false,
+  reReviewMeta: null,
+  originalCode: null,
 };
