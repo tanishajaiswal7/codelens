@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { authApi } from '../api/authApi.js';
 
 const AuthContext = createContext(null);
+const isDev = import.meta.env.DEV;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -17,7 +18,7 @@ export function AuthProvider({ children }) {
       return nextUser;
     } catch (error) {
       // Log the error for debugging
-      if (process.env.NODE_ENV === 'development') {
+      if (isDev) {
         console.error('[AuthContext] Failed to fetch user:', {
           message: error.message,
           status: error.response?.status,
@@ -36,7 +37,7 @@ export function AuthProvider({ children }) {
     let isMounted = true;
 
     refreshUser().then((user) => {
-      if (isMounted && process.env.NODE_ENV === 'development') {
+      if (isMounted && isDev) {
         console.log('[AuthContext] Initial user refresh complete:', user ? 'authenticated' : 'not authenticated');
       }
     });

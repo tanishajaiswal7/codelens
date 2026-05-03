@@ -18,13 +18,14 @@ export const authController = {
       }
 
       const { name, email, password } = req.body;
+      const normalizedEmail = email.trim().toLowerCase();
 
-      const existingUser = await authService.findUserByEmail(email);
+      const existingUser = await authService.findUserByEmail(normalizedEmail);
       if (existingUser) {
         return res.status(400).json({ message: 'Email already registered' });
       }
 
-      const user = await authService.createUser({ name, email, password });
+      const user = await authService.createUser({ name, email: normalizedEmail, password });
       const token = authService.generateToken(user._id);
 
       res.cookie('token', token, tokenCookieOptions());
@@ -51,10 +52,17 @@ export const authController = {
       }
 
       const { email, password } = req.body;
+      const normalizedEmail = email.trim().toLowerCase();
 
-      const user = await authService.findUserByEmail(email);
+      const user = await authService.findUserByEmail(normalizedEmail);
       if (!user) {
         return res.status(401).json({ message: 'Invalid email or password' });
+      }
+
+      if (!user.password) {
+        return res.status(400).json({
+          message: 'This account does not have a local password. Please continue with GitHub login or set a password first.',
+        });
       }
 
       const isPasswordValid = await authService.comparePasswords(password, user.password);

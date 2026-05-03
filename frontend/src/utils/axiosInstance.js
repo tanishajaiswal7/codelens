@@ -2,9 +2,10 @@ import axios from 'axios';
 import { getApiBaseUrl } from './apiBaseUrl.js';
 
 const baseURL = getApiBaseUrl();
+const isDev = import.meta.env.DEV;
 
 // Log the API base URL in development and production (hidden errors)
-if (process.env.NODE_ENV === 'development') {
+if (isDev) {
   console.log('[axiosInstance] Using API base URL:', baseURL);
 }
 
@@ -18,7 +19,6 @@ axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     const { response, request, message, config } = error;
-    const isDev = process.env.NODE_ENV === 'development';
 
     // Log all errors in development for debugging
     if (isDev) {

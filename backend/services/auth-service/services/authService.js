@@ -16,7 +16,8 @@ export const authService = {
    * @returns {Promise<Object|null>} User document or null if not found
    */
   async findUserByEmail(email) {
-    return await User.findOne({ email });
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : email;
+    return await User.findOne({ email: normalizedEmail });
   },
 
   /**
@@ -26,13 +27,15 @@ export const authService = {
    */
   async createUser(userData) {
     const { name, email, password } = userData;
+    const normalizedName = typeof name === 'string' ? name.trim() : name;
+    const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : email;
 
     const salt = await bcryptjs.genSalt(10);
     const hashedPassword = await bcryptjs.hash(password, salt);
 
     const user = new User({
-      name,
-      email,
+      name: normalizedName,
+      email: normalizedEmail,
       password: hashedPassword,
     });
 
@@ -47,6 +50,10 @@ export const authService = {
    * @returns {Promise<boolean>} True if passwords match
    */
   async comparePasswords(plainPassword, hashedPassword) {
+    if (!hashedPassword) {
+      return false;
+    }
+
     return await bcryptjs.compare(plainPassword, hashedPassword);
   },
 
@@ -56,8 +63,12 @@ export const authService = {
    * @returns {string} Signed JWT token
    */
   generateToken(userId) {
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
     return jwt.sign({ userId }, process.env.JWT_SECRET, {
-      expiresIn: process.env.JWT_EXPIRY,
+      expiresIn: process.env.JWT_EXPIRY || '7d',
     });
   },
 
