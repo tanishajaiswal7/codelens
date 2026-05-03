@@ -17,7 +17,6 @@ function InviteModal({
   const [statusType, setStatusType] = useState('info');
   const [inviteResults, setInviteResults] = useState([]);
   const [shareCopied, setShareCopied] = useState(false);
-  const [inviteSent, setInviteSent] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
@@ -26,7 +25,6 @@ function InviteModal({
       setStatusMessage('');
       setInviteResults([]);
       setShareCopied(false);
-      setInviteSent(false);
     }
   }, [isOpen]);
 
@@ -111,7 +109,6 @@ function InviteModal({
           `✓ ${successCount} invites created successfully. Email delivery is running in the background. You can also copy the links below and send them manually.`
         );
       }
-      setInviteSent(true);
       setInviteResults(results);
       setEmails([]);
       setEmailText('');
@@ -150,13 +147,14 @@ function InviteModal({
   if (!isOpen) return null;
 
   const successCount = inviteResults.filter((item) => item.success).length;
+  const showSuccessState = inviteResults.length > 0 && successCount > 0;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-overlay">
       <div className="invite-modal" onClick={(e) => e.stopPropagation()}>
         <div className="invite-header">
           <div>
-            <h2>{inviteSent ? '✓ Invites Sent!' : 'Invite teammates'}</h2>
+            <h2>{showSuccessState ? '✓ Invites Sent!' : 'Invite teammates'}</h2>
             <p className="workspace-name">to {workspaceName}</p>
           </div>
           <button className="modal-close" onClick={onClose}>
@@ -164,7 +162,7 @@ function InviteModal({
           </button>
         </div>
 
-        {inviteSent ? (
+        {showSuccessState ? (
           <div className="invite-body invite-body--success">
             <div className="success-content">
               <div className="success-icon">✓</div>
@@ -188,10 +186,6 @@ function InviteModal({
                   </ul>
                 </div>
               )}
-
-              <button type="button" className="btn-primary" onClick={() => setInviteSent(false)}>
-                Send more invites
-              </button>
             </div>
           </div>
         ) : (
