@@ -11,6 +11,35 @@ const buildPlainTextInvite = (workspaceName, inviteUrl) => (
   'This invite expires in 7 days.'
 )
 
+const buildInviteHtml = (workspaceName, inviteUrl) => `
+  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+    <div style="background:#09090b;padding:24px;border-radius:8px 8px 0 0">
+      <h1 style="color:white;font-size:20px;margin:0">CodeLens AI</h1>
+    </div>
+    <div style="background:#f9fafb;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb">
+      <h2 style="color:#111;font-size:18px;margin:0 0 16px">
+        You have been invited to join ${workspaceName}
+      </h2>
+      <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 24px">
+        Someone has invited you to collaborate on CodeLens AI.
+        Click the button below to join the workspace.
+      </p>
+      <a href="${inviteUrl}"
+         style="display:inline-block;background:#4f46e5;color:white;
+                padding:12px 24px;border-radius:6px;text-decoration:none;
+                font-size:14px;font-weight:500">
+        Join workspace
+      </a>
+      <p style="color:#9ca3af;font-size:12px;margin:24px 0 0">
+        If the button does not work, copy this link: ${inviteUrl}
+      </p>
+      <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">
+        This invite expires in 7 days.
+      </p>
+    </div>
+  </div>
+`
+
 const getHttpErrorDetails = (err) => {
   if (!err) return ''
   if (err.response?.data) {
@@ -53,35 +82,6 @@ const sendViaSendGrid = async (config, { toEmail, subject, html, text }) => {
   return true
 }
 
-const buildInviteHtml = (workspaceName, inviteUrl) => `
-  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-    <div style="background:#09090b;padding:24px;border-radius:8px 8px 0 0">
-      <h1 style="color:white;font-size:20px;margin:0">CodeLens AI</h1>
-    </div>
-    <div style="background:#f9fafb;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb">
-      <h2 style="color:#111;font-size:18px;margin:0 0 16px">
-        You have been invited to join ${workspaceName}
-      </h2>
-      <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 24px">
-        Someone has invited you to collaborate on CodeLens AI.
-        Click the button below to join the workspace.
-      </p>
-      <a href="${inviteUrl}"
-         style="display:inline-block;background:#4f46e5;color:white;
-                padding:12px 24px;border-radius:6px;text-decoration:none;
-                font-size:14px;font-weight:500">
-        Join workspace
-      </a>
-      <p style="color:#9ca3af;font-size:12px;margin:24px 0 0">
-        If the button does not work, copy this link: ${inviteUrl}
-      </p>
-      <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">
-        This invite expires in 7 days.
-      </p>
-    </div>
-  </div>
-`
-
 export const emailService = {
   async sendWorkspaceInviteEmail({
     toEmail,
@@ -92,37 +92,7 @@ export const emailService = {
     if (!config.sendgridApiKey || !config.from) {
       console.log('[Email] SendGrid not configured — invite email skipped')
       return false
-        subject: `You have been invited to ${workspaceName} on CodeLens AI`,
-        html: buildInviteHtml(workspaceName, inviteUrl),
-        text: buildPlainTextInvite(workspaceName, inviteUrl),
-    const html = `
-      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
-        <div style="background:#09090b;padding:24px;border-radius:8px 8px 0 0">
-          <h1 style="color:white;font-size:20px;margin:0">CodeLens AI</h1>
-        </div>
-        <div style="background:#f9fafb;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb">
-          <h2 style="color:#111;font-size:18px;margin:0 0 16px">
-            You have been invited to join ${workspaceName}
-          </h2>
-          <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 24px">
-            Someone has invited you to collaborate on CodeLens AI.
-            Click the button below to join the workspace.
-          </p>
-          <a href="${inviteUrl}"
-             style="display:inline-block;background:#4f46e5;color:white;
-                    padding:12px 24px;border-radius:6px;text-decoration:none;
-                    font-size:14px;font-weight:500">
-            Join workspace
-          </a>
-          <p style="color:#9ca3af;font-size:12px;margin:24px 0 0">
-            If the button does not work, copy this link: ${inviteUrl}
-          </p>
-          <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">
-            This invite expires in 7 days.
-          </p>
-        </div>
-      </div>
-    `
+    }
 
     try {
       await sendViaSendGrid(config, {
