@@ -63,11 +63,15 @@ export const authService = {
    * @returns {string} Signed JWT token
    */
   generateToken(userId) {
-    if (!process.env.JWT_SECRET) {
+    const jwtSecret = process.env.JWT_SECRET || (
+      process.env.NODE_ENV !== 'production' ? 'codelens-dev-jwt-secret' : null
+    );
+
+    if (!jwtSecret) {
       throw new Error('JWT_SECRET is not configured');
     }
 
-    return jwt.sign({ userId }, process.env.JWT_SECRET, {
+    return jwt.sign({ userId }, jwtSecret, {
       expiresIn: process.env.JWT_EXPIRY || '7d',
     });
   },

@@ -20,9 +20,9 @@ const createTransporter = () => {
     host: config.host,
     port: config.port,
     secure: config.secure,
-    connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 10000),
-    greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 10000),
-    socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 10000),
+    connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 60000),
+    greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 60000),
+    socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 60000),
     requireTLS: !config.secure,
     auth: {
       user: config.user,
