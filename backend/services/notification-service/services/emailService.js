@@ -16,17 +16,31 @@ const createTransporter = () => {
     return null
   }
 
+  const isGmail = String(config.host || '').toLowerCase().includes('gmail.com')
+
+  const transportConfig = isGmail
+    ? {
+        service: 'gmail',
+        auth: {
+          user: config.user,
+          pass: config.pass,
+        },
+      }
+    : {
+        host: config.host,
+        port: config.port,
+        secure: config.secure,
+        auth: {
+          user: config.user,
+          pass: config.pass,
+        },
+      }
+
   return nodemailer.createTransport({
-    host: config.host,
-    port: config.port,
-    secure: config.secure,
+    ...transportConfig,
     connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 10000),
     greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 10000),
     socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 10000),
-    auth: {
-      user: config.user,
-      pass: config.pass,
-    },
   })
 }
 
@@ -97,9 +111,15 @@ export const emailService = {
         `You have been invited to ${workspaceName} on CodeLens AI`
       )
 
+      const envelopeFrom = config.user || config.from || 'noreply@codelens.ai'
+
       await transporter.sendMail({
         from: mailHeaders.from,
         replyTo: mailHeaders.replyTo,
+        envelope: {
+          from: envelopeFrom,
+          to: toEmail,
+        },
         to: toEmail,
         subject: mailHeaders.subject,
         html,
@@ -207,9 +227,15 @@ export const emailService = {
     try {
       const mailHeaders = buildMailHeaders(config, subject)
 
+      const envelopeFrom = config.user || config.from || 'noreply@codelens.ai'
+
       await transporter.sendMail({
         from: mailHeaders.from,
         replyTo: mailHeaders.replyTo,
+        envelope: {
+          from: envelopeFrom,
+          to: toEmail,
+        },
         to: toEmail,
         subject: mailHeaders.subject,
         html,
