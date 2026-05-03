@@ -342,6 +342,88 @@
   background: #2563eb;
 }
 
+.invite-body--success {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.success-content {
+  text-align: center;
+  width: 100%;
+  max-width: 500px;
+}
+
+.success-content .success-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: scaleIn 0.4s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.success-message {
+  margin: 0 0 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.success-note {
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+.invite-results--success {
+  margin: 1.5rem 0 !important;
+  padding: 1.25rem !important;
+  border: 1px solid rgba(52, 211, 153, 0.2) !important;
+  border-radius: 16px;
+  background: rgba(52, 211, 153, 0.08) !important;
+  border-top: none !important;
+  text-align: left;
+}
+
+.invite-results--success h3 {
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.invite-results--success ul {
+  gap: 0.8rem;
+}
+
+.invite-results--success li {
+  border: 1px solid rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.05);
+  border-left: 3px solid var(--green);
+  color: var(--text);
+  padding: 0.8rem 1rem;
+}
+
+.result-email {
+  color: var(--text);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.success-content .btn-primary {
+  margin-top: 1rem;
+  min-width: 200px;
+}
+
 @media (max-width: 860px) {
   .invite-body {
     grid-template-columns: 1fr;
