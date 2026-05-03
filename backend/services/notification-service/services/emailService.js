@@ -16,31 +16,18 @@ const createTransporter = () => {
     return null
   }
 
-  const isGmail = String(config.host || '').toLowerCase().includes('gmail.com')
-
-  const transportConfig = isGmail
-    ? {
-        service: 'gmail',
-        auth: {
-          user: config.user,
-          pass: config.pass,
-        },
-      }
-    : {
-        host: config.host,
-        port: config.port,
-        secure: config.secure,
-        auth: {
-          user: config.user,
-          pass: config.pass,
-        },
-      }
-
   return nodemailer.createTransport({
-    ...transportConfig,
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
     connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 10000),
     greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 10000),
     socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 10000),
+    requireTLS: !config.secure,
+    auth: {
+      user: config.user,
+      pass: config.pass,
+    },
   })
 }
 
