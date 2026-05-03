@@ -304,6 +304,21 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .sidebar-enhanced {
+    padding-bottom: 14px;
+  }
+
+  .sidebar-nav-wrapper {
+    gap: 6px;
+  }
+
+  .sidebar-nav-item,
+  .filter-select,
+  .search-input,
+  .empty-action {
+    min-height: 44px;
+  }
+
   .filter-group {
     flex-direction: column;
     align-items: flex-start;
@@ -315,5 +330,9 @@
 
   .filter-select {
     width: 100%;
+  }
+
+  .sidebar-section {
+    padding-bottom: 18px;
   }
 }

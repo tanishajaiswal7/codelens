@@ -53,6 +53,19 @@ function DashboardContent({ user }) {
   const editorRef = useRef(null);
   const dashboardMainRef = useRef(null);
 
+  useEffect(() => {
+    const syncMobileSidebar = () => {
+      if (window.innerWidth <= 900) {
+        setSidebarOpen(false);
+      }
+    };
+
+    syncMobileSidebar();
+    window.addEventListener('resize', syncMobileSidebar);
+
+    return () => window.removeEventListener('resize', syncMobileSidebar);
+  }, []);
+
   // GitHub PR flow state
   const [gitHubStep, setGitHubStep] = useState('repos'); // 'repos', 'prs', 'filebrowser', 'files', 'review'
   const [selectedRepo, setSelectedRepo] = useState(null);

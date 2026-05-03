@@ -209,9 +209,16 @@
   }
 
   .sidebar-enhanced {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
+    position: fixed;
+    top: 48px;
+    left: 0;
+    width: min(88vw, 340px);
+    height: calc(100dvh - 48px);
+    border-right: 1px solid var(--border);
+    border-bottom: none;
+    z-index: 60;
+    box-shadow: 18px 0 32px rgba(0, 0, 0, 0.35);
+    overflow-y: auto;
   }
 }
 
@@ -238,7 +245,7 @@
   }
 
   .sidebar-enhanced {
-    max-height: 56dvh;
+    width: min(92vw, 330px);
   }
 
   .sidebar-nav-wrapper {

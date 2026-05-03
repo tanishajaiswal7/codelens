@@ -419,3 +419,53 @@
 .arrow {
   font-size: 10px;
 }
+
+@media (max-width: 640px) {
+  .topbar {
+    height: auto;
+    padding: 8px 10px;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .topbar-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .logo-link {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .logo-name {
+    white-space: nowrap;
+  }
+
+  .topbar-nav {
+    display: none;
+  }
+
+  .topbar-right {
+    width: 100%;
+    margin-left: 0;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .topbar-btn {
+    height: 32px;
+    padding: 0 10px;
+    font-size: 10px;
+    flex: 1 1 110px;
+    justify-content: center;
+  }
+
+  .topbar-avatar,
+  .topbar-avatar-image,
+  .topbar-avatar-button {
+    margin-left: 0;
+  }
+}
