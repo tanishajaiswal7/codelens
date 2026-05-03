@@ -11,6 +11,7 @@ function JoinWorkspacePage() {
   const [isLoading, setIsLoading] = useState(Boolean(token));
   const [error, setError] = useState(null);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [isSuccessful, setIsSuccessful] = useState(false);
   const [inviteInput, setInviteInput] = useState('');
   const [pasteError, setPasteError] = useState('');
 
@@ -37,7 +38,12 @@ function JoinWorkspacePage() {
       const data = await workspaceApi.acceptInvite(token);
 
       if (data.workspace && data.workspace._id) {
-        navigate(`/workspace/${data.workspace._id}`);
+        setIsSuccessful(true);
+        setInviteDetails(data);
+        // Navigate after showing success for 1 second
+        setTimeout(() => {
+          navigate(`/workspace/${data.workspace._id}`);
+        }, 1000);
         return;
       }
 
@@ -73,7 +79,11 @@ function JoinWorkspacePage() {
       const data = await workspaceApi.acceptInvite(token);
       localStorage.removeItem('pendingInvite');
       if (data.workspace && data.workspace._id) {
-        navigate(`/workspace/${data.workspace._id}`);
+        setIsSuccessful(true);
+        // Navigate after showing success for 1 second
+        setTimeout(() => {
+          navigate(`/workspace/${data.workspace._id}`);
+        }, 1000);
       }
     } catch (err) {
       setError(err.message || 'Failed to accept invite');
@@ -110,7 +120,20 @@ function JoinWorkspacePage() {
       return;
     }
 
-    setPasteError('');
+    setPSuccessful)
+    return (
+      <div className="join-workspace-page">
+        <div className="success-redirect-state">
+          <div className="success-icon">✓</div>
+          <h2>Successfully Joined!</h2>
+          <p className="workspace-name">{inviteDetails?.workspace?.name || inviteDetails?.workspaceName}</p>
+          <p className="description">Redirecting to workspace...</p>
+          <div className="spinner"></div>
+        </div>
+      </div>
+    );
+
+  if (isasteError('');
     navigate(`/join/${parsedToken}`);
   };
 

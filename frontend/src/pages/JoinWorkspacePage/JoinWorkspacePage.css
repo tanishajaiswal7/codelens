@@ -11,6 +11,7 @@
 .error-state,
 .login-required-state,
 .success-state,
+.success-redirect-state,
 .join-form-state {
   background: var(--bg-primary);
   border: 1px solid var(--border);
@@ -41,13 +42,15 @@
 .loading-state p,
 .error-state p,
 .login-required-state p,
-.success-state p {
+.success-state p,
+.success-redirect-state p {
   color: var(--text-secondary);
 }
 
 .error-state h2,
 .login-required-state h2,
-.success-state h2 {
+.success-state h2,
+.success-redirect-state h2 {
   margin-top: 0;
   margin-bottom: 1rem;
   color: var(--text-primary);
