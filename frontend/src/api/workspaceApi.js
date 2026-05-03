@@ -28,14 +28,17 @@ export const workspaceApi = {
   getPendingInvites: (workspaceId) =>
     axiosInstance.get(`/api/workspace/${workspaceId}/pending-invites`).then((r) => r.data),
 
+  deleteInvite: (workspaceId, inviteId) =>
+    axiosInstance.delete(`/api/workspace/${workspaceId}/invites/${inviteId}`).then((r) => r.data),
+
   deletePendingInvite: (workspaceId, inviteId) =>
-    axiosInstance.delete(`/api/workspace/${workspaceId}/pending-invites/${inviteId}`).then((r) => r.data),
+    axiosInstance.delete(`/api/workspace/${workspaceId}/invites/${inviteId}`).then((r) => r.data),
 
   acceptInvite: (token) =>
     axiosInstance.get(`/api/workspace/join/${token}`).then((r) => r.data),
 
-  leaveWorkspace: (id) =>
-    axiosInstance.delete(`/api/workspace/${id}/leave`).then((r) => r.data),
+  leaveWorkspace: (workspaceId) =>
+    axiosInstance.delete(`/api/workspace/${workspaceId}/leave`).then((r) => r.data),
 
   getMembers: (id) =>
     axiosInstance.get(`/api/workspace/${id}/members`).then((r) => r.data),

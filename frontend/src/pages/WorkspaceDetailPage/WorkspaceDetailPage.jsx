@@ -192,11 +192,15 @@ function WorkspaceDetailPage() {
 
   const handleDeletePendingInvite = async (inviteId) => {
     if (!confirm('Delete this pending invite entry?')) return;
+
+    const previousInvites = pendingInvites;
+    setPendingInvites((current) => current.filter((invite) => invite._id !== inviteId));
+
     try {
-      await workspaceApi.deletePendingInvite(id, inviteId);
-      await fetchPendingInvites();
-      await fetchInviteLink();
+      await workspaceApi.deleteInvite(id, inviteId);
+      alert('Invite deleted successfully.');
     } catch (err) {
+      setPendingInvites(previousInvites);
       setError(err.response?.data?.error || err.message || 'Failed to delete pending invite');
     }
   };
@@ -213,13 +217,22 @@ function WorkspaceDetailPage() {
   };
 
   const handleLeaveWorkspace = async () => {
-    if (!confirm('Are you sure you want to leave this workspace?')) return;
+    const confirmed = window.confirm(
+      'Are you sure you want to leave this workspace? You will need a new invite to rejoin.'
+    );
+    if (!confirmed) return;
 
     try {
       await workspaceApi.leaveWorkspace(id);
       navigate('/workspace');
     } catch (err) {
-      setError(err.message || 'Failed to leave workspace');
+      const message = err.response?.data?.error || 'Failed to leave workspace';
+
+      if (message.toLowerCase().includes('owner')) {
+        alert('Workspace owners cannot leave. You created this workspace.');
+      } else {
+        alert(message);
+      }
     }
   };
 
@@ -273,6 +286,16 @@ function WorkspaceDetailPage() {
     if (role === 'owner') return 'wsd-role-pill--owner';
     if (role === 'admin') return 'wsd-role-pill--admin';
     return 'wsd-role-pill--member';
+  };
+
+  const getInviteStatusMeta = (invite) => {
+    if (invite.status === 'expired') {
+      return { label: 'Expired', tone: 'expired' };
+    }
+    if (invite.status === 'used') {
+      return { label: 'Used', tone: 'used' };
+    }
+    return { label: 'Pending', tone: 'pending' };
   };
 
   const statCards = [
@@ -425,6 +448,9 @@ function WorkspaceDetailPage() {
                 <div key={invite._id} className="wsd-invite-row">
                   <div className="wsd-invite-email">{invite.email}</div>
                   <div className="wsd-invite-meta">{invite.isReusable ? 'Reusable link' : 'Email invite'}</div>
+                  <div className={`wsd-invite-status wsd-invite-status--${getInviteStatusMeta(invite).tone}`}>
+                    {getInviteStatusMeta(invite).label}
+                  </div>
                   <div className="wsd-invite-meta">{invite.isReusable ? `${invite.uses}/${invite.maxUses || '∞'}` : '1/1'}</div>
                   <div className="wsd-invite-meta">{invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : 'N/A'}</div>
                   <div className="wsd-inline-actions wsd-inline-actions--compact">
@@ -471,7 +497,10 @@ function WorkspaceDetailPage() {
             <div className="wsd-member-email">{member.email}</div>
           </div>
           <div className={`wsd-role-pill ${getRoleToneClass(member.role)}`}>{member.role}</div>
-          <div className="wsd-member-reviews">{member.reviewsThisMonth}</div>
+          <div className="wsd-member-reviews">
+            <span className="wsd-member-review-count">{member.totalReviews ?? member.reviewsThisMonth ?? 0}</span>
+            <span className="wsd-member-review-label"> {member.reviewLabel || 'reviews'}</span>
+          </div>
         </div>
       ))}
     </div>

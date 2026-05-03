@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { workspaceApi } from '../../api/workspaceApi';
 import { pollJob } from '../../utils/jobPoller';
 import './WorkspacePRList.css';
@@ -10,6 +11,7 @@ const personaLabels = {
 };
 
 export default function WorkspacePRList({ workspaceId, onReviewComplete, refreshSignal = 0 }) {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -60,6 +62,29 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
   }
 
   if (error) {
+    const normalizedError = (error || '').toLowerCase();
+    const isNoRepoLinked = normalizedError.includes('no github repo linked');
+
+    if (isNoRepoLinked) {
+      return (
+        <div className="no-repo-state">
+          <div className="no-repo-icon">🔗</div>
+          <h3 className="no-repo-title">Link a GitHub repository</h3>
+          <p className="no-repo-desc">
+            Connect a GitHub repo to start reviewing your team&apos;s
+            pull requests from this dashboard.
+          </p>
+          <button
+            className="no-repo-btn"
+            onClick={() => navigate(`/workspace/${workspaceId}`)}
+            type="button"
+          >
+            Go to workspace settings →
+          </button>
+        </div>
+      );
+    }
+
     return (
       <div className="wpr-error">
         <p>{error}</p>

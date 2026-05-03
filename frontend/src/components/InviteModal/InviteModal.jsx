@@ -84,32 +84,37 @@ function InviteModal({
     const results = await onInviteEmails(currentEmails);
     setInviteResults(results);
 
-    const successCount = results.filter((item) => item.success).length;
-    const failCount = results.filter((item) => !item.success).length;
+    const successEntries = results.filter((item) => item.success);
+    const failedEntries = results.filter((item) => !item.success);
+    const successCount = successEntries.length;
+    const failedInvites = failedEntries.length;
 
-    const failedInvites = results.filter((item) => !item.success).length;
-    const pendingEmails = results.filter((item) => item.success && item.emailSent === false).length;
-    const successText = successCount === 1 ? 'Invite created successfully.' : `${successCount} invites created successfully.`;
-    const failureText = failedInvites === 1 ? '1 invite failed.' : `${failedInvites} invites failed.`;
-    const deliveryWarningText = pendingEmails === 1 ? 'Email delivery failed for 1 invite.' : `${pendingEmails} invites were created but email delivery failed.`;
-
-    if (successCount > 0 && failedInvites === 0 && pendingEmails === 0) {
+    if (successCount > 0 && failedInvites === 0) {
       setStatusType('success');
-      setStatusMessage('Invite sent successfully.');
+      if (successCount === 1) {
+        setStatusMessage(
+          `Invite link created. We are sending an email to ${successEntries[0].email}. You can also copy the link below and send it manually.`
+        );
+      } else {
+        setStatusMessage(
+          `${successCount} invite links created. We are sending emails in the background. You can also copy the links below and send them manually.`
+        );
+      }
       setInviteResults(results);
       setEmails([]);
       setEmailText('');
-      setTimeout(() => {
-        onClose();
-      }, 1400);
-    } else if (successCount > 0 && (failedInvites > 0 || pendingEmails > 0)) {
+    } else if (successCount > 0 && failedInvites > 0) {
       setStatusType('warning');
-      setStatusMessage(`${successText} ${pendingEmails > 0 ? deliveryWarningText : ''} ${failureText}`.trim());
+      const failureText = failedInvites === 1 ? '1 invite failed.' : `${failedInvites} invites failed.`;
+      setStatusMessage(
+        `${successCount} invite links created. We are sending emails in the background. ${failureText}`
+      );
       setInviteResults(results);
-      setEmails(results.filter((item) => !item.success).map((item) => item.email));
+      setEmails(failedEntries.map((item) => item.email));
       setEmailText('');
     } else {
       setStatusType('error');
+      const failureText = failedInvites === 1 ? '1 invite failed.' : `${failedInvites} invites failed.`;
       setStatusMessage(failureText || 'Unable to send invites.');
       setInviteResults(results);
       setEmailText('');
@@ -226,16 +231,16 @@ function InviteModal({
               {inviteResults.map((item) => (
                 <li key={item.email} className={item.success ? 'success' : 'error'}>
                   <div>
-                    {item.email} — {item.success ? 'Sent' : item.error}
+                    {item.email} — {item.success ? 'Invite link created' : item.error}
                   </div>
                   {item.success && item.inviteUrl && (
                     <div className="invite-url">
                       <code>{item.inviteUrl}</code>
                     </div>
                   )}
-                  {item.success && item.emailSent === false && (
+                  {item.success && (
                     <div className="invite-note">
-                      Invite created successfully, but email sending is not configured.
+                      Email delivery runs in the background. You can copy this invite link and share it manually right away.
                     </div>
                   )}
                 </li>

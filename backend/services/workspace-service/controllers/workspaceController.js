@@ -229,17 +229,40 @@ export const workspaceController = {
   async leaveWorkspace(req, res, next) {
     try {
       const userId = req.userId;
-      const { id } = req.params;
+      const { id, workspaceId } = req.params;
+      const targetWorkspaceId = workspaceId || id;
 
-      const result = await workspaceService.leaveWorkspace(id, userId);
+      const result = await workspaceService.leaveWorkspace(targetWorkspaceId, userId);
 
       return res.json(result);
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
       if (error.message.includes('not found')) {
         return res.status(404).json({ error: error.message });
       }
-      if (error.message.includes('Access denied') || error.message.includes('cannot leave')) {
+      return next(error);
+    }
+  },
+
+  async deleteInvite(req, res, next) {
+    try {
+      const userId = req.userId;
+      const { id, workspaceId, inviteId } = req.params;
+      const targetWorkspaceId = workspaceId || id;
+
+      const result = await workspaceService.deleteInvite(targetWorkspaceId, inviteId, userId);
+      return res.json(result);
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      if (error.message.includes('Access denied')) {
         return res.status(403).json({ error: error.message });
+      }
+      if (/invite not found/i.test(error.message)) {
+        return res.status(404).json({ error: error.message });
       }
       return next(error);
     }

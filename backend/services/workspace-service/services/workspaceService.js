@@ -4,9 +4,9 @@ import { WorkspaceMember } from '../models/WorkspaceMember.js';
 import { WorkspaceInvite } from '../models/WorkspaceInvite.js';
 import { Review } from '../../review-service/models/Review.js';
 import { User } from '../../auth-service/models/User.js';
-import { emailService } from '../../auth-service/services/emailService.js';
 import { publishEvent } from '../../../rabbitmq/publisher.js';
 import { QUEUES } from '../../../rabbitmq/queues.js';
+import mongoose from 'mongoose';
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const INVITE_EXPIRY_DAYS = 7;
@@ -189,29 +189,21 @@ export const workspaceService = {
     });
 
     const inviteUrl = buildInviteUrl(frontendBaseUrl, token);
-    let emailSent = false;
-
-    if (emailService.isConfigured()) {
-      try {
-        const inviterUser = await User.findById(inviterUserId).select('name email').lean();
-        await emailService.sendWorkspaceInviteEmail({
-          toEmail: email.toLowerCase(),
-          workspaceName: workspace.name,
-          inviteUrl,
-          inviterName: inviterUser?.name || inviterUser?.email || 'A teammate',
-        });
-        emailSent = true;
-      } catch (err) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Workspace invite email failed:', err.message);
-        }
-      }
-    }
+    publishEvent(QUEUES.NOTIFICATION_EVENTS, {
+      type: 'send_invite_email',
+      toEmail: email.toLowerCase(),
+      workspaceName: workspace.name,
+      inviteUrl,
+      workspaceId,
+      createdAt: new Date().toISOString(),
+    }).catch((err) => {
+      console.error('[Invite] Queue publish failed:', err.message);
+    });
 
     return {
       inviteUrl,
       token,
-      emailSent,
+      emailQueued: true,
     };
   },
 
@@ -346,26 +338,37 @@ export const workspaceService = {
       isActive: true,
     }).populate('userId', 'name email githubUsername githubAvatar');
 
-    // Enrich with review counts and latest review details
+    const workspaceObjectId = new mongoose.Types.ObjectId(workspaceId);
+
+    // Enrich with workspace-only review counts and role-aware labels
     const enrichedMembers = await Promise.all(
       members.map(async (m) => {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        const reviewCount = await Review.countDocuments({
+        const memberWorkspaceReviews = await Review.find({
+          workspaceId: workspaceObjectId,
           userId: m.userId._id,
-          createdAt: { $gte: thirtyDaysAgo },
-          deleted: false,
-        });
-
-        // Get latest review with verdict and issue counts
-        const latestReview = await Review.findOne({
-          userId: m.userId._id,
+          reviewContext: 'workspace',
           deleted: false,
         })
           .sort({ createdAt: -1 })
           .select('verdict suggestions createdAt summary')
           .lean();
+
+        const latestReview = memberWorkspaceReviews[0] || null;
+
+        let reviewCount = 0;
+        let reviewLabel = 'PRs reviewed';
+
+        if (m.role === 'owner' || m.role === 'admin') {
+          reviewCount = await Review.countDocuments({
+            workspaceId: workspaceObjectId,
+            managerDecisionBy: m.userId._id,
+            managerDecision: { $in: ['approved', 'rejected'] },
+            deleted: false,
+          });
+          reviewLabel = 'decisions';
+        } else {
+          reviewCount = memberWorkspaceReviews.length;
+        }
 
         let issueCount = 0;
         let criticalCount = 0;
@@ -384,6 +387,8 @@ export const workspaceService = {
           githubUsername: m.userId.githubUsername,
           githubAvatar: m.userId.githubAvatar,
           role: m.role,
+          totalReviews: reviewCount,
+          reviewLabel,
           reviewsThisMonth: reviewCount,
           latestReview: latestReview
             ? {
@@ -413,27 +418,29 @@ export const workspaceService = {
       throw new Error('Access denied: only owner or admin can view pending invites');
     }
 
-    const now = new Date();
-    const pendingInvites = await WorkspaceInvite.find({
+    const invites = await WorkspaceInvite.find({
       workspaceId,
-      expiresAt: { $gte: now },
-      $or: [
-        { isReusable: false, usedAt: null },
-        { isReusable: true, maxUses: 0 },
-        { isReusable: true, maxUses: { $gt: 0 }, $expr: { $lt: ['$uses', '$maxUses'] } },
-      ],
     }).sort({ createdAt: -1 });
 
-    return pendingInvites.map((invite) => ({
+    const now = new Date();
+    return invites.map((invite) => {
+      const isExpired = invite.expiresAt && invite.expiresAt < now;
+      const isUsed = Boolean(invite.usedAt) || (invite.isReusable && invite.maxUses > 0 && invite.uses >= invite.maxUses);
+      const status = isUsed ? 'used' : isExpired ? 'expired' : 'pending';
+
+      return {
       _id: invite._id,
-      email: invite.email,
+      email: invite.email || 'Reusable workspace link',
       token: invite.token,
       expiresAt: invite.expiresAt,
+      usedAt: invite.usedAt,
       isReusable: invite.isReusable,
       maxUses: invite.maxUses,
       uses: invite.uses || 0,
+      status,
       createdAt: invite.createdAt,
-    }));
+      };
+    });
   },
 
   async deleteReusableInvite(workspaceId, requestingUserId) {
@@ -483,34 +490,51 @@ export const workspaceService = {
     return { message: 'Pending invite deleted successfully' };
   },
 
+  async deleteInvite(workspaceId, inviteId, requestingUserId) {
+    const membership = await WorkspaceMember.findOne({
+      workspaceId,
+      userId: requestingUserId,
+      role: { $in: ['owner', 'admin'] },
+      isActive: true,
+    });
+
+    if (!membership) {
+      throw { status: 403, message: 'Only owners can manage invites' };
+    }
+
+    const invite = await WorkspaceInvite.findOneAndDelete({
+      _id: inviteId,
+      workspaceId,
+    });
+
+    if (!invite) {
+      throw { status: 404, message: 'Invite not found' };
+    }
+
+    return { success: true };
+  },
+
   async leaveWorkspace(workspaceId, userId) {
-    const member = await WorkspaceMember.findOne({
+    const membership = await WorkspaceMember.findOne({
       workspaceId,
       userId,
       isActive: true,
     });
 
-    if (!member) {
-      throw new Error('Not a member of this workspace');
+    if (!membership) {
+      throw { status: 404, message: 'You are not a member of this workspace' };
     }
 
-    // Prevent owner from leaving if they are the only owner
-    if (member.role === 'owner') {
-      const ownerCount = await WorkspaceMember.countDocuments({
-        workspaceId,
-        role: 'owner',
-        isActive: true,
-      });
-
-      if (ownerCount === 1) {
-        throw new Error('Owner cannot leave workspace (at least one owner must remain)');
-      }
+    if (membership.role === 'owner') {
+      throw {
+        status: 400,
+        message: 'Workspace owners cannot leave. You can delete the workspace instead.',
+      };
     }
 
-    member.isActive = false;
-    await member.save();
+    await WorkspaceMember.findByIdAndDelete(membership._id);
 
-    return { message: 'Successfully left workspace' };
+    return { success: true };
   },
 
   async updateWorkspaceRepo(workspaceId, userId, repoUrl) {

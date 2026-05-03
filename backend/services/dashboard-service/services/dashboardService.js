@@ -95,17 +95,37 @@ export const dashboardService = {
     }
 
     // Per member stats
-    const memberStats = members.map(m => {
-      const uid = m.userId._id.toString();
-      const memberReviews = reviews.filter(
-        r => r.userId.toString() === uid
-      );
-      const issueCounts = memberReviews.map((r) => r.suggestions?.length || 0);
+    const memberStats = await Promise.all(members.map(async (m) => {
+      const memberWorkspaceReviews = await Review.find({
+        workspaceId: new mongoose.Types.ObjectId(workspaceId),
+        userId: new mongoose.Types.ObjectId(m.userId._id),
+        reviewContext: 'workspace',
+        deleted: { $ne: true },
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      let reviewCount = 0;
+      let decisionCount = 0;
+
+      if (m.role === 'owner' || m.role === 'admin') {
+        decisionCount = await Review.countDocuments({
+          workspaceId: new mongoose.Types.ObjectId(workspaceId),
+          managerDecisionBy: new mongoose.Types.ObjectId(m.userId._id),
+          managerDecision: { $in: ['approved', 'rejected'] },
+          deleted: { $ne: true },
+        });
+        reviewCount = decisionCount;
+      } else {
+        reviewCount = memberWorkspaceReviews.length;
+      }
+
+      const issueCounts = memberWorkspaceReviews.map((r) => r.suggestions?.length || 0);
       const averageIssues = issueCounts.length > 0
         ? Math.round(issueCounts.reduce((acc, value) => acc + value, 0) / issueCounts.length)
         : 0;
       const severityRank = { info: 1, low: 2, medium: 3, high: 4, critical: 5 };
-      const worstSeverity = memberReviews.reduce((current, review) => {
+      const worstSeverity = memberWorkspaceReviews.reduce((current, review) => {
         const reviewWorst = (review.suggestions || []).reduce((worst, suggestion) => {
           const severity = suggestion.severity || 'info';
           return severityRank[severity] > severityRank[worst] ? severity : worst;
@@ -118,19 +138,19 @@ export const dashboardService = {
         name: m.userId.name,
         email: m.userId.email,
         role: m.role,
-        totalReviews: memberReviews.length,
-        criticalIssues: memberReviews.reduce((acc, r) =>
+        totalReviews: reviewCount,
+        reviewLabel: (m.role === 'owner' || m.role === 'admin') ? 'decisions' : 'PRs reviewed',
+        criticalIssues: memberWorkspaceReviews.reduce((acc, r) =>
           acc + (r.suggestions?.filter(s => s.severity === 'critical').length || 0)
         , 0),
-        lastReviewAt: memberReviews[0]?.createdAt || null,
-        latestVerdict: memberReviews[0]?.verdict || null
-        ,
+        lastReviewAt: memberWorkspaceReviews[0]?.createdAt || null,
+        latestVerdict: memberWorkspaceReviews[0]?.verdict || null,
         avatar: m.userId.avatarUrl || m.userId.githubAvatar || null,
-        prCount: memberReviews.length,
+        prCount: reviewCount,
         avgSuggestions: averageIssues,
         worstSeverity,
       };
-    });
+    }));
 
     // PR rows for table — NO code field ever
     const reviewRows = reviews.slice(0, 50).map(r => {

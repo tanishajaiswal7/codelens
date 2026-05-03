@@ -469,7 +469,7 @@ const ManagerDashboardPage = () => {
                     <div className="mdb-member-name">{member.name}</div>
                     <div className="mdb-member-role">{member.role}</div>
                     <div className="mdb-member-stats">
-                      <span>{member.prCount} PRs</span>
+                      <span>{member.totalReviews} {member.reviewLabel || 'reviews'}</span>
                       <span>{member.avgSuggestions} avg issues</span>
                       <span className={`mdb-severity-${member.worstSeverity}`}>{member.worstSeverity}</span>
                     </div>

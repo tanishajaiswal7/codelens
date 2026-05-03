@@ -46,12 +46,14 @@ router.post('/:id/invite-link/delete', verifyToken, workspaceController.deleteIn
 // DELETE /api/workspace/:id/pending-invites/:inviteId — remove a single pending invite
 router.delete('/:id/pending-invites/:inviteId', verifyToken, workspaceController.deletePendingInvite);
 router.post('/:id/pending-invites/:inviteId/delete', verifyToken, workspaceController.deletePendingInvite);
+router.delete('/:workspaceId/invites/:inviteId', verifyToken, workspaceController.deleteInvite);
 
 // PATCH /api/workspace/:id/repo — update workspace repo link (owner/admin only)
 router.patch('/:id/repo', verifyToken, workspaceController.updateWorkspaceRepo);
 
 // DELETE /api/workspace/:id/leave — leave workspace (protected)
 router.delete('/:id/leave', verifyToken, workspaceController.leaveWorkspace);
+router.delete('/:workspaceId/leave', verifyToken, workspaceController.leaveWorkspace);
 
 // GET /api/workspace/:id/my-reviews — get current user's PR reviews (protected)
 router.get('/:id/my-reviews', verifyToken, workspaceController.getMyReviews);

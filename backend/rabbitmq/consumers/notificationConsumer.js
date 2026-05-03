@@ -64,6 +64,18 @@ export async function startNotificationConsumer() {
         })
       }
 
+      if (event.type === 'send_invite_email') {
+        const { emailService } = await import(
+          '../../services/notification-service/services/emailService.js'
+        )
+
+        await emailService.sendWorkspaceInviteEmail({
+          toEmail: event.toEmail,
+          workspaceName: event.workspaceName,
+          inviteUrl: event.inviteUrl,
+        })
+      }
+
       channel.ack(msg)
 
     } catch (err) {
