@@ -127,10 +127,10 @@ export const emailService = {
     try {
       await sendViaSendGrid(config, {
         toEmail,
-        workspaceName,
-        inviteUrl,
-      }
-      )
+        subject: `You have been invited to ${workspaceName} on CodeLens AI`,
+        html: buildInviteHtml(workspaceName, inviteUrl),
+        text: buildPlainTextInvite(workspaceName, inviteUrl),
+      })
       return true
     } catch (err) {
       console.error('[Email] Invite email failed:', getHttpErrorDetails(err))
