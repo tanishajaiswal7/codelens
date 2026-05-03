@@ -4,6 +4,7 @@ import { WorkspaceMember } from '../models/WorkspaceMember.js';
 import { WorkspaceInvite } from '../models/WorkspaceInvite.js';
 import { Review } from '../../review-service/models/Review.js';
 import { User } from '../../auth-service/models/User.js';
+import { emailService } from '../../notification-service/services/emailService.js';
 import { publishEvent } from '../../../rabbitmq/publisher.js';
 import { QUEUES } from '../../../rabbitmq/queues.js';
 import mongoose from 'mongoose';
@@ -189,21 +190,31 @@ export const workspaceService = {
     });
 
     const inviteUrl = buildInviteUrl(frontendBaseUrl, token);
-    publishEvent(QUEUES.NOTIFICATION_EVENTS, {
-      type: 'send_invite_email',
+
+    const emailSent = await emailService.sendWorkspaceInviteEmail({
       toEmail: email.toLowerCase(),
       workspaceName: workspace.name,
       inviteUrl,
-      workspaceId,
-      createdAt: new Date().toISOString(),
-    }).catch((err) => {
-      console.error('[Invite] Queue publish failed:', err.message);
     });
+
+    if (!emailSent) {
+      publishEvent(QUEUES.NOTIFICATION_EVENTS, {
+        type: 'send_invite_email',
+        toEmail: email.toLowerCase(),
+        workspaceName: workspace.name,
+        inviteUrl,
+        workspaceId,
+        createdAt: new Date().toISOString(),
+      }).catch((err) => {
+        console.error('[Invite] Queue publish failed:', err.message);
+      });
+    }
 
     return {
       inviteUrl,
       token,
-      emailQueued: true,
+      emailSent: Boolean(emailSent),
+      emailQueued: !emailSent,
     };
   },
 

@@ -38,7 +38,7 @@ export const emailService = {
 
     if (!transporter || !config.from) {
       console.log('[Email] Not configured — invite email skipped')
-      return
+      return false
     }
 
     const html = `
@@ -78,8 +78,10 @@ export const emailService = {
         html,
       })
       console.log(`[Email] Invite sent to ${toEmail}`)
+      return true
     } catch (err) {
       console.error('[Email] Invite email failed:', err.message)
+      return false
     }
   },
 
@@ -98,7 +100,7 @@ export const emailService = {
     // Only send if email config exists
     if (!transporter || !config.from) {
       console.log('[Email] Email not configured — skipping')
-      return
+      return false
     }
 
     const isApproved = decision === 'approved'
@@ -183,9 +185,11 @@ export const emailService = {
         html,
       })
       console.log(`[Email] Sent decision email to ${toEmail}`)
+      return true
     } catch (err) {
       console.error('[Email] Failed to send:', err.message)
       // Do not throw — email failure should not break anything
+      return false
     }
   },
 }
