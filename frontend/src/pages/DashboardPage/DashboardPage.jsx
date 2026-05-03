@@ -11,6 +11,7 @@ import PRSelector from '../../components/PRSelector/PRSelector.jsx';
 import PRFileSelector from '../../components/PRFileSelector/PRFileSelector.jsx';
 import PRReviewPanel from '../../components/PRReviewPanel/PRReviewPanel.jsx';
 import FileBrowser from '../../components/FileBrowser/FileBrowser.jsx';
+import HistoryReviewViewer from '../../components/HistoryReviewViewer/HistoryReviewViewer.jsx';
 import ProtectedRoute from '../../components/ProtectedRoute/ProtectedRoute.jsx';
 import Topbar from '../../components/Topbar/Topbar.jsx';
 import { OnboardingModal } from '../../components/HelpModals';
@@ -46,7 +47,10 @@ function DashboardContent({ user }) {
   const [splitRatio, setSplitRatio] = useState(50);
   const [isResizing, setIsResizing] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
+  const [historyView, setHistoryView] = useState(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const splitContainerRef = useRef(null);
+  const editorRef = useRef(null);
 
   // GitHub PR flow state
   const [gitHubStep, setGitHubStep] = useState('repos'); // 'repos', 'prs', 'filebrowser', 'files', 'review'
@@ -273,6 +277,7 @@ function DashboardContent({ user }) {
             maxTurns: result.maxTurns || 10,
             totalBugs: result.totalBugs || 0,
             discoveredCount: result.discoveredCount || 0,
+            currentState: result.currentState || 'QUESTIONING',
             language: result.language || 'javascript',
           });
           setIsSocraticLoading(false);
@@ -340,12 +345,14 @@ function DashboardContent({ user }) {
             ...prev,
             messages: [
               ...prev.messages,
-              { role: 'ai', content: result.aiMessage }
+              { role: 'ai', content: result.aiMessage },
+              ...(result.nextBugQuestion ? [{ role: 'ai', content: result.nextBugQuestion }] : []),
             ],
             turnCount: result.turnCount,
             totalBugs: result.totalBugs,
             discoveredCount: result.discoveredCount,
             maxTurns: result.maxTurns || prev.maxTurns,
+            currentState: result.currentState || prev.currentState,
             isWaiting: false,
           }))
 
@@ -407,26 +414,31 @@ function DashboardContent({ user }) {
 
   const handleSelectReview = async (reviewId) => {
     try {
-      setIsLoading(true);
+      setIsLoadingHistory(true);
       setError(null);
       const response = await historyApi.getReview(reviewId);
-      setCurrentReview(response.review);
-      setPreviousReview(null);
-      setOriginalCode(response.review?.code || null);
-      setReReviewMeta(null);
-      setCurrentCode(response.review?.code || '');
-      setSocraticMode(false);
-      setSocraticCompleted(false);
-      setSocraticSession(null);
+      setHistoryView(response.review);
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Failed to load review:', error);
       }
-      const errorMessage = error.response?.data?.error || 'Failed to load review. Please try again.';
-      setError(errorMessage);
+      alert('Could not load this review. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsLoadingHistory(false);
     }
+  };
+
+  const handleFreshReview = (code, persona) => {
+    // Close history view
+    setHistoryView(null);
+    // Switch to paste tab
+    setMode('code');
+    // Load the code into editor
+    if (editorRef?.current && code) {
+      editorRef.current.setValue(code);
+    }
+    // Set the persona
+    if (persona) setSelectedPersona(persona);
   };
 
   // GitHub PR flow handlers
@@ -508,14 +520,26 @@ function DashboardContent({ user }) {
         )}
 
         <div className="dashboard-main">
-          {/* Mode Tabs */}
-          <div className="mode-tabs">
-            <button
-              className={`mode-tab ${mode === 'code' ? 'active' : ''}`}
-              onClick={() => setMode('code')}
-            >
-              Paste Code
-            </button>
+          {/* History View — shown when user clicks a history item */}
+          {historyView && (
+            <HistoryReviewViewer
+              review={historyView}
+              onClose={() => setHistoryView(null)}
+              onReReview={handleFreshReview}
+            />
+          )}
+
+          {/* Normal dashboard — shown when no history item selected */}
+          {!historyView && (
+            <>
+              {/* Mode Tabs */}
+              <div className="mode-tabs">
+                <button
+                  className={`mode-tab ${mode === 'code' ? 'active' : ''}`}
+                  onClick={() => setMode('code')}
+                >
+                  Paste Code
+                </button>
             <button
               className={`mode-tab ${mode === 'github' ? 'active' : ''}`}
               onClick={() => setMode('github')}
@@ -538,6 +562,7 @@ function DashboardContent({ user }) {
               >
                 <div className="paste-column editor-column">
                   <CodeEditor 
+                    editorRef={editorRef}
                     onSubmit={handleSubmitReview}
                     socraticMode={socraticMode}
                     onSocraticToggle={handleSocraticToggle}
@@ -639,6 +664,8 @@ function DashboardContent({ user }) {
                 />
               )}
             </div>
+          )}
+            </>
           )}
         </div>
       </div>

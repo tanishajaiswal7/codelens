@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import ConfidenceBadge from '../ConfidenceBadge/ConfidenceBadge.jsx';
 import './SuggestionCard.css';
 
-export default function SuggestionCard({ suggestion, isNew, isResolved }) {
+export default function SuggestionCard({ suggestion, isNew, isResolved, onLineRefClick }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getSeverityClass = (severity) => {
@@ -44,7 +44,15 @@ export default function SuggestionCard({ suggestion, isNew, isResolved }) {
           <h3 className="sug-title">{suggestion.title}</h3>
           <div className="sug-meta">
             {suggestion.lineRef && (
-              <span className="line-ref">
+              <span
+                className={`line-ref ${onLineRefClick ? 'lineref-clickable' : ''}`}
+                onClick={() => {
+                  if (onLineRefClick && suggestion.lineRef) {
+                    onLineRefClick(suggestion.lineRef)
+                  }
+                }}
+                title={onLineRefClick ? 'Click to highlight in editor' : ''}
+              >
                 L{suggestion.lineRef}
               </span>
             )}
@@ -103,9 +111,11 @@ SuggestionCard.propTypes = {
   }).isRequired,
   isNew: PropTypes.bool,
   isResolved: PropTypes.bool,
+  onLineRefClick: PropTypes.func,
 };
 
 SuggestionCard.defaultProps = {
   isNew: false,
   isResolved: false,
+  onLineRefClick: null,
 };

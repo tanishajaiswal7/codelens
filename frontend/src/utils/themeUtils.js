@@ -17,28 +17,12 @@ export const applyTheme = (theme) => {
   if (!root) return;
   
   root.setAttribute('data-theme', validTheme);
-  
-  // Apply inline styles with !important to override any existing styles
-  if (validTheme === 'light') {
-    root.style.setProperty('background-color', '#ffffff', 'important');
-    root.style.setProperty('color', '#1a1a1a', 'important');
-    if (body) {
-      body.style.setProperty('background-color', '#ffffff', 'important');
-      body.style.setProperty('color', '#1a1a1a', 'important');
-    }
-  } else {
-    root.style.setProperty('background-color', '#0f0f1a', 'important');
-    root.style.setProperty('color', '#f0eff8', 'important');
-    if (body) {
-      body.style.setProperty('background-color', '#0f0f1a', 'important');
-      body.style.setProperty('color', '#f0eff8', 'important');
-    }
-  }
-  
-  // Force browser to recalculate styles
-  if (root.offsetHeight !== undefined) {
-    void root.offsetHeight;
-  }
+  // Do not force inline styles here. Let CSS variables defined in stylesheets
+  // drive the appearance for both light and dark themes. This avoids
+  // conflicts where inline styles override component-level styling and
+  // produces inconsistent UX in the light theme.
+  // Force a reflow so CSS changes take effect immediately.
+  void root.offsetHeight;
 };
 
 /**

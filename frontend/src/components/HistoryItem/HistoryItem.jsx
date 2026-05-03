@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 import './HistoryItem.css';
 
 export default function HistoryItem({ 
@@ -6,6 +7,17 @@ export default function HistoryItem({
   onSelect, 
   onDelete 
 }) {
+  const [isClicking, setIsClicking] = useState(false);
+
+  const handleClick = async () => {
+    setIsClicking(true);
+    try {
+      await onSelect(item.reviewId);
+    } finally {
+      setIsClicking(false);
+    }
+  };
+
   const formatTimeAgo = (date) => {
     const now = new Date();
     const diffMs = now - new Date(date);
@@ -28,7 +40,10 @@ export default function HistoryItem({
   };
 
   return (
-    <div className="history-item" onClick={() => onSelect(item.reviewId)}>
+    <div 
+      className={`history-item ${isClicking ? 'hist-card-loading' : ''}`}
+      onClick={handleClick}
+    >
       <div className="history-item-header">
         <div className="history-item-code">
           <code>{item.codeSnippet}</code>
@@ -40,6 +55,7 @@ export default function HistoryItem({
             onDelete(item.reviewId);
           }}
           title="Delete review"
+          disabled={isClicking}
         >
           ✕
         </button>
@@ -52,6 +68,9 @@ export default function HistoryItem({
           {item.persona.toUpperCase()}
         </span>
         <span className="history-item-time">{formatTimeAgo(item.createdAt)}</span>
+        {isClicking && (
+          <div className="hist-card-spinner"/>
+        )}
       </div>
     </div>
   );

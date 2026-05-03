@@ -135,19 +135,29 @@ export default function SocraticPanel({
       {/* ── Messages ── */}
       {sessionStarted && (
         <div className="sp-messages">
-          {messages.map((msg, i) => (
-            <div 
-              key={i} 
-              className={`sp-bubble sp-bubble-${msg.role}`}
-            >
-              <div className="sp-bubble-label">
-                {msg.role === 'ai' ? '🤖 Me' : '👤 You'}
+          {messages.map((msg, i) => {
+            const isNewBugStart = i > 0 && msg.role === 'ai' && messages[i - 1]?.role === 'ai'
+
+            return (
+              <div key={i}>
+                {isNewBugStart && (
+                  <div className="sp-bug-separator">
+                    <div className="sp-bug-sep-line" />
+                    <span className="sp-bug-sep-label">Next issue</span>
+                    <div className="sp-bug-sep-line" />
+                  </div>
+                )}
+                <div className={`sp-bubble sp-bubble-${msg.role}`}>
+                  <div className={`sp-bubble-label ${msg.role === 'user' ? 'sp-user-label' : ''}`}>
+                    {msg.role === 'ai' ? 'CodeLens AI' : 'You'}
+                  </div>
+                  <div className="sp-bubble-content">
+                    {msg.content}
+                  </div>
+                </div>
               </div>
-              <div className="sp-bubble-content">
-                {msg.content}
-              </div>
-            </div>
-          ))}
+            )
+          })}
 
           {/* ── Thinking indicator ── */}
           {isWaiting && messages.length > 0 && (

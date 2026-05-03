@@ -48,6 +48,8 @@
   --r:    6px;
   --r-lg: 8px;
   --r-xl: 10px;
+  --overlay: rgba(2,6,23,0.82);
+  --modal-bg: rgba(8,14,28,0.98);
 }
 
 /* ── LIGHT THEME ── */
@@ -91,6 +93,8 @@
   --syntax-hl-bg:     rgba(220,38,38,0.04);
   --syntax-hl-border: rgba(220,38,38,0.35);
   --syntax-body:      #44414f;
+  --overlay: rgba(255,255,255,0.85);
+  --modal-bg: rgba(255,255,255,0.98);
 }
 
 html, body {
@@ -235,6 +239,30 @@ button:disabled {
   );
   background-size: 1000px 100%;
   animation: shimmer 2s infinite;
+}
+
+.app-loading-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: var(--bg);
+  color: var(--text-2);
+}
+
+.app-loading-screen__spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid var(--border-2);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+
+.app-loading-screen__text {
+  font-size: 13px;
 }
 
 /* ── RESPONSIVE DESIGN ── */

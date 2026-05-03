@@ -11,28 +11,13 @@
     />
     <title>CodeLens AI</title>
     <script>
-      // Apply theme before React renders to prevent flash
+      // Apply theme before React renders to prevent flash.
+      // Only set the `data-theme` attribute; avoid forcing inline styles
+      // so the CSS variables in App.css control the appearance.
       (function() {
         const theme = localStorage.getItem('codelens-theme') || 'dark';
         if (document.documentElement) {
           document.documentElement.setAttribute('data-theme', theme);
-          if (theme === 'light') {
-            document.documentElement.style.backgroundColor = '#ffffff';
-            document.documentElement.style.color = '#1a1a1a';
-          } else {
-            document.documentElement.style.backgroundColor = '#0f0f1a';
-            document.documentElement.style.color = '#f0eff8';
-          }
-        }
-        // Apply body styles only if body exists
-        if (document.body) {
-          if (theme === 'light') {
-            document.body.style.backgroundColor = '#ffffff';
-            document.body.style.color = '#1a1a1a';
-          } else {
-            document.body.style.backgroundColor = '#0f0f1a';
-            document.body.style.color = '#f0eff8';
-          }
         }
       })();
     </script>

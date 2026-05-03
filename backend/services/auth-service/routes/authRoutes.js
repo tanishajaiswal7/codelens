@@ -47,6 +47,8 @@ router.post('/logout', authController.logout);
 
 router.get('/me', verifyToken, authController.getMe);
 
+router.patch('/complete-onboarding', verifyToken, authController.completeOnboarding);
+
 router.put(
   '/profile',
   verifyToken,

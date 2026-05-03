@@ -192,10 +192,42 @@ export const workspacePRService = {
           });
           if (!contentRes.ok) return null;
           const contentData = await contentRes.json();
-          const decoded = Buffer.from(contentData.content, 'base64').toString('utf-8');
+
+          // If GitHub flagged the content as truncated, fetch the full blob
+          // using the Git Blobs API which supports larger files.
+          let decoded = '';
+          if (contentData.truncated && contentData.sha) {
+            try {
+              const blobRes = await fetch(
+                `https://api.github.com/repos/${workspace.repoFullName}/git/blobs/${contentData.sha}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: 'application/vnd.github.v3+json'
+                  }
+                }
+              );
+              if (blobRes.ok) {
+                const blobData = await blobRes.json();
+                const base64 = (blobData.content || '').replace(/\n/g, '');
+                decoded = Buffer.from(base64, 'base64').toString('utf-8');
+              }
+            } catch (e) {
+              // fall through to try decode from contentData if available
+            }
+          }
+
+          if (!decoded && contentData.content) {
+            const base64 = (contentData.content || '').replace(/\n/g, '');
+            decoded = Buffer.from(base64, 'base64').toString('utf-8');
+          }
+
           return {
             path: file.filename,
-            content: decoded.slice(0, 4000),
+            // Return the full decoded content so the frontend editor receives
+            // the complete file. Avoid slicing here which caused truncated
+            // displays (e.g., header lineCount != shown content).
+            content: decoded,
             additions: file.additions,
             deletions: file.deletions
           };

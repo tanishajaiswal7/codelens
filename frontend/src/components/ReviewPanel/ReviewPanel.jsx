@@ -16,6 +16,8 @@ export default function ReviewPanel({
   isReReviewing,
   reReviewMeta,
   originalCode,
+  isHistoryView,
+  onSuggestionClick,
 }) {
   const [filter, setFilter] = useState('all');
 
@@ -116,9 +118,9 @@ export default function ReviewPanel({
       )}
 
       <div className="review-header-actions">
-        {onReReview && originalCode && (
+        {!isHistoryView && onReReview && originalCode && (
           <button
-            className="re-review-btn"
+            className="re-review-btn rr-btn"
             onClick={onReReview}
             disabled={isReReviewing}
             title="Re-review only the changed lines"
@@ -130,7 +132,16 @@ export default function ReviewPanel({
 
       <div className="verdict-strip">
         <div>
-          <div className="verdict-title">Verdict</div>
+          <div className="verdict-title">
+            {isHistoryView ? (
+              <>
+                <span>Past Review</span>
+                <span className="past-review-badge">read only</span>
+              </>
+            ) : (
+              <span>Verdict</span>
+            )}
+          </div>
           <div className="verdict-text">{review.summary}</div>
         </div>
         <div className={`verdict-badge ${getVerdictClass(review.verdict)}`}>
@@ -179,6 +190,7 @@ export default function ReviewPanel({
                 key={`resolved-${id}`}
                 suggestion={original}
                 isResolved
+                onLineRefClick={onSuggestionClick}
               />
             );
           })}
@@ -187,6 +199,7 @@ export default function ReviewPanel({
               key={suggestion.id}
               suggestion={suggestion}
               isNew={suggestion.status === 'new'}
+              onLineRefClick={onSuggestionClick}
             />
           ))}
         </div>
@@ -233,6 +246,8 @@ ReviewPanel.propTypes = {
     })).isRequired,
   }),
   resolvedSuggestionIds: PropTypes.arrayOf(PropTypes.string),
+  isHistoryView: PropTypes.bool,
+  onSuggestionClick: PropTypes.func,
 };
 
 ReviewPanel.defaultProps = {
@@ -242,4 +257,6 @@ ReviewPanel.defaultProps = {
   isReReviewing: false,
   reReviewMeta: null,
   originalCode: null,
+  isHistoryView: false,
+  onSuggestionClick: null,
 };

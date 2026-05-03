@@ -173,4 +173,17 @@ export const authService = {
 
     return await User.findById(userId).select('-password');
   },
+
+  /**
+   * Mark onboarding as completed for a user.
+   * @param {string} userId - User ID
+   * @returns {Promise<Object|null>} Updated user document without password
+   */
+  async completeOnboarding(userId) {
+    return await User.findByIdAndUpdate(
+      userId,
+      { onboardingCompleted: true },
+      { new: true }
+    ).select('-password');
+  },
 };

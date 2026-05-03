@@ -85,3 +85,22 @@
   color: var(--text-4);
   font-family: 'Inter', sans-serif;
 }
+
+.hist-card-loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.hist-card-spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--border-2);
+  border-top-color: var(--accent-2);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-left: auto;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

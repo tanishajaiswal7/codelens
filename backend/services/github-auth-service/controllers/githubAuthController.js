@@ -17,6 +17,25 @@ const githubOAuthStateCookieOptions = () => ({
   maxAge: 15 * 60 * 1000,
 });
 
+const githubOAuthRedirectCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: 15 * 60 * 1000,
+});
+
+const normalizeRedirectPath = (value) => {
+  if (!value || typeof value !== 'string') {
+    return '/dashboard';
+  }
+
+  if (!value.startsWith('/')) {
+    return '/dashboard';
+  }
+
+  return value;
+};
+
 /**
  * Initiates GitHub OAuth flow
  * Generates state token and redirects to GitHub
@@ -26,9 +45,11 @@ const githubOAuthStateCookieOptions = () => ({
 export const initiateGitHubOAuth = (req, res) => {
   try {
     const state = crypto.randomBytes(32).toString('hex');
+    const redirect = normalizeRedirectPath(req.query.redirect);
     
     // Store state in cookie (15 min expiry)
     res.cookie('github_oauth_state', state, githubOAuthStateCookieOptions());
+    res.cookie('github_oauth_redirect', redirect, githubOAuthRedirectCookieOptions());
 
     const params = new URLSearchParams({
       client_id: process.env.GITHUB_CLIENT_ID,
@@ -78,9 +99,12 @@ export const handleGitHubCallback = async (req, res) => {
     // Set JWT cookie
     res.cookie('token', token, tokenCookieOptions());
 
-    // Redirect to dashboard
+    const redirectPath = normalizeRedirectPath(req.cookies.github_oauth_redirect);
+    res.clearCookie('github_oauth_redirect');
+
+    // Redirect back to the requested frontend path
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/dashboard`);
+    res.redirect(`${frontendUrl}${redirectPath}`);
   } catch (error) {
     if (process.env.NODE_ENV === 'development') {
       console.error('OAuth callback error:', error.message);

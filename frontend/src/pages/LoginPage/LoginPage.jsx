@@ -1,12 +1,15 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../../api/authApi.js';
+import { settingsApi } from '../../api/settingsApi.js';
 import GitHubLoginButton from '../../components/GitHubLoginButton/GitHubLoginButton.jsx';
-import BackButton from '../../components/BackButton/BackButton.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
+import { applyTheme } from '../../utils/themeUtils.js';
 import './LoginPage.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,14 +27,27 @@ export default function LoginPage() {
 
     try {
       await authApi.login(formData);
-      
+      const nextUser = await refreshUser();
+
+      // After login, fetch user settings from backend and apply them
+      try {
+        const response = await settingsApi.getSettings();
+        const data = response?.settings;
+        if (data?.theme) applyTheme(data.theme);
+        if (data?.defaultPersona) localStorage.setItem('codelens-default-persona', data.defaultPersona);
+        if (data?.preferredLanguage) localStorage.setItem('codelens-preferred-language', data.preferredLanguage);
+        if (data?.emailNotifications) localStorage.setItem('codelens-email-notifications', JSON.stringify(data.emailNotifications));
+      } catch (settingsErr) {
+        // ignore — fallback to existing localStorage values
+      }
+
       // Check if there's a pending workspace invite
       const pendingInvite = localStorage.getItem('pendingInvite');
       if (pendingInvite) {
         localStorage.removeItem('pendingInvite');
         navigate(`/join/${pendingInvite}`);
       } else {
-        navigate('/dashboard');
+        navigate(nextUser?.onboardingCompleted ? '/dashboard' : '/onboarding');
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
@@ -45,44 +61,47 @@ export default function LoginPage() {
       <div className="auth-layout">
         <aside className="auth-intro-panel">
           <div className="auth-kicker">CodeLens AI</div>
-          <h1>Review code with clear, structured AI feedback.</h1>
+          <h1>Ship safer and faster — AI reviews that explain the why.</h1>
           <p className="auth-intro-copy">
-            Sign in to paste code, review GitHub pull requests, and get explanations that help you understand the why behind every suggestion.
+            Get instant, explainable code reviews with confidence scores. Learn why issues matter, teach your team with Socratic guidance, and keep a searchable history of feedback across repos.
           </p>
+
+          <div style={{ marginTop: 20 }}>
+            <Link to="/landing" className="intro-cta">Explore live demo →</Link>
+          </div>
 
           <div className="auth-value-grid">
             <div className="auth-value-card">
               <span className="auth-value-label">What you can do</span>
-              <strong>Paste code or import a PR</strong>
+              <strong>Instant AI reviews — paste code or import a PR</strong>
             </div>
             <div className="auth-value-card">
               <span className="auth-value-label">How it helps</span>
-              <strong>Compare personas and learn step by step</strong>
+              <strong>Socratic mode & personas to teach and coach</strong>
             </div>
             <div className="auth-value-card">
               <span className="auth-value-label">What you keep</span>
-              <strong>History, settings, and workspace invites</strong>
+              <strong>Searchable review history and team workflows</strong>
             </div>
           </div>
 
           <div className="auth-steps">
             <div className="auth-step">
               <span>1</span>
-              <p>Sign in with email or GitHub.</p>
+              <p>Sign in quickly with email or secure GitHub connect.</p>
             </div>
             <div className="auth-step">
               <span>2</span>
-              <p>Choose a persona or Socratic mode.</p>
+              <p>Pick a persona or enable Socratic mode for learning.</p>
             </div>
             <div className="auth-step">
               <span>3</span>
-              <p>Review code, save history, and join workspaces.</p>
+              <p>Review code, capture history, and collaborate in workspaces.</p>
             </div>
           </div>
         </aside>
 
         <section className="auth-card">
-          <BackButton fallback="/" />
           <div className="auth-header">
             <div className="auth-logo">
               Code<span className="logo-accent">Lens</span> AI
@@ -131,7 +150,7 @@ export default function LoginPage() {
               className="auth-submit"
               disabled={loading}
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Logging in...' : 'Continue to reviews'}
             </button>
             <p className="auth-helper-text">You’ll land on your dashboard and can continue any pending workspace invite automatically.</p>
           </form>
@@ -143,6 +162,7 @@ export default function LoginPage() {
           </div>
 
           <GitHubLoginButton />
+          <p className="auth-privacy">We only access repos you approve during GitHub connect. Your code and tokens stay private.</p>
 
           <div className="auth-footer">
             Don't have an account?{' '}

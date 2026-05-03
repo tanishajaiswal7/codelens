@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

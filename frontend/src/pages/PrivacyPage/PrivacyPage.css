@@ -1,0 +1,13 @@
+.legal-page {
+  min-height: 80vh;
+  padding: 48px 24px;
+  max-width: 980px;
+  margin: 0 auto;
+  color: var(--text);
+}
+
+.legal-header h1 { font-size: 28px; margin: 0 0 8px; }
+.legal-sub { color: var(--text-3); margin: 0 0 18px; }
+.legal-content p { color: var(--text-2); line-height: 1.6; }
+.legal-content h2 { margin-top: 20px; }
+.legal-back { color: var(--accent-3); text-decoration: none; font-weight: 700; }

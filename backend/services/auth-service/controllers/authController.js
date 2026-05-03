@@ -35,6 +35,7 @@ export const authController = {
           id: user._id,
           name: user.name,
           email: user.email,
+          onboardingCompleted: user.onboardingCompleted,
         },
       });
     } catch (error) {
@@ -71,6 +72,7 @@ export const authController = {
           id: user._id,
           name: user.name,
           email: user.email,
+          onboardingCompleted: user.onboardingCompleted,
         },
       });
     } catch (error) {
@@ -89,7 +91,34 @@ export const authController = {
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-      res.json({ user });
+      res.json({
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          onboardingCompleted: user.onboardingCompleted,
+          githubUsername: user.githubUsername,
+          githubAvatar: user.githubAvatar,
+          githubId: user.githubId,
+          avatarUrl: user.avatarUrl,
+          isGithubConnected: user.isGithubConnected,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  async completeOnboarding(req, res, next) {
+    try {
+      const user = await authService.completeOnboarding(req.userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      res.json({ success: true });
     } catch (error) {
       next(error);
     }

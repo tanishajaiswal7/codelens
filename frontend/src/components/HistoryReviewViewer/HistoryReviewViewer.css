@@ -1,0 +1,249 @@
+.hrv {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Header ── */
+.hrv-header {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.hrv-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hrv-back-btn {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: 'Instrument Sans', sans-serif;
+  white-space: nowrap;
+  padding: 0;
+  letter-spacing: -0.01em;
+}
+
+.hrv-back-btn:hover {
+  color: var(--text);
+}
+
+.hrv-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hrv-crumb {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.hrv-crumb-sep {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.hrv-crumb-active {
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.hrv-header-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: center;
+}
+
+.hrv-persona-tag {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Persona colors */
+.hrv-tag-faang {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent-2);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.hrv-tag-security {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.hrv-tag-startup {
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.hrv-time {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.hrv-issues-count {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.hrv-rereview-btn {
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--text-2);
+  font-family: 'Instrument Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.12s;
+}
+
+.hrv-rereview-btn:hover {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* ── Split workspace ── */
+.hrv-workspace {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Code pane ── */
+.hrv-code-pane {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.hrv-pane-header {
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+  flex-shrink: 0;
+}
+
+.hrv-pane-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.hrv-lang-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(16, 185, 129, 0.08);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.hrv-pane-meta {
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.hrv-editor-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.hrv-editor-wrap .monaco-editor {
+  height: 100% !important;
+}
+
+/* Read-only highlight styling */
+.history-highlighted-line {
+  background: rgba(99, 102, 241, 0.1) !important;
+  border-left: 2px solid var(--accent-2) !important;
+}
+
+.history-glyph-dot::before {
+  content: '●';
+  color: var(--accent-2);
+  font-size: 8px;
+}
+
+/* No code available state */
+.hrv-no-code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 10px;
+  padding: 24px;
+  text-align: center;
+}
+
+.hrv-no-code-icon {
+  font-size: 28px;
+  opacity: 0.3;
+}
+
+.hrv-no-code-text {
+  font-size: 12px;
+  color: var(--text-3);
+  line-height: 1.6;
+  max-width: 200px;
+}
+
+/* ── Review pane ── */
+.hrv-review-pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ReviewPanel inside history view — no re-review button */
+.hrv-review-pane .rr-btn {
+  display: none;
+}

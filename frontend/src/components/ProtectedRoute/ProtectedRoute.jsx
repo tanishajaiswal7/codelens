@@ -1,37 +1,40 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { useNavigate } from 'react-router-dom';
-import { authApi } from '../../api/authApi.js';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext.jsx';
 import './ProtectedRoute.css';
 
 export default function ProtectedRoute({ children }) {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await authApi.getMe();
-        setUser(response.data.user);
-        setLoading(false);
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Auth check failed:', error);
-        }
-        navigate('/login');
-      }
-    };
+    if (isLoading) {
+      return;
+    }
 
-    checkAuth();
-  }, [navigate]);
+    if (!user) {
+      navigate('/login');
+      return;
+    }
 
-  if (loading) {
+    if (!user.onboardingCompleted && location.pathname !== '/onboarding') {
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+
+    if (user.onboardingCompleted && location.pathname === '/onboarding') {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isLoading, location.pathname, navigate, user]);
+
+  if (isLoading) {
     return <div className="loadingContainer">Loading...</div>;
   }
 
   if (!user) {
-    return null;
+    return <div className="loadingContainer">Loading...</div>;
   }
 
   // If children is a function, call it with user; otherwise render it as is

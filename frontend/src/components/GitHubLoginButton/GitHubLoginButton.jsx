@@ -6,9 +6,10 @@ import './GitHubLoginButton.css';
  * GitHub Login Button Component
  * Simple button that initiates GitHub OAuth flow
  */
-const GitHubLoginButton = ({ label = 'Continue with GitHub' }) => {
+const GitHubLoginButton = ({ label = 'Continue with GitHub', redirectPath = '/dashboard' }) => {
   const handleClick = () => {
-    window.location.href = `${getApiBaseUrl()}/api/github/auth/login`;
+    const redirectQuery = redirectPath ? `?redirect=${encodeURIComponent(redirectPath)}` : '';
+    window.location.href = `${getApiBaseUrl()}/api/github/auth/login${redirectQuery}`;
   };
 
   return (
@@ -29,6 +30,7 @@ const GitHubLoginButton = ({ label = 'Continue with GitHub' }) => {
 
 GitHubLoginButton.propTypes = {
   label: PropTypes.string,
+  redirectPath: PropTypes.string,
 };
 
 export default GitHubLoginButton;

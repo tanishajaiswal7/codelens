@@ -205,8 +205,22 @@ export const fileBrowserService = {
         throw error;
       }
 
-      // Decode content from base64
-      const content = Buffer.from(response.data.content, 'base64').toString('utf-8');
+      // Decode content from base64. If GitHub marked the content as truncated
+      // (Contents API limit), fetch the full blob via the Git Blobs API.
+      let content = '';
+      if (response.data.truncated) {
+        const blobResp = await client.client.get(
+          `/repos/${owner}/${repo}/git/blobs/${response.data.sha}`
+        );
+        // Blob content may contain newlines in the base64 string; strip them
+        // before decoding to ensure full content is decoded.
+        const blobBase64 = (blobResp.data.content || '').replace(/\n/g, '');
+        content = Buffer.from(blobBase64, 'base64').toString('utf-8');
+      } else {
+        const base64 = (response.data.content || '').replace(/\n/g, '');
+        content = Buffer.from(base64, 'base64').toString('utf-8');
+      }
+
       const lines = content.split('\n');
       const lineCount = lines.length;
 

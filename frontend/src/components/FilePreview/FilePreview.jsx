@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import PersonaPicker from '../PersonaPicker/PersonaPicker.jsx';
 import { socraticApi } from '../../api/socraticApi.js';
@@ -17,6 +17,10 @@ export default function FilePreview({
 }) {
   const [selectedPersona, setSelectedPersona] = useState('faang');
   const [editedCode, setEditedCode] = useState(null);
+
+  useEffect(() => {
+    setEditedCode(null);
+  }, [file?.path, file?.content]);
 
   if (isLoading) {
     return (
@@ -118,7 +122,10 @@ export default function FilePreview({
             onCodeChange?.(nextCode);
           }}
           onMount={(editor) => {
+            editor.setScrollTop(0);
+            editor.setScrollLeft(0);
             editor.setPosition({ lineNumber: 1, column: 1 });
+            editor.revealPositionInCenter({ lineNumber: 1, column: 1 });
             editor.revealLine(1);
           }}
           options={{

@@ -258,6 +258,34 @@
   align-self: flex-end;
 }
 
+.sp-bug-separator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.sp-bug-sep-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-2);
+}
+
+.sp-bug-sep-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-3);
+  white-space: nowrap;
+  padding: 2px 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+
+.sp-user-label {
+  justify-content: flex-end;
+}
+
 .sp-bubble-label {
   font-size: 9px;
   font-weight: 600;

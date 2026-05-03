@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../../api/authApi.js';
 import GitHubLoginButton from '../../components/GitHubLoginButton/GitHubLoginButton.jsx';
-import BackButton from '../../components/BackButton/BackButton.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 import './RegisterPage.css';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -44,6 +45,7 @@ export default function RegisterPage() {
         email: formData.email,
         password: formData.password,
       });
+      const nextUser = await refreshUser();
       
       // Check if there's a pending workspace invite
       const pendingInvite = localStorage.getItem('pendingInvite');
@@ -51,7 +53,7 @@ export default function RegisterPage() {
         localStorage.removeItem('pendingInvite');
         navigate(`/join/${pendingInvite}`);
       } else {
-        navigate('/dashboard');
+        navigate(nextUser?.onboardingCompleted ? '/dashboard' : '/onboarding');
       }
     } catch (err) {
       const errorMessage =
@@ -72,6 +74,9 @@ export default function RegisterPage() {
             Register once, then use the same account for code reviews, GitHub pull requests, invite links, and saved review history.
           </p>
 
+          <div style={{ marginTop: 20 }}>
+            <Link to="/landing" className="intro-cta">Explore live demo →</Link>
+          </div>
           <div className="auth-value-grid">
             <div className="auth-value-card">
               <span className="auth-value-label">Built for</span>
@@ -104,7 +109,6 @@ export default function RegisterPage() {
         </aside>
 
         <section className="auth-card">
-          <BackButton fallback="/" />
           <div className="auth-header">
             <div className="auth-logo">
               Code<span className="logo-accent">Lens</span> AI
