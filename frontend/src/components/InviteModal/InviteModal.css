@@ -5,20 +5,27 @@
   align-items: center;
   justify-content: center;
   padding: 1.5rem;
-  background: var(--overlay);
-  backdrop-filter: blur(10px);
+  background:
+    radial-gradient(circle at top, rgba(91, 91, 214, 0.18), transparent 38%),
+    radial-gradient(circle at bottom right, rgba(96, 165, 250, 0.12), transparent 30%),
+    var(--overlay);
+  backdrop-filter: blur(14px) saturate(1.1);
   z-index: 1000;
 }
 
 .invite-modal {
-  width: min(100%, 920px);
+  width: min(100%, 980px);
   max-height: min(90vh, 920px);
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 26px;
+  border: 1px solid var(--border-3);
+  border-radius: 28px;
   padding: 2rem;
-  background: var(--modal-bg);
-  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.45);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 30%),
+    var(--modal-bg);
+  box-shadow:
+    0 32px 90px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .invite-header {
@@ -26,45 +33,61 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
 }
 
 .invite-header h2 {
   margin: 0;
   color: var(--text);
-  font-size: clamp(1.5rem, 2vw, 2rem);
+  font-size: clamp(1.6rem, 2.4vw, 2.25rem);
   line-height: 1.1;
+  letter-spacing: -0.03em;
 }
 
 .workspace-name {
-  margin: 0.5rem 0 0;
-  color: var(--blue);
-  font-size: 1rem;
-  font-weight: 600;
+  margin: 0.55rem 0 0;
+  color: var(--text-2);
+  font-size: 1.02rem;
+  font-weight: 500;
 }
 
 .modal-close {
-  border: 0;
-  background: transparent;
+  width: 42px;
+  height: 42px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text-2);
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   line-height: 1;
-  padding: 0.2rem 0.4rem;
+  padding: 0;
+}
+
+.modal-close:hover {
+  border-color: var(--border-2);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
 }
 
 .invite-body {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
   gap: 1rem;
+  margin-top: 1rem;
 }
 
 .invite-form,
 .share-link-panel {
   min-width: 0;
-  padding: 1.4rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
+  padding: 1.45rem;
+  border: 1px solid var(--border-2);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 100%),
+    rgba(255, 255, 255, 0.03);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .invite-form label,
@@ -72,13 +95,15 @@
   display: block;
   margin-bottom: 0.65rem;
   color: var(--text);
-  font-weight: 600;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .panel-description {
-  margin: 0 0 1rem;
+  margin: 0 0 1.1rem;
   color: var(--text-2);
-  line-height: 1.55;
+  line-height: 1.6;
+  max-width: 32ch;
 }
 
 .invite-input-row {
@@ -90,16 +115,18 @@
 .invite-input {
   flex: 2;
   min-width: 0;
-  padding: 1rem 1.1rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  height: 54px;
+  padding: 0 1rem;
+  border: 1px solid var(--border-2);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
-  font-size: 1rem;
+  font-size: 0.98rem;
 }
 
 .add-email-btn {
   flex: 0 0 130px;
+  height: 54px;
 }
 
 .invite-input::placeholder {
@@ -108,39 +135,43 @@
 
 .invite-input:focus {
   outline: none;
-  border-color: var(--blue);
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.16);
+  border-color: rgba(96, 165, 250, 0.75);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.14);
 }
 
 .btn-secondary {
+  width: 100%;
+  min-height: 54px;
   padding: 0.85rem 1.2rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
-  font-weight: 600;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+  font-weight: 700;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.24);
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .btn-primary {
+  min-height: 54px;
   padding: 0.95rem 1.4rem;
   border: 1px solid transparent;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #4f46e5 0%, #2563eb 100%);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent-2) 0%, var(--blue) 100%);
   color: #ffffff;
   font-weight: 700;
-  box-shadow: 0 18px 40px rgba(79, 70, 229, 0.22);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  box-shadow: 0 18px 40px rgba(91, 91, 214, 0.22);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: linear-gradient(135deg, #4338ca 0%, #1d4ed8 100%);
+  filter: brightness(1.06);
 }
 
 .btn-primary,
@@ -159,16 +190,17 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
-  margin-top: 0.75rem;
+  margin-top: 0.9rem;
 }
 
 .email-chip {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  padding: 0.55rem 0.8rem;
+  padding: 0.6rem 0.9rem;
   border-radius: 999px;
-  background: rgba(96, 165, 250, 0.12);
+  background: rgba(96, 165, 250, 0.11);
+  border: 1px solid rgba(96, 165, 250, 0.16);
   color: var(--text);
   font-size: 0.92rem;
 }
@@ -189,21 +221,24 @@
   justify-content: flex-end;
   flex-wrap: wrap;
   margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
 
 .modal-actions button {
+  min-width: 112px;
   padding: 0.95rem 1.3rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-2);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text);
-  font-weight: 600;
+  font-weight: 700;
   transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
 }
 
 .modal-actions button:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .modal-actions button:disabled {
@@ -216,10 +251,10 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.9rem 1rem;
+  padding: 0.95rem 1rem;
   border: 1px solid var(--border-2);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.035);
 }
 
 .share-link-box code,
@@ -228,30 +263,32 @@
   flex: 1;
   color: var(--text);
   word-break: break-all;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
 }
 
 .copy-btn {
+  min-width: 84px;
   padding: 0.72rem 0.95rem;
   border: 0;
-  border-radius: 10px;
-  background: var(--blue);
+  border-radius: 12px;
+  background: rgba(96, 165, 250, 0.18);
   color: white;
   font-weight: 600;
 }
 
 .copy-btn:hover {
-  background: #2563eb;
+  background: rgba(96, 165, 250, 0.28);
 }
 
 .invite-status {
   margin-top: 1rem;
   padding: 0.95rem 1rem;
-  border-radius: 14px;
+  border-radius: 16px;
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  border: 1px solid var(--border-2);
 }
 
 .invite-status.success {
@@ -295,9 +332,9 @@
 .invite-results li {
   display: grid;
   gap: 0.5rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--border-2);
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.03);
   color: var(--text-2);
 }
@@ -316,48 +353,32 @@
   font-size: 0.92rem;
 }
 
-.success-icon {
-  font-size: 3rem;
-  color: var(--green);
-  margin-bottom: 1rem;
-}
-
-.success-text {
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 0.5rem;
-}
-
-.done-btn {
-  width: 100%;
-  padding: 0.85rem;
-  border: 0;
-  border-radius: 12px;
-  background: var(--blue);
-  color: white;
-  font-weight: 600;
-}
-
-.done-btn:hover {
-  background: #2563eb;
-}
-
 .invite-body--success {
   display: flex !important;
   justify-content: center;
   align-items: center;
-  min-height: 300px;
+  min-height: 320px;
+  padding: 1.5rem 0;
 }
 
 .success-content {
   text-align: center;
   width: 100%;
-  max-width: 500px;
+  max-width: 540px;
 }
 
 .success-content .success-icon {
-  font-size: 4rem;
-  margin-bottom: 1.5rem;
+  width: 76px;
+  height: 76px;
+  margin: 0 auto 1.25rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at top, rgba(52, 211, 153, 0.22), rgba(52, 211, 153, 0.08));
+  border: 1px solid rgba(52, 211, 153, 0.22);
+  color: var(--green);
+  display: grid;
+  place-items: center;
+  font-size: 2.15rem;
+  font-weight: 800;
   animation: scaleIn 0.4s ease;
 }
 
@@ -374,8 +395,8 @@
 
 .success-message {
   margin: 0 0 0.75rem;
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.35rem;
+  font-weight: 800;
   color: var(--text);
 }
 
@@ -387,10 +408,10 @@
 }
 
 .invite-results--success {
-  margin: 1.5rem 0 !important;
+  margin: 1.25rem 0 1.5rem !important;
   padding: 1.25rem !important;
   border: 1px solid rgba(52, 211, 153, 0.2) !important;
-  border-radius: 16px;
+  border-radius: 18px;
   background: rgba(52, 211, 153, 0.08) !important;
   border-top: none !important;
   text-align: left;
@@ -420,8 +441,8 @@
 }
 
 .success-content .btn-primary {
-  margin-top: 1rem;
-  min-width: 200px;
+  margin-top: 0.25rem;
+  min-width: 220px;
 }
 
 @media (max-width: 860px) {
@@ -436,8 +457,8 @@
   }
 
   .invite-modal {
-    padding: 1.25rem;
-    border-radius: 18px;
+    padding: 1.15rem;
+    border-radius: 20px;
   }
 
   .invite-input-row,
@@ -453,11 +474,17 @@
   .modal-actions button {
     width: 100%;
   }
+
+  .invite-form,
+  .share-link-panel {
+    padding: 1.1rem;
+    border-radius: 18px;
+  }
 }
 
 @media (max-width: 560px) {
   .invite-modal {
-    padding: 1.5rem;
+    padding: 1rem;
   }
 
   .invite-link-box {
