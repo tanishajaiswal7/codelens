@@ -255,19 +255,16 @@ function OnboardingWizard() {
 
                   <div className="ob-review-note">You just got your first AI review.</div>
 
-                  <div className="ob-actions">
+                  <div className="ob-actions ob-actions--stacked">
                     <button type="button" className="ob-primary-btn" onClick={goToNext}>
                       Next: See what Socratic mode can do →
+                    </button>
+                    <button type="button" className="ob-skip-link" onClick={() => handleComplete('You are all set! Start reviewing your first real project.') }>
+                      Skip and go to dashboard
                     </button>
                   </div>
                 </div>
               )}
-
-              <div className="ob-actions ob-actions--bottom-link">
-                <button type="button" className="ob-skip-link" onClick={() => handleComplete('You are all set! Start reviewing your first real project.') }>
-                  Skip and go to dashboard
-                </button>
-              </div>
             </>
           )}
 
