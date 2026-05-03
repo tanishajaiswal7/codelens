@@ -51,6 +51,7 @@ function DashboardContent({ user }) {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const splitContainerRef = useRef(null);
   const editorRef = useRef(null);
+  const dashboardMainRef = useRef(null);
 
   // GitHub PR flow state
   const [gitHubStep, setGitHubStep] = useState('repos'); // 'repos', 'prs', 'filebrowser', 'files', 'review'
@@ -441,6 +442,23 @@ function DashboardContent({ user }) {
     if (persona) setSelectedPersona(persona);
   };
 
+  const handleNewReview = () => {
+    setHistoryView(null);
+    setMode('code');
+    setGitHubStep('repos');
+    setSelectedRepo(null);
+    setSelectedPR(null);
+    setPrReview(null);
+
+    if (window.innerWidth <= 900) {
+      setSidebarOpen(false);
+    }
+
+    requestAnimationFrame(() => {
+      dashboardMainRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   // GitHub PR flow handlers
   const handleRepoSelect = (fullName) => {
     setSelectedRepo(fullName);
@@ -513,13 +531,14 @@ function DashboardContent({ user }) {
         {sidebarOpen && (
           <SidebarEnhanced 
             onReviewSelect={handleSelectReview}
+            onNewReview={handleNewReview}
             rateLimitUsed={rateLimitUsed}
             rateLimitTotal={20}
             refreshKey={historyRefreshKey}
           />
         )}
 
-        <div className="dashboard-main">
+        <div className="dashboard-main" ref={dashboardMainRef}>
           {/* History View — shown when user clicks a history item */}
           {historyView && (
             <HistoryReviewViewer

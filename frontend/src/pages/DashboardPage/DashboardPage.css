@@ -170,11 +170,14 @@
 
   .dashboard-body {
     flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .dashboard-main {
     min-width: 0;
     min-height: 0;
+    overflow: visible;
   }
 
   .mode-tabs {
@@ -204,6 +207,12 @@
   .split-resizer {
     display: none;
   }
+
+  .sidebar-enhanced {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
 }
 
 @media (max-width: 640px) {
@@ -226,5 +235,27 @@
 
   .dashboard-main {
     overflow: hidden;
+  }
+
+  .sidebar-enhanced {
+    max-height: 56dvh;
+  }
+
+  .sidebar-nav-wrapper {
+    padding: 10px;
+  }
+
+  .sidebar-section {
+    padding: 10px;
+  }
+
+  .sidebar-nav-item {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .search-input,
+  .filter-select {
+    font-size: 14px;
   }
 }

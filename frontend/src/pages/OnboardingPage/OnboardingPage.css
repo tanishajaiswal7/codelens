@@ -3,7 +3,8 @@
   background: var(--bg);
   color: var(--text);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .onboarding-page__shell {
@@ -169,6 +170,8 @@
   border-radius: 14px;
   overflow: hidden;
   background: var(--bg-1);
+  height: min(72vh, 560px);
+  min-height: 420px;
 }
 
 .ob-review-summary {
@@ -383,6 +386,10 @@
     padding: 72px 16px 92px;
   }
 
+  .onboarding-page {
+    -webkit-overflow-scrolling: touch;
+  }
+
   .ob-heading {
     font-size: 28px;
   }
@@ -398,6 +405,50 @@
 
   .ob-card {
     order: 1;
+  }
+
+  .ob-editor-card {
+    height: min(70vh, 520px);
+    min-height: 420px;
+  }
+
+  .ob-editor-card .editor-pane {
+    min-height: 100%;
+  }
+
+  .ob-editor-card .editor-surface {
+    min-height: 320px;
+  }
+
+  .ob-editor-card .pane-header,
+  .ob-editor-card .editor-footer {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .ob-editor-card .pane-header {
+    gap: 8px;
+  }
+
+  .ob-editor-card .pane-title {
+    font-size: 9px;
+    gap: 4px;
+  }
+
+  .ob-editor-card .socratic-toggle-wrap {
+    font-size: 10px;
+    gap: 6px;
+  }
+
+  .ob-editor-card .lang-tag {
+    max-width: 100px;
+    font-size: 9px;
+  }
+
+  .ob-editor-card .review-btn {
+    width: 100%;
+    justify-content: center;
+    height: 36px;
   }
 
   .ob-actions {

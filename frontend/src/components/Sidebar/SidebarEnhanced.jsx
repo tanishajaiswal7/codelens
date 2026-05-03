@@ -8,6 +8,7 @@ import './SidebarEnhanced.css';
 
 export default function SidebarEnhanced({ 
   onReviewSelect, 
+  onNewReview,
   rateLimitUsed = 0,
   rateLimitTotal = 20,
   refreshKey = 0,
@@ -99,7 +100,11 @@ export default function SidebarEnhanced({
   return (
     <aside className="sidebar-enhanced">
       <div className="sidebar-nav-wrapper">
-        <button className="sidebar-nav-item active" title="Create new review">
+        <button
+          className="sidebar-nav-item active"
+          onClick={onNewReview}
+          title="Create new review"
+        >
           <span>🆕</span> New Review
         </button>
         <button 
@@ -234,7 +239,12 @@ export default function SidebarEnhanced({
 
 SidebarEnhanced.propTypes = {
   onReviewSelect: PropTypes.func.isRequired,
+  onNewReview: PropTypes.func,
   rateLimitUsed: PropTypes.number,
   rateLimitTotal: PropTypes.number,
   refreshKey: PropTypes.number,
+};
+
+SidebarEnhanced.defaultProps = {
+  onNewReview: () => {},
 };
