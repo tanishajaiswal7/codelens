@@ -259,9 +259,9 @@ function InviteModal({
           </div>
         )}
 
-        {statusMessage && !inviteSent && <div className={`invite-status ${statusType}`}>{statusMessage}</div>}
+        {statusMessage && !showSuccessState && <div className={`invite-status ${statusType}`}>{statusMessage}</div>}
 
-        {inviteResults.length > 0 && !inviteSent && (
+        {inviteResults.length > 0 && !showSuccessState && (
           <div className="invite-results">
             <h3>Invite outcomes</h3>
             <ul>
