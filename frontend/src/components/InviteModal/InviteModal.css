@@ -15,8 +15,10 @@
 
 .invite-modal {
   width: min(100%, 980px);
-  max-height: min(90vh, 920px);
-  overflow: auto;
+  max-height: calc(100vh - 3rem);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   border: 1px solid var(--border-3);
   border-radius: 28px;
   padding: 2rem;
@@ -76,6 +78,8 @@
   grid-template-columns: minmax(0, 1.5fr) minmax(320px, 1fr);
   gap: 1rem;
   margin-top: 1rem;
+  min-height: 0;
+  flex: 1;
 }
 
 .invite-form,
@@ -359,14 +363,17 @@
   display: flex !important;
   justify-content: center;
   align-items: center;
-  min-height: 320px;
-  padding: 1.5rem 0;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 1.25rem 0 0.5rem;
 }
 
 .success-content {
   text-align: center;
   width: 100%;
-  max-width: 540px;
+  max-width: 680px;
+  margin: 0 auto;
 }
 
 .success-content .success-icon {
@@ -400,6 +407,9 @@
   font-size: 1.35rem;
   font-weight: 800;
   color: var(--text);
+  max-width: 40ch;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .success-note {
@@ -407,16 +417,22 @@
   font-size: 0.95rem;
   color: var(--text-2);
   line-height: 1.6;
+  max-width: 48ch;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .invite-results--success {
-  margin: 1.25rem 0 1.5rem !important;
+  width: 100%;
+  max-width: 680px;
+  margin: 1.25rem auto 1.5rem !important;
   padding: 1.25rem !important;
   border: 1px solid rgba(52, 211, 153, 0.2) !important;
   border-radius: 18px;
   background: rgba(52, 211, 153, 0.08) !important;
   border-top: none !important;
   text-align: left;
+  box-sizing: border-box;
 }
 
 .invite-results--success h3 {
@@ -434,6 +450,7 @@
   border-left: 3px solid var(--green);
   color: var(--text);
   padding: 0.8rem 1rem;
+  min-width: 0;
 }
 
 .result-email {
@@ -445,6 +462,21 @@
 .success-content .btn-primary {
   margin-top: 0.25rem;
   min-width: 220px;
+}
+
+.invite-url {
+  width: 100%;
+  min-width: 0;
+}
+
+.invite-url code,
+.invite-results code {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 @media (max-width: 860px) {
@@ -491,6 +523,10 @@
 @media (max-width: 560px) {
   .invite-modal {
     padding: 1rem;
+  }
+
+  .invite-body--success {
+    padding-top: 1rem;
   }
 
   .invite-link-box {
