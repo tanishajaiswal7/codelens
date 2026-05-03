@@ -452,7 +452,7 @@ function WorkspaceDetailPage() {
                     {getInviteStatusMeta(invite).label}
                   </div>
                   <div className="wsd-invite-meta">{invite.isReusable ? `${invite.uses}/${invite.maxUses || '∞'}` : '1/1'}</div>
-                  <div className="wsd-invite-meta">{invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString() : 'N/A'}</div>
+                  <div className="wsd-invite-meta">{invite.createdAt ? new Date(invite.createdAt).toLocaleDateString() : 'N/A'}</div>
                   <div className="wsd-inline-actions wsd-inline-actions--compact">
                     <button
                       type="button"

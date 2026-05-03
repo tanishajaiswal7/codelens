@@ -81,6 +81,13 @@ function InviteModal({
       return;
     }
 
+    setStatusType('info');
+    setStatusMessage(
+      currentEmails.length === 1
+        ? `Sending invite to ${currentEmails[0]}...`
+        : `Sending ${currentEmails.length} invites...`
+    );
+
     const results = await onInviteEmails(currentEmails);
     setInviteResults(results);
 
@@ -93,11 +100,11 @@ function InviteModal({
       setStatusType('success');
       if (successCount === 1) {
         setStatusMessage(
-          `Invite link created. We are sending an email to ${successEntries[0].email}. You can also copy the link below and send it manually.`
+          `Invite created successfully for ${successEntries[0].email}. Email delivery is running in the background. You can also copy the link below and send it manually.`
         );
       } else {
         setStatusMessage(
-          `${successCount} invite links created. We are sending emails in the background. You can also copy the links below and send them manually.`
+          `${successCount} invites created successfully. Email delivery is running in the background. You can also copy the links below and send them manually.`
         );
       }
       setInviteResults(results);
