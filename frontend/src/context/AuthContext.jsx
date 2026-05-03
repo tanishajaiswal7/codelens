@@ -15,7 +15,15 @@ export function AuthProvider({ children }) {
       const nextUser = response?.data?.user || null;
       setUser(nextUser);
       return nextUser;
-    } catch {
+    } catch (error) {
+      // Log the error for debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.error('[AuthContext] Failed to fetch user:', {
+          message: error.message,
+          status: error.response?.status,
+          url: error.config?.url,
+        });
+      }
       setUser(null);
       return null;
     } finally {
@@ -24,7 +32,18 @@ export function AuthProvider({ children }) {
   };
 
   useEffect(() => {
-    refreshUser();
+    // Mount check - only run once on component mount
+    let isMounted = true;
+
+    refreshUser().then((user) => {
+      if (isMounted && process.env.NODE_ENV === 'development') {
+        console.log('[AuthContext] Initial user refresh complete:', user ? 'authenticated' : 'not authenticated');
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

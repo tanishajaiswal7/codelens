@@ -1,3 +1,5 @@
+import axiosInstance from './axiosInstance.js'
+
 export function pollJob(
   jobId,
   onResult,
@@ -20,19 +22,8 @@ export function pollJob(
     }
 
     try {
-      const res = await fetch(`/api/jobs/${jobId}`, {
-        credentials: 'include',
-      })
-
-      if (!res.ok) {
-        if (res.status === 404) {
-          // Job not created yet — keep polling
-          return
-        }
-        throw new Error(`Job poll failed: ${res.status}`)
-      }
-
-      const job = await res.json()
+      const response = await axiosInstance.get(`/api/jobs/${jobId}`)
+      const job = response.data
 
       if (job.status === 'done') {
         clearInterval(interval)
@@ -43,6 +34,10 @@ export function pollJob(
       }
       // queued/processing: keep polling
     } catch (err) {
+      if (err.response?.status === 404) {
+        // Job not created yet — keep polling
+        return
+      }
       console.error('[jobPoller] Error:', err.message)
       // Don't stop polling on network errors — keep trying
     }
