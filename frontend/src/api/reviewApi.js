@@ -1,8 +1,8 @@
 import axiosInstance from '../utils/axiosInstance.js';
 
 export const reviewApi = {
-  submitReview: (code, persona, mode = 'standard') =>
-    axiosInstance.post('/api/review', { code, persona, mode }).then((r) => r.data),
+  submitReview: (code, persona, mode = 'standard', isOnboarding = false) =>
+    axiosInstance.post('/api/review', { code, persona, mode, isOnboarding }).then((r) => r.data),
   reReview: (oldCode, newCode, previousSuggestions, persona) =>
     axiosInstance.post('/api/review/re-review', {
       oldCode,

@@ -43,6 +43,7 @@ export const reviewService = {
    * @param {string} userId - User ID requesting the review
    * @param {string} code - Code to review (wrapped in backticks)
    * @param {string} persona - Reviewer persona (faang, startup, security)
+   * @param {boolean} isOnboarding - If true, skip saving to history
    * @returns {Promise<Object>} Review with summary, verdict, and suggestions
    */
   async runReview(userId, code, persona, mode,
@@ -50,7 +51,8 @@ export const reviewService = {
     repoFullName = null,
     prNumber = null,
     repoPath = null,
-    reviewContext = 'personal'
+    reviewContext = 'personal',
+    isOnboarding = false
   ) {
     try {
       // Build persona-specific prompt
@@ -73,6 +75,16 @@ export const reviewService = {
           console.error('Groq review failed, using fallback review:', aiError.message);
         }
         review = createFallbackReview(aiError.message || 'AI review unavailable', code, persona);
+      }
+
+      // Skip saving to history if this is an onboarding review
+      if (isOnboarding) {
+        return {
+          reviewId: null,
+          summary: review.summary,
+          verdict: review.verdict,
+          suggestions: review.suggestions,
+        };
       }
 
       // Save to MongoDB

@@ -11,15 +11,15 @@ export const reviewController = {
       }
 
       const userId = req.userId;
-      const { code, persona, mode = 'standard' } = req.body;
+      const { code, persona, mode = 'standard', isOnboarding = false } = req.body;
 
       // Validate and sanitize inputs
       const sanitizedCode = validateCode(code);
       const validatedPersona = validatePersona(persona);
 
-      console.log('Review request:', { userId, persona: validatedPersona, codeLength: code.length });
+      console.log('Review request:', { userId, persona: validatedPersona, codeLength: code.length, isOnboarding });
 
-      const review = await reviewService.runReview(userId, sanitizedCode, validatedPersona);
+      const review = await reviewService.runReview(userId, sanitizedCode, validatedPersona, mode, null, null, null, null, 'personal', isOnboarding);
 
       // Add rate limit header if available
       if (res.locals.rateLimitRemaining !== undefined) {

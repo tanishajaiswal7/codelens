@@ -147,7 +147,7 @@ function OnboardingWizard() {
   const handleReview = async (code) => {
     setIsReviewing(true);
     try {
-      const response = await reviewApi.submitReview(code, 'security', 'standard');
+      const response = await reviewApi.submitReview(code, 'security', 'standard', true);
       setReviewResult(response.review || response);
     } catch (error) {
       console.error('Onboarding review failed:', error);
