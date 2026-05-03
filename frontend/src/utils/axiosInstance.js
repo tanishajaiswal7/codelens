@@ -17,35 +17,48 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    const { response, request, message } = error;
+    const { response, request, message, config } = error;
     const isDev = process.env.NODE_ENV === 'development';
 
     // Log all errors in development for debugging
     if (isDev) {
-      console.error('[axiosInstance] Error Details:', {
+      console.error('[axiosInstance] Error:', {
         status: response?.status,
-        url: request?.url || 'unknown',
+        url: config?.url || request?.url || 'unknown',
+        method: config?.method || 'unknown',
         message,
         data: response?.data,
       });
     }
 
-    // Handle 401 Unauthorized
+    // 401 Unauthorized: Let the caller handle it (e.g., AuthContext)
+    // Do NOT auto-redirect here, as it breaks React state management
     if (response?.status === 401) {
       if (isDev) {
-        console.warn('Unauthorized access - redirecting to login');
+        console.warn('[axiosInstance] Unauthorized (401) - let the caller decide what to do');
       }
-      window.location.href = '/login';
+      // Just reject, don't redirect
+      return Promise.reject(error);
+    }
+
+    // 403 Forbidden: User is authenticated but doesn't have permission
+    if (response?.status === 403) {
+      if (isDev) {
+        console.warn('[axiosInstance] Forbidden (403) - user lacks required permissions');
+      }
+      return Promise.reject(error);
     }
 
     // Handle network/connectivity errors
     if (!response && !request) {
       // Request setup error
-      console.error('[axiosInstance] Request setup failed:', message);
+      if (isDev) {
+        console.error('[axiosInstance] Request setup failed:', message);
+      }
     } else if (!response) {
       // Network error (no response from server)
       if (isDev) {
-        console.error('[axiosInstance] Network error - backend may be unreachable:', {
+        console.error('[axiosInstance] Network unreachable:', {
           baseURL,
           message,
         });
