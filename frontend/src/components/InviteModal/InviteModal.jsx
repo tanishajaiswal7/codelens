@@ -227,9 +227,6 @@ function InviteModal({
               )}
 
               <div className="modal-actions">
-                <button type="button" onClick={onClose} disabled={isSending || isGeneratingLink}>
-                  Cancel
-                </button>
                 <button type="submit" className="btn-primary" disabled={isSending || isGeneratingLink}>
                   {isSending ? 'Sending...' : 'Send Invites'}
                 </button>
