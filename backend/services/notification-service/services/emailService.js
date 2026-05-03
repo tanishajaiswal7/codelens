@@ -9,9 +9,7 @@ const getMailConfig = () => ({
   from: process.env.SMTP_FROM || process.env.EMAIL_FROM,
 })
 
-const createTransporter = () => {
-  const config = getMailConfig()
-
+const createTransporter = (config) => {
   if (!config.user || !config.pass) {
     return null
   }
@@ -29,6 +27,42 @@ const createTransporter = () => {
       pass: config.pass,
     },
   })
+}
+
+const getTransportAttempts = (config) => {
+  const attempts = [
+    {
+      host: config.host,
+      port: config.port,
+      secure: config.secure,
+      connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 60000),
+      greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 60000),
+      socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 60000),
+      requireTLS: !config.secure,
+      auth: {
+        user: config.user,
+        pass: config.pass,
+      },
+    },
+  ]
+
+  if (config.host === 'smtp.gmail.com' && config.port !== 465) {
+    attempts.push({
+      host: config.host,
+      port: 465,
+      secure: true,
+      connectionTimeout: Number(process.env.SMTP_CONNECTION_TIMEOUT || 60000),
+      greetingTimeout: Number(process.env.SMTP_GREETING_TIMEOUT || 60000),
+      socketTimeout: Number(process.env.SMTP_SOCKET_TIMEOUT || 60000),
+      requireTLS: false,
+      auth: {
+        user: config.user,
+        pass: config.pass,
+      },
+    })
+  }
+
+  return attempts
 }
 
 const buildMailHeaders = (config, subject) => {
@@ -56,7 +90,7 @@ export const emailService = {
     inviteUrl,
   }) {
     const config = getMailConfig()
-    const transporter = createTransporter()
+    const transporter = createTransporter(config)
 
     if (!transporter || !config.from) {
       console.log('[Email] Not configured — invite email skipped')
@@ -100,7 +134,7 @@ export const emailService = {
 
       const envelopeFrom = config.user || config.from || 'noreply@codelens.ai'
 
-      await transporter.sendMail({
+      const message = {
         from: mailHeaders.from,
         replyTo: mailHeaders.replyTo,
         envelope: {
@@ -110,9 +144,26 @@ export const emailService = {
         to: toEmail,
         subject: mailHeaders.subject,
         html,
-      })
-      console.log(`[Email] Invite sent to ${toEmail}`)
-      return true
+      }
+
+      let lastError = null
+      for (const transportOptions of getTransportAttempts(config)) {
+        try {
+          await nodemailer.createTransport(transportOptions).sendMail(message)
+          console.log(
+            `[Email] Invite sent to ${toEmail} via ${transportOptions.host}:${transportOptions.port}`
+          )
+          return true
+        } catch (err) {
+          lastError = err
+          console.error(
+            `[Email] SMTP attempt failed (${transportOptions.host}:${transportOptions.port}, secure=${transportOptions.secure}):`,
+            err.message
+          )
+        }
+      }
+
+      throw lastError || new Error('SMTP send failed')
     } catch (err) {
       console.error('[Email] Invite email failed:', err.message)
       return false
@@ -129,7 +180,7 @@ export const emailService = {
     repoFullName,
   }) {
     const config = getMailConfig()
-    const transporter = createTransporter()
+    const transporter = createTransporter(config)
 
     // Only send if email config exists
     if (!transporter || !config.from) {
@@ -216,7 +267,7 @@ export const emailService = {
 
       const envelopeFrom = config.user || config.from || 'noreply@codelens.ai'
 
-      await transporter.sendMail({
+      const message = {
         from: mailHeaders.from,
         replyTo: mailHeaders.replyTo,
         envelope: {
@@ -226,9 +277,27 @@ export const emailService = {
         to: toEmail,
         subject: mailHeaders.subject,
         html,
-      })
-      console.log(`[Email] Sent decision email to ${toEmail}`)
-      return true
+
+      }
+
+      let lastError = null
+      for (const transportOptions of getTransportAttempts(config)) {
+        try {
+          await nodemailer.createTransport(transportOptions).sendMail(message)
+          console.log(
+            `[Email] Sent decision email to ${toEmail} via ${transportOptions.host}:${transportOptions.port}`
+          )
+          return true
+        } catch (err) {
+          lastError = err
+          console.error(
+            `[Email] SMTP attempt failed (${transportOptions.host}:${transportOptions.port}, secure=${transportOptions.secure}):`,
+            err.message
+          )
+        }
+      }
+
+      throw lastError || new Error('SMTP send failed')
     } catch (err) {
       console.error('[Email] Failed to send:', err.message)
       // Do not throw — email failure should not break anything
