@@ -69,18 +69,22 @@ export async function startNotificationConsumer() {
           '../../services/notification-service/services/emailService.js'
         )
 
-        await emailService.sendWorkspaceInviteEmail({
+        const sent = await emailService.sendWorkspaceInviteEmail({
           toEmail: event.toEmail,
           workspaceName: event.workspaceName,
           inviteUrl: event.inviteUrl,
         })
+
+        if (!sent) {
+          throw new Error(`Invite email failed for ${event.toEmail}`)
+        }
       }
 
       channel.ack(msg)
 
     } catch (err) {
       console.error('[NotificationConsumer] Failed:', err.message)
-      channel.ack(msg)
+      channel.nack(msg, false, false)
     }
   })
 }
