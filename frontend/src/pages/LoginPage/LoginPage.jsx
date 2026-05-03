@@ -26,8 +26,17 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await authApi.login(formData);
-      const nextUser = await refreshUser();
+      const loginResponse = await authApi.login(formData);
+      const serverUser = loginResponse?.data?.user || null;
+
+      let nextUser = null;
+      try {
+        nextUser = await refreshUser();
+      } catch {
+        nextUser = null;
+      }
+
+      nextUser = nextUser || serverUser;
 
       // After login, fetch user settings from backend and apply them
       try {
@@ -50,7 +59,7 @@ export default function LoginPage() {
         navigate(nextUser?.onboardingCompleted ? '/dashboard' : '/onboarding');
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || err.response?.data?.error || 'Login failed');
     } finally {
       setLoading(false);
     }

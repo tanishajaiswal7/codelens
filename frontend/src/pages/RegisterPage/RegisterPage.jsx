@@ -40,12 +40,21 @@ export default function RegisterPage() {
     setErrors({});
 
     try {
-      await authApi.register({
+      const registerResponse = await authApi.register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
-      const nextUser = await refreshUser();
+      const serverUser = registerResponse?.data?.user || null;
+
+      let nextUser = null;
+      try {
+        nextUser = await refreshUser();
+      } catch {
+        nextUser = null;
+      }
+
+      nextUser = nextUser || serverUser;
       
       // Check if there's a pending workspace invite
       const pendingInvite = localStorage.getItem('pendingInvite');
@@ -57,7 +66,7 @@ export default function RegisterPage() {
       }
     } catch (err) {
       const errorMessage =
-        err.response?.data?.message || 'Registration failed';
+        err.response?.data?.message || err.response?.data?.error || 'Registration failed';
       setErrors({ general: errorMessage });
     } finally {
       setLoading(false);

@@ -91,11 +91,12 @@ export default function Topbar({ user, showBackButton = false, onBack, onSidebar
   const handleLogout = async () => {
     try {
       await authApi.logout();
-      navigate('/login');
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Logout failed:', error);
       }
+    } finally {
+      navigate('/login', { replace: true });
     }
   };
 

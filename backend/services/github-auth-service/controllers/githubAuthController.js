@@ -7,6 +7,7 @@ const tokenCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+  path: '/',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 });
 
@@ -14,6 +15,7 @@ const githubOAuthStateCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  path: '/',
   maxAge: 15 * 60 * 1000,
 });
 
@@ -21,6 +23,7 @@ const githubOAuthRedirectCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  path: '/',
   maxAge: 15 * 60 * 1000,
 });
 
@@ -84,7 +87,7 @@ export const handleGitHubCallback = async (req, res) => {
     }
 
     // Clear the state cookie
-    res.clearCookie('github_oauth_state');
+    res.clearCookie('github_oauth_state', githubOAuthStateCookieOptions());
 
     if (!code) {
       return res.status(400).json({ error: 'Missing authorization code' });
@@ -100,7 +103,7 @@ export const handleGitHubCallback = async (req, res) => {
     res.cookie('token', token, tokenCookieOptions());
 
     const redirectPath = normalizeRedirectPath(req.cookies.github_oauth_redirect);
-    res.clearCookie('github_oauth_redirect');
+    res.clearCookie('github_oauth_redirect', githubOAuthRedirectCookieOptions());
 
     // Redirect back to the requested frontend path
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
