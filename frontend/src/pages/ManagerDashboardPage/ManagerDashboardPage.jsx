@@ -1,11 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { dashboardApi } from '../../api/dashboardApi';
-import StatCard from '../../components/StatCard/StatCard';
 import ReleaseReportModal from '../../components/ReleaseReportModal/ReleaseReportModal';
 import WorkspacePRList from '../../components/WorkspacePRList/WorkspacePRList';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
 import './ManagerDashboardPage.css';
+
+const timeAgo = (value) => {
+  if (!value) return 'Just now';
+  const diffMs = Date.now() - new Date(value).getTime();
+  const diffMinutes = Math.max(1, Math.floor(diffMs / (1000 * 60)));
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d ago`;
+};
+
+const verdictTone = (verdict) => {
+  if (verdict === 'approved') return 'approved';
+  if (verdict === 'minor_issues') return 'amber';
+  if (verdict === 'needs_revision' || verdict === 'rejected') return 'red';
+  return 'neutral';
+};
+
+const verdictLabel = (verdict) => {
+  if (verdict === 'approved') return 'Approved';
+  if (verdict === 'minor_issues') return 'Minor issues';
+  if (verdict === 'needs_revision' || verdict === 'rejected') return 'Changes requested';
+  return 'Under review';
+};
+
+const formatIssueCount = (count) => `${count || 0} issue${count === 1 ? '' : 's'}`;
 
 const ManagerDashboardPage = () => {
   const { id: workspaceId } = useParams();
@@ -24,6 +50,7 @@ const ManagerDashboardPage = () => {
   const [generatedReport, setGeneratedReport] = useState(null);
   const [prListRefreshSignal, setPrListRefreshSignal] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [decisionFeedbacks, setDecisionFeedbacks] = useState({});
 
   useEffect(() => {
     loadData();
@@ -59,8 +86,8 @@ const ManagerDashboardPage = () => {
       } else {
         console.error('Failed to load reports:', reportsResult.reason);
       }
-    } catch (error) {
-      console.error('Unexpected dashboard load error:', error);
+    } catch (loadError) {
+      console.error('Unexpected dashboard load error:', loadError);
       setError('Failed to load dashboard data.');
     } finally {
       setPrListRefreshSignal((prev) => prev + 1);
@@ -70,9 +97,7 @@ const ManagerDashboardPage = () => {
   };
 
   const handlePRSelect = (prId) => {
-    setSelectedPRs(prev =>
-      prev.includes(prId) ? prev.filter(id => id !== prId) : [...prev, prId]
-    );
+    setSelectedPRs((prev) => (prev.includes(prId) ? prev.filter((id) => id !== prId) : [...prev, prId]));
   };
 
   const handleGenerateReport = async () => {
@@ -83,56 +108,62 @@ const ManagerDashboardPage = () => {
       const report = await dashboardApi.generateReport(workspaceId, sprintName.trim());
       setGeneratedReport(report);
       setShowReportModal(true);
-      // Reload reports
       const reportsData = await dashboardApi.getReports(workspaceId);
       setReports(reportsData);
-    } catch (error) {
-      console.error('Failed to generate report:', error);
+    } catch (reportError) {
+      console.error('Failed to generate report:', reportError);
     } finally {
       setGenerating(false);
     }
   };
 
-  const getVerdictBadge = (verdict) => {
-    const classes = {
-      approved: 'badge-ready',
-      minor_issues: 'badge-minor',
-      needs_revision: 'badge-needs',
-    };
-    return <span className={`verdict-badge ${classes[verdict] || ''}`}>{verdict.replace('_', ' ')}</span>;
+  const handleDecision = async (reviewId, decision) => {
+    try {
+      await dashboardApi.makeDecision(workspaceId, reviewId, decision, decisionFeedbacks[reviewId] || '');
+      setDecisionFeedbacks((prev) => ({ ...prev, [reviewId]: '' }));
+      setExpandedPR(null);
+      await loadData();
+    } catch (decisionError) {
+      console.error('Failed to save review decision:', decisionError);
+    }
   };
 
-  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const resolveAvatarUrl = (avatarUrl) => {
     if (!avatarUrl) return '';
     if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://') || avatarUrl.startsWith('blob:')) {
       return avatarUrl;
     }
-    return `${apiBaseUrl}${avatarUrl}`;
+    return `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${avatarUrl}`;
   };
 
-  const filteredPRs = prs.filter(pr => {
+  const filteredPRs = prs.filter((pr) => {
     if (filter === 'All') return true;
-    if (filter === 'Critical Issues') return pr.criticalCount > 0;
+    if (filter === 'Critical') return pr.criticalCount > 0;
     if (filter === 'Approved') return pr.verdict === 'approved';
     return true;
   });
 
-  const hasNoPRs = filteredPRs.length === 0;
+  const recentNotifications = prs.slice(0, 5);
   const hasReviewedPRs = (stats?.reviewedPrCount || 0) > 0;
   const hasLinkedRepo = Boolean(stats?.repoFullName);
   const memberStats = Array.isArray(stats?.memberStats) ? stats.memberStats : [];
-  const reportButtonLabel = hasReviewedPRs
-    ? (generating ? 'Generating...' : 'Generate Report')
-    : 'Review at least one PR first';
+  const reportButtonLabel = hasReviewedPRs ? (generating ? 'Generating...' : 'Generate report') : 'Review at least one PR first';
   const selectedCount = selectedPRs.length;
-  const qualityPhrase = stats?.qualityScore >= 90
-    ? 'Excellent review quality'
-    : stats?.qualityScore >= 75
-    ? 'Healthy review flow'
-    : 'Review focus required';
+  const qualityPhrase =
+    stats?.qualityScore >= 90
+      ? 'Excellent review quality'
+      : stats?.qualityScore >= 75
+      ? 'Healthy review flow'
+      : 'Review focus required';
 
-  if (loading) return <div className="loading">Loading dashboard...</div>;
+  const statCards = [
+    { label: 'Open PRs', value: stats?.totalOpenPRs ?? 0, tone: 'neutral' },
+    { label: 'Reviewed PRs', value: stats?.reviewedPrCount ?? 0, tone: 'neutral' },
+    { label: 'Critical issues', value: stats?.criticalCount ?? 0, tone: (stats?.criticalCount ?? 0) > 0 ? 'red' : 'neutral' },
+    { label: 'Quality score', value: `${stats?.qualityScore ?? 0}%`, tone: (stats?.qualityScore ?? 0) >= 80 ? 'green' : 'neutral' },
+  ];
+
+  if (loading) return <div className="manager-dashboard loading">Loading dashboard...</div>;
 
   if (error && !stats) {
     return (
@@ -144,304 +175,313 @@ const ManagerDashboardPage = () => {
   }
 
   return (
-    <div className="manager-dashboard">
-      <div className="dashboard-intro">
-        <div className="dashboard-intro-copy">
-          <p className="dashboard-tag">Manager summary</p>
-          <h1>Manager Dashboard</h1>
-          <p className="dashboard-copy">
-            Monitor your team, prioritize high-risk pull requests, and generate release-ready insights with one view.
+    <div className="manager-dashboard-page">
+      <div className="mdb-hero">
+        <div className="mdb-hero-copy">
+          <p className="mdb-kicker">Manager dashboard</p>
+          <h1>{stats?.workspaceName || 'Workspace'}</h1>
+          <p className="mdb-copy">
+            Monitor team review velocity, prioritize risky pull requests, and keep release decisions visible in one workspace.
           </p>
-          <div className="dashboard-context-row">
-            <span className="context-label">Workspace</span>
-            <strong className="context-value">{stats?.workspaceName || 'Workspace'}</strong>
+          <div className="mdb-context-row">
+            <span className="mdb-context-label">Workspace</span>
+            <strong className="mdb-context-value">{stats?.workspaceName || 'Workspace'}</strong>
             {hasLinkedRepo ? (
-              <span className="repo-chip">{stats.repoFullName}</span>
+              <span className="mdb-repo-chip">{stats.repoFullName}</span>
             ) : (
-              <span className="repo-chip repo-chip-warning">No repository linked yet</span>
+              <span className="mdb-repo-chip mdb-repo-chip--warning">No repository linked yet</span>
             )}
+            <span className="mdb-status-chip">{qualityPhrase}</span>
           </div>
         </div>
-        <div className="dashboard-highlights">
-          {userRole !== 'member' && (
-            <NotificationBell workspaceId={workspaceId} />
-          )}
-          <div className="highlight-pill">{qualityPhrase}</div>
-          <div className="highlight-pill">
-            {stats?.criticalCount === 0 ? 'No open critical issues' : `${stats.criticalCount} critical issue${stats.criticalCount > 1 ? 's' : ''}`}
-          </div>
+        <div className="mdb-hero-actions">
+          {userRole !== 'member' && <NotificationBell workspaceId={workspaceId} />}
+          <button type="button" className="mdb-btn mdb-btn--ghost" onClick={loadData} disabled={isRefreshing}>
+            {isRefreshing ? 'Refreshing...' : 'Refresh dashboard'}
+          </button>
         </div>
       </div>
 
-      {/* Pull Requests Section */}
-      <section className="mdb-section">
-        <div className="mdb-section-head">
-          <div>
-            <h2 className="mdb-section-title">Open Pull Requests</h2>
-            <p className="mdb-section-sub">
-              Review your team's open PRs before merging
-            </p>
+      <div className="mdb-stat-row">
+        {statCards.map((card) => (
+          <div key={card.label} className={`mdb-stat-card mdb-stat-card--${card.tone}`}>
+            <div className="mdb-stat-label">{card.label}</div>
+            <div className="mdb-stat-value">{card.value}</div>
           </div>
-          <div className="section-actions">
-            <span className="selection-pill">
-              {selectedCount > 0 ? `${selectedCount} selected` : 'Live from GitHub'}
-            </span>
-            <button type="button" className="refresh-btn" onClick={loadData} disabled={isRefreshing}>
-              {isRefreshing ? 'Refreshing...' : 'Refresh dashboard'}
-            </button>
-          </div>
-        </div>
-        <WorkspacePRList
-          workspaceId={workspaceId}
-          refreshSignal={prListRefreshSignal}
-          onReviewComplete={() => {
-            // Refresh stats when a review completes
-            dashboardApi.getStats(workspaceId)
-              .then((result) => {
-                setStats(result.stats);
-                setUserRole(result.userRole);
-                setPrListRefreshSignal((prev) => prev + 1);
-              })
-              .catch((err) => {
-                console.error('Failed to refresh stats after PR review:', err);
-              });
-          }}
-        />
-        {!hasLinkedRepo && (
-          <div className="guide-note">
-            Link a GitHub repository from Workspace Detail page to load open pull requests here.
-          </div>
-        )}
-        {hasLinkedRepo && !hasReviewedPRs && (
-          <div className="guide-note">
-            Start by reviewing one PR. After the first completed review, team metrics and release readiness report will populate automatically.
-          </div>
-        )}
-      </section>
-
-      {/* Stats Cards */}
-      <div className="stats-grid">
-        <StatCard
-          label="Open PRs"
-          value={stats?.totalOpenPRs ?? 0}
-          trend="neutral"
-        />
-        <StatCard
-          label="Reviewed PRs"
-          value={stats?.reviewedPrCount ?? 0}
-          trend="up"
-        />
-        <StatCard
-          label="Critical Issues"
-          value={stats?.criticalCount ?? 0}
-          trend="down"
-          trendValue={(stats?.criticalCount ?? 0) > 0 ? 'Needs attention' : 'Good'}
-        />
-        <StatCard
-          label="Quality Score"
-          value={`${stats?.qualityScore ?? 0}%`}
-          trend={(stats?.qualityScore ?? 0) >= 80 ? 'up' : 'down'}
-        />
-        <StatCard
-          label="Reviews This Week"
-          value={stats?.prsThisWeek ?? 0}
-          trend="up"
-        />
+        ))}
       </div>
 
-      {/* Main Content */}
-      <div className="dashboard-content">
-        {/* PR Table */}
-        <div className="pr-section">
-          <div className="section-header">
+      <div className="mdb-grid">
+        <section className="mdb-card mdb-card--reviews">
+          <div className="mdb-card__header">
             <div>
-              <h2>Team PR Reviews</h2>
-              <p className="section-copy">Track review velocity, highlight risks, and drill into PR details without leaving the dashboard.</p>
+              <h2>Pull request reviews</h2>
+              <p className="mdb-card-subtitle">Review your team's open PRs before merging.</p>
             </div>
-            <div className="filters">
-              {['All', 'Critical Issues', 'Approved'].map(f => (
+            <div className="mdb-chip-row">
+              {['All', 'Critical', 'Approved'].map((value) => (
                 <button
-                  key={f}
-                  className={`filter-chip ${filter === f ? 'active' : ''}`}
-                  onClick={() => setFilter(f)}
+                  key={value}
+                  type="button"
+                  className={`mdb-filter-chip ${filter === value ? 'active' : ''}`}
+                  onClick={() => setFilter(value)}
                 >
-                  {f}
+                  {value}
                 </button>
               ))}
-              {selectedCount > 0 && (
-                <span className="selection-pill selection-pill-inline">
-                  {selectedCount} selected
-                </span>
-              )}
+              {selectedCount > 0 && <span className="mdb-selection-pill">{selectedCount} selected</span>}
             </div>
           </div>
-
-          <div className="pr-table">
-            <div className="table-header">
-              <div className="col-select"></div>
-              <div className="col-title">PR Title</div>
-              <div className="col-author">Author</div>
-              <div className="col-repo">Repo</div>
-              <div className="col-issues">Issues</div>
-              <div className="col-verdict">Verdict</div>
-              <div className="col-date">Date</div>
-            </div>
-
-            {hasNoPRs ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">📭</div>
+          <div className="mdb-card__body">
+            {filteredPRs.length === 0 ? (
+              <div className="mdb-empty">
+                <div className="mdb-empty-icon">⌁</div>
                 <strong>No PRs found</strong>
                 <p>Try a different filter or refresh the workspace to show the latest team activity.</p>
-                <button type="button" className="refresh-btn" onClick={loadData}>
+                <button type="button" className="mdb-btn mdb-btn--ghost" onClick={loadData}>
                   Refresh data
                 </button>
               </div>
             ) : (
-              filteredPRs.map(pr => (
-                <div key={pr.id} className="pr-row">
-                  <div className="col-select">
-                    <input
-                      type="checkbox"
-                      checked={selectedPRs.includes(pr.id)}
-                      onChange={() => handlePRSelect(pr.id)}
-                      aria-label={`Select PR ${pr.prTitle}`}
-                    />
-                  </div>
-                  <div className="col-title">
-                    <div
-                      className="pr-title"
-                      onClick={() => setExpandedPR(expandedPR === pr.id ? null : pr.id)}
-                    >
-                      #{pr.prNumber} {pr.prTitle}
-                    </div>
-                    {expandedPR === pr.id && (
-                      <div className="pr-details">
-                        {pr.suggestions.map((s, i) => (
-                          <div key={i} className="suggestion-item">
-                            <span className={`severity-${s.severity}`}>{s.severity}</span>
-                            {s.title}: {s.description}
+              <div className="mdb-pr-list">
+                {filteredPRs.map((pr) => {
+                  const isExpanded = expandedPR === pr.id;
+                  const issueCount = pr.totalIssues || 0;
+                  const criticalCount = pr.criticalCount || 0;
+
+                  return (
+                    <div key={pr.id} className={`mdb-pr-item ${isExpanded ? 'is-open' : ''}`}>
+                      <button
+                        type="button"
+                        className="mdb-pr-row"
+                        onClick={() => setExpandedPR(isExpanded ? null : pr.id)}
+                      >
+                        <div className="mdb-pr-main">
+                          <span className="mdb-pr-num">#{pr.prNumber}</span>
+                          <div className="mdb-pr-copy">
+                            <strong>{pr.prTitle}</strong>
+                            <span>
+                              {pr.authorName} · {formatIssueCount(issueCount)}
+                              {criticalCount > 0 ? ` · ${criticalCount} critical` : ''}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="col-author">
-                    {pr.authorAvatar ? (
-                      <img src={resolveAvatarUrl(pr.authorAvatar)} alt={pr.authorName} className="author-avatar" />
-                    ) : (
-                      <span className="author-avatar fallback">{pr.authorName?.[0] || 'U'}</span>
-                    )}
-                    {pr.authorName}
-                  </div>
-                  <div className="col-repo">{pr.repoFullName}</div>
-                  <div className="col-issues">{pr.totalIssues} ({pr.criticalCount} critical)</div>
-                  <div className="col-verdict">{getVerdictBadge(pr.verdict)}</div>
-                  <div className="col-date">{new Date(pr.createdAt).toLocaleDateString()}</div>
-                </div>
-              ))
+                        </div>
+                        <div className="mdb-pr-side">
+                          <span className={`mdb-critical-chip ${criticalCount > 0 ? 'is-hot' : ''}`}>
+                            {criticalCount > 0 ? `${criticalCount} critical` : 'No critical issues'}
+                          </span>
+                          <span className={`mdb-verdict-badge mdb-verdict-badge--${verdictTone(pr.verdict)}`}>
+                            {verdictLabel(pr.verdict)}
+                          </span>
+                        </div>
+                      </button>
+
+                      {isExpanded && (
+                        <div className="mdb-pr-expanded" onClick={(event) => event.stopPropagation()}>
+                          <div className="mdb-expansion-label">Review decision</div>
+                          <textarea
+                            className="mdb-feedback-input"
+                            rows={2}
+                            placeholder="Write feedback for the developer (optional)..."
+                            value={decisionFeedbacks[pr.id] || ''}
+                            onChange={(event) =>
+                              setDecisionFeedbacks((prev) => ({
+                                ...prev,
+                                [pr.id]: event.target.value,
+                              }))
+                            }
+                          />
+                          <div className="mdb-decision-actions">
+                            <button
+                              type="button"
+                              className="mdb-decision-btn mdb-decision-btn--approve"
+                              onClick={() => handleDecision(pr.id, 'approved')}
+                            >
+                              Approve — ready to merge
+                            </button>
+                            <button
+                              type="button"
+                              className="mdb-decision-btn mdb-decision-btn--reject"
+                              onClick={() => handleDecision(pr.id, 'rejected')}
+                            >
+                              Request changes
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Member Summary */}
-        <div className="member-section">
-          <div className="section-header section-header-stack">
+        <section className="mdb-card mdb-card--notifications">
+          <div className="mdb-card__header">
             <div>
-              <h2>Team Members</h2>
-              <p className="section-copy">Review contribution trends, roles, and ownership at a glance.</p>
+              <h2>Recent notifications</h2>
+              <p className="mdb-card-subtitle">Review decisions and updates from the latest PR activity.</p>
             </div>
           </div>
-          {memberStats.length === 0 && (
-            <div className="empty-state">
-              <div className="empty-state-icon">👥</div>
-              <strong>No member review activity yet</strong>
-              <p>Once team members run workspace PR reviews, their contribution summary appears here.</p>
-            </div>
-          )}
-          <div className="member-grid">
-          {memberStats.map(member => (
-            <div key={member.userId} className="member-card">
-              {member.avatar ? (
-                <img src={resolveAvatarUrl(member.avatar)} alt={member.name} className="member-avatar" />
-              ) : (
-                <span className="member-avatar fallback">{member.name?.split(' ').map((part) => part[0]).join('').toUpperCase()}</span>
-              )}
-              <div className="member-info">
-                <div className="member-name">{member.name}</div>
-                <div className="member-role">{member.role}</div>
-                <div className="member-stats">
-                  <span>{member.prCount} PRs</span>
-                  <span>{member.avgSuggestions} avg issues</span>
-                  <span className={`severity-${member.worstSeverity}`}>{member.worstSeverity}</span>
-                </div>
+          <div className="mdb-card__body">
+            {recentNotifications.length === 0 ? (
+              <div className="mdb-empty mdb-empty--compact">
+                <div className="mdb-empty-icon">⌁</div>
+                <strong>No recent activity</strong>
+                <p>Once PRs are reviewed, the latest notifications will appear here.</p>
               </div>
-            </div>
-          ))}
+            ) : (
+              <div className="mdb-notification-list">
+                {recentNotifications.map((pr) => {
+                  const tone = verdictTone(pr.verdict);
+                  const message =
+                    pr.verdict === 'approved'
+                      ? `PR #${pr.prNumber} was approved`
+                      : pr.verdict === 'minor_issues'
+                      ? `PR #${pr.prNumber} has minor issues to review`
+                      : pr.verdict === 'needs_revision'
+                      ? `PR #${pr.prNumber} needs changes`
+                      : `PR #${pr.prNumber} is under review`;
+
+                  return (
+                    <div key={pr.id} className="mdb-notification-row">
+                      <span className={`mdb-notification-dot mdb-notification-dot--${tone}`} />
+                      <div className="mdb-notification-copy">{message}</div>
+                      <div className="mdb-notification-time">{timeAgo(pr.createdAt)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </div>
+        </section>
       </div>
 
-      {/* Release Report Section */}
-      <div className="report-section">
-        <div className="report-head">
-          <div>
-            <h2>Generate Release Report</h2>
-            <p className="report-help-text">
-              Generates a sprint verdict based on workspace-tagged PR reviews only.
-            </p>
+      <div className="mdb-secondary-grid">
+        <section className="mdb-card">
+          <div className="mdb-card__header">
+            <div>
+              <h2>Open pull requests</h2>
+              <p className="mdb-card-subtitle">Live pull requests pulled from the linked repository.</p>
+            </div>
+            {selectedCount > 0 && <span className="mdb-selection-pill">{selectedCount} selected</span>}
           </div>
-          <div className="report-meta">
-            <span className="selection-pill">{stats?.reviewedPrCount ?? 0} reviewed</span>
-            <span className="selection-pill">{stats?.totalOpenPRs ?? 0} open</span>
-          </div>
-        </div>
-        <div className="report-controls">
-          <div className="report-input-wrap">
-            <label htmlFor="sprint-name" className="sprint-label">Sprint name</label>
-            <input
-              id="sprint-name"
-              type="text"
-              placeholder="e.g. Sprint 12"
-              value={sprintName}
-              onChange={(e) => setSprintName(e.target.value)}
-              className="sprint-input"
+          <div className="mdb-card__body">
+            <WorkspacePRList
+              workspaceId={workspaceId}
+              refreshSignal={prListRefreshSignal}
+              onReviewComplete={() => {
+                dashboardApi
+                  .getStats(workspaceId)
+                  .then((result) => {
+                    setStats(result.stats);
+                    setUserRole(result.userRole);
+                    setPrListRefreshSignal((prev) => prev + 1);
+                  })
+                  .catch((err) => {
+                    console.error('Failed to refresh stats after PR review:', err);
+                  });
+              }}
             />
+            {!hasLinkedRepo && <div className="mdb-guide-note">Link a GitHub repository from Workspace Detail page to load open pull requests here.</div>}
+            {hasLinkedRepo && !hasReviewedPRs && <div className="mdb-guide-note">Start by reviewing one PR. After the first completed review, team metrics and release readiness report will populate automatically.</div>}
           </div>
-          <button
-            onClick={handleGenerateReport}
-            disabled={!sprintName.trim() || generating || !hasReviewedPRs}
-            className="generate-btn"
-            title={!hasReviewedPRs ? 'Review at least one PR first' : 'Generate sprint release report'}
-          >
-            {reportButtonLabel}
-          </button>
-        </div>
+        </section>
 
-        <div className="past-reports">
-          <h3>Past Reports</h3>
-          {reports.length === 0 && (
-            <div className="empty-state">
-              <div className="empty-state-icon">🧾</div>
-              <strong>No reports generated yet</strong>
-              <p>Complete PR reviews and generate your first release report for this workspace.</p>
+        <section className="mdb-card">
+          <div className="mdb-card__header">
+            <div>
+              <h2>Release reports</h2>
+              <p className="mdb-card-subtitle">Generate a sprint verdict from completed workspace reviews.</p>
             </div>
-          )}
-          {reports.map(report => (
-            <div key={report.id} className="report-item">
-              <span>{report.sprintName}</span>
-              <span className={`verdict-badge ${report.verdict}`}>{report.verdict}</span>
-              <span>{new Date(report.createdAt).toLocaleDateString()}</span>
+          </div>
+          <div className="mdb-card__body">
+            <div className="mdb-report-controls">
+              <div className="mdb-report-input-wrap">
+                <label htmlFor="sprint-name" className="mdb-sprint-label">Sprint name</label>
+                <input
+                  id="sprint-name"
+                  type="text"
+                  placeholder="e.g. Sprint 12"
+                  value={sprintName}
+                  onChange={(event) => setSprintName(event.target.value)}
+                  className="mdb-sprint-input"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleGenerateReport}
+                disabled={!sprintName.trim() || generating || !hasReviewedPRs}
+                className="mdb-btn mdb-btn--primary"
+                title={!hasReviewedPRs ? 'Review at least one PR first' : 'Generate sprint release report'}
+              >
+                {reportButtonLabel}
+              </button>
             </div>
-          ))}
-        </div>
+
+            <div className="mdb-past-reports">
+              <div className="mdb-past-reports-head">Past reports</div>
+              {reports.length === 0 ? (
+                <div className="mdb-empty mdb-empty--compact">
+                  <div className="mdb-empty-icon">⌁</div>
+                  <strong>No reports generated yet</strong>
+                  <p>Complete PR reviews and generate your first release report for this workspace.</p>
+                </div>
+              ) : (
+                <div className="mdb-report-list">
+                  {reports.map((report) => (
+                    <div key={report.id} className="mdb-report-row">
+                      <span className="mdb-report-name">{report.sprintName}</span>
+                      <span className={`mdb-verdict-badge mdb-verdict-badge--${verdictTone(report.verdict)}`}>
+                        {report.verdict}
+                      </span>
+                      <span className="mdb-report-date">{new Date(report.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
       </div>
 
-      {showReportModal && generatedReport && (
-        <ReleaseReportModal
-          report={generatedReport}
-          onClose={() => setShowReportModal(false)}
-        />
+      {memberStats.length > 0 && (
+        <section className="mdb-card mdb-card--members">
+          <div className="mdb-card__header">
+            <div>
+              <h2>Team members</h2>
+              <p className="mdb-card-subtitle">Review contribution trends, roles, and ownership at a glance.</p>
+            </div>
+          </div>
+          <div className="mdb-card__body">
+            <div className="mdb-member-grid">
+              {memberStats.map((member) => (
+                <div key={member.userId} className="mdb-member-card">
+                  {member.avatar ? (
+                    <img src={resolveAvatarUrl(member.avatar)} alt={member.name} className="mdb-member-avatar" />
+                  ) : (
+                    <span className="mdb-member-avatar mdb-member-avatar--fallback">
+                      {member.name?.split(' ').map((part) => part[0]).join('').toUpperCase()}
+                    </span>
+                  )}
+                  <div className="mdb-member-copy">
+                    <div className="mdb-member-name">{member.name}</div>
+                    <div className="mdb-member-role">{member.role}</div>
+                    <div className="mdb-member-stats">
+                      <span>{member.prCount} PRs</span>
+                      <span>{member.avgSuggestions} avg issues</span>
+                      <span className={`mdb-severity-${member.worstSeverity}`}>{member.worstSeverity}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
       )}
+
+      {showReportModal && generatedReport && <ReleaseReportModal report={generatedReport} onClose={() => setShowReportModal(false)} />}
     </div>
   );
 };

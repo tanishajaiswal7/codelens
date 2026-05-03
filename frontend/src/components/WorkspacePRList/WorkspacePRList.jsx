@@ -3,6 +3,12 @@ import { workspaceApi } from '../../api/workspaceApi';
 import { pollJob } from '../../utils/jobPoller';
 import './WorkspacePRList.css';
 
+const personaLabels = {
+  faang: 'FAANG',
+  startup: 'Startup',
+  security: 'Security',
+};
+
 export default function WorkspacePRList({ workspaceId, onReviewComplete, refreshSignal = 0 }) {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,12 +21,13 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
     setIsLoading(true);
     setError(null);
 
-    workspaceApi.getOpenPRs(workspaceId)
-      .then(result => {
+    workspaceApi
+      .getOpenPRs(workspaceId)
+      .then((result) => {
         setData(result);
         setIsLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         setError(err.response?.data?.error || 'Failed to load PRs');
         setIsLoading(false);
       });
@@ -29,13 +36,11 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
   const handleReview = async (prNumber) => {
     setReviewingPR(prNumber);
     try {
-      const { jobId } = await workspaceApi.reviewPR(
-        workspaceId, prNumber, persona
-      );
-      const cancel = pollJob(
+      const { jobId } = await workspaceApi.reviewPR(workspaceId, prNumber, persona);
+      pollJob(
         jobId,
         (result) => {
-          setCompletedReviews(prev => ({ ...prev, [prNumber]: result }));
+          setCompletedReviews((prev) => ({ ...prev, [prNumber]: result }));
           setReviewingPR(null);
           if (onReviewComplete) onReviewComplete();
         },
@@ -50,56 +55,56 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
     }
   };
 
-  if (isLoading) return (
-    <div className="wpr-loading">Loading pull requests from GitHub...</div>
-  );
+  if (isLoading) {
+    return <div className="wpr-loading">Loading pull requests from GitHub...</div>;
+  }
 
-  if (error) return (
-    <div className="wpr-error">
-      <p>{error}</p>
-      {error.includes('GitHub') && (
-        <p className="wpr-error-hint">
-          Go to Settings → Connect your GitHub account first.
-        </p>
-      )}
-      {error.includes('repo') && (
-        <p className="wpr-error-hint">
-          Add a GitHub repo link to this workspace in settings.
-        </p>
-      )}
-    </div>
-  );
+  if (error) {
+    return (
+      <div className="wpr-error">
+        <p>{error}</p>
+        {error.includes('GitHub') && <p className="wpr-error-hint">Go to Settings → Connect your GitHub account first.</p>}
+        {error.includes('repo') && <p className="wpr-error-hint">Add a GitHub repo link to this workspace in settings.</p>}
+      </div>
+    );
+  }
 
-  if (!data?.pulls?.length) return (
-    <div className="wpr-empty">
-      <p>No open pull requests found in</p>
-      <code>{data?.repoFullName || 'the linked repo'}</code>
-      <p>When your team opens PRs on GitHub, they will appear here.</p>
-    </div>
-  );
+  if (!data?.pulls?.length) {
+    return (
+      <div className="wpr-empty">
+        <div className="wpr-empty-icon">⌁</div>
+        <p>No open pull requests found</p>
+        <p className="wpr-empty-sub">When your team opens PRs on GitHub, they will appear here.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="wpr-container">
       <div className="wpr-repo-header">
-        <span className="wpr-repo-name">{data.repoFullName}</span>
+        <div>
+          <span className="wpr-repo-name">{data.repoFullName}</span>
+          <div className="wpr-repo-subtitle">Linked repository</div>
+        </div>
         <span className="wpr-pr-count">{data.pulls.length} open PRs</span>
       </div>
 
       <div className="wpr-persona-bar">
         <span className="wpr-persona-label">Review persona:</span>
-        {['faang', 'startup', 'security'].map(p => (
+        {['faang', 'startup', 'security'].map((value) => (
           <button
-            key={p}
-            className={`wpr-persona-btn ${persona === p ? 'active' : ''}`}
-            onClick={() => setPersona(p)}
+            key={value}
+            type="button"
+            className={`wpr-persona-btn ${persona === value ? 'active' : ''}`}
+            onClick={() => setPersona(value)}
           >
-            {p}
+            {personaLabels[value]}
           </button>
         ))}
       </div>
 
       <div className="wpr-list">
-        {data.pulls.map(pr => {
+        {data.pulls.map((pr) => {
           const result = completedReviews[pr.prNumber];
           const isReviewing = reviewingPR === pr.prNumber;
 
@@ -125,26 +130,24 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
                 {result ? (
                   <div className="wpr-result">
                     <span className={`wpr-verdict wpr-verdict--${result.verdict}`}>
-                      {result.verdict === 'approved' ? '✅ Approved' :
-                       result.verdict === 'needs_revision' ? '❌ Needs revision' :
-                       '⚠️ Minor issues'}
+                      {result.verdict === 'approved'
+                        ? 'Approved'
+                        : result.verdict === 'needs_revision'
+                        ? 'Needs revision'
+                        : 'Minor issues'}
                     </span>
-                    <span className="wpr-issue-count">
-                      {result.suggestions?.length || 0} issues
-                    </span>
+                    <span className="wpr-issue-count">{result.suggestions?.length || 0} issues</span>
                   </div>
                 ) : (
-                  <button
-                    className="wpr-review-btn"
-                    onClick={() => handleReview(pr.prNumber)}
-                    disabled={isReviewing || !!reviewingPR}
-                  >
+                  <button className="wpr-review-btn" type="button" onClick={() => handleReview(pr.prNumber)} disabled={isReviewing || !!reviewingPR}>
                     {isReviewing ? (
                       <>
-                        <span className="wpr-spinner"></span>
+                        <span className="wpr-spinner" />
                         Reviewing...
                       </>
-                    ) : 'Review PR'}
+                    ) : (
+                      'Review PR'
+                    )}
                   </button>
                 )}
               </div>
