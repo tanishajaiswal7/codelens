@@ -30,6 +30,24 @@ const createTransporter = () => {
   })
 }
 
+const buildMailHeaders = (config, subject) => {
+  const senderEmail = config.user
+  const configuredFrom = (config.from || '').trim()
+  const fromAddress = senderEmail
+    ? `CodeLens AI <${senderEmail}>`
+    : configuredFrom
+      ? configuredFrom
+      : 'CodeLens AI <noreply@codelens.ai>'
+
+  const replyTo = configuredFrom && configuredFrom !== senderEmail ? configuredFrom : senderEmail
+
+  return {
+    from: fromAddress,
+    replyTo,
+    subject,
+  }
+}
+
 export const emailService = {
   async sendWorkspaceInviteEmail({
     toEmail,
@@ -74,10 +92,16 @@ export const emailService = {
     `
 
     try {
+      const mailHeaders = buildMailHeaders(
+        config,
+        `You have been invited to ${workspaceName} on CodeLens AI`
+      )
+
       await transporter.sendMail({
-        from: config.from,
+        from: mailHeaders.from,
+        replyTo: mailHeaders.replyTo,
         to: toEmail,
-        subject: `You have been invited to ${workspaceName} on CodeLens AI`,
+        subject: mailHeaders.subject,
         html,
       })
       console.log(`[Email] Invite sent to ${toEmail}`)
@@ -181,10 +205,13 @@ export const emailService = {
     `
 
     try {
+      const mailHeaders = buildMailHeaders(config, subject)
+
       await transporter.sendMail({
-        from: config.from,
+        from: mailHeaders.from,
+        replyTo: mailHeaders.replyTo,
         to: toEmail,
-        subject,
+        subject: mailHeaders.subject,
         html,
       })
       console.log(`[Email] Sent decision email to ${toEmail}`)
