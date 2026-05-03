@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 import Editor from '@monaco-editor/react';
-import ReReviewButton from '../ReReViewButton/ReReviewButton.jsx';
+import ReReviewButton from '../ReReviewButton/ReReviewButton.jsx';
 import './CodeEditor.css';
 
 export default function CodeEditor({
