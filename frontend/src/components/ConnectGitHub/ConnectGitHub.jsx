@@ -16,7 +16,11 @@ const ConnectGitHub = ({ onConnected }) => {
   const [success, setSuccess] = useState(null);
 
   const validatePAT = (value) => {
-    return value.startsWith('ghp_') && value.length >= 40;
+    const trimmed = value.trim();
+    return (
+      (trimmed.startsWith('ghp_') || trimmed.startsWith('github_pat_')) &&
+      trimmed.length >= 40
+    );
   };
 
   const handleConnectPAT = async (e) => {

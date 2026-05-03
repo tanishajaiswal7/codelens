@@ -13,7 +13,7 @@ const GitHubLoginButton = ({ label = 'Continue with GitHub', redirectPath = '/da
   };
 
   return (
-    <button className="github-login-button" onClick={handleClick}>
+    <button type="button" className="github-login-button" onClick={handleClick}>
       <svg
         width="20"
         height="20"
