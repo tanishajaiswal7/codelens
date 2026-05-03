@@ -64,6 +64,46 @@ export async function startNotificationConsumer() {
         })
       }
 
+      if (event.type === 'manager_decision') {
+        // Create notification for the target user about manager decision
+        await Notification.create({
+          workspaceId: event.workspaceId,
+          type: 'manager_decision',
+          message: `Your review was ${event.decision}${event.prNumber ? ` for PR #${event.prNumber}` : ''}`,
+          reviewId: event.reviewId || null,
+          targetUserId: event.targetUserId || null,
+          isRead: false,
+          createdAt: new Date()
+        })
+
+        // Attempt to send email notification if configured
+        try {
+          const { emailService } = await import(
+            '../../services/notification-service/services/emailService.js'
+          )
+
+          // Look up user email if targetUserId provided
+          if (event.targetUserId) {
+            const { User } = await import('../../services/auth-service/models/User.js')
+            const user = await User.findById(event.targetUserId).select('email name').lean()
+            if (user && user.email) {
+              await emailService.sendPRDecisionEmail({
+                toEmail: user.email,
+                toName: user.name || user.email,
+                decision: event.decision,
+                feedback: event.feedback || null,
+                prNumber: event.prNumber || null,
+                workspaceId: event.workspaceId,
+                repoFullName: event.repoFullName || null,
+              })
+            }
+          }
+        } catch (e) {
+          // Non-fatal
+          console.warn('[NotificationConsumer] manager_decision email failed:', e.message || e)
+        }
+      }
+
       if (event.type === 'send_invite_email') {
         const { emailService } = await import(
           '../../services/notification-service/services/emailService.js'

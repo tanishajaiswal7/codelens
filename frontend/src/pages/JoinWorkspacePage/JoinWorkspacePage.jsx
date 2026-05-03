@@ -120,7 +120,12 @@ function JoinWorkspacePage() {
       return;
     }
 
-    setPSuccessful)
+    setPasteError('');
+    navigate(`/join/${parsedToken}`);
+  };
+
+  // Show a brief success screen when invite acceptance completed
+  if (isSuccessful)
     return (
       <div className="join-workspace-page">
         <div className="success-redirect-state">
@@ -132,10 +137,6 @@ function JoinWorkspacePage() {
         </div>
       </div>
     );
-
-  if (isasteError('');
-    navigate(`/join/${parsedToken}`);
-  };
 
   if (isLoading)
     return (

@@ -5,6 +5,7 @@ import { workspaceApi } from '../../api/workspaceApi.js';
 import BackButton from '../../components/BackButton/BackButton.jsx';
 import InviteModal from '../../components/InviteModal/InviteModal.jsx';
 import MemberPRReviews from '../../components/MemberPRReviews/MemberPRReviews.jsx';
+import NotificationBell from '../../components/NotificationBell/NotificationBell';
 import './WorkspaceDetailPage.css';
 
 function WorkspaceDetailPage() {
@@ -586,6 +587,11 @@ function WorkspaceDetailPage() {
                 </button>
               </>
             )}
+
+            {isMember && (
+              <NotificationBell workspaceId={id} />
+            )}
+
             <button type="button" onClick={handleLeaveWorkspace} className="wsd-btn wsd-btn--danger-ghost">
               Leave workspace
             </button>

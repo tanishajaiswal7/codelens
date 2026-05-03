@@ -5,28 +5,32 @@ import { WorkspaceMember } from '../../workspace-service/models/WorkspaceMember.
 
 const router = express.Router()
 
-// Get unread notifications for workspace owner/admin
+// Get unread notifications for workspace
 router.get('/:workspaceId', authMiddleware, async (req, res, next) => {
   try {
     const { workspaceId } = req.params
 
-    // Verify user is owner or admin
+    // Verify membership exists
     const membership = await WorkspaceMember.findOne({
       workspaceId,
       userId: req.userId,
-      role: { $in: ['owner', 'admin'] }
+      isActive: true,
     })
     if (!membership) {
       return res.status(403).json({ error: 'Access denied' })
     }
 
-    const notifications = await Notification.find({
-      workspaceId,
-      isRead: false
-    })
-    .sort({ createdAt: -1 })
-    .limit(20)
-    .lean()
+    let query = { workspaceId, isRead: false }
+
+    // Members only see notifications targeted at them
+    if (membership.role === 'member') {
+      query.targetUserId = req.userId
+    }
+
+    const notifications = await Notification.find(query)
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .lean()
 
     res.json(notifications)
   } catch (err) {

@@ -20,15 +20,24 @@ const buildInviteUrl = (baseUrl, token) => {
 const normalizeRepoUrl = (repoUrl) => {
   if (!repoUrl) return { repoUrl: null, repoFullName: null };
 
-  const trimmed = repoUrl
-    .replace('https://github.com/', '')
-    .replace('http://github.com/', '')
+  // Handle urls with or without protocol, with or without trailing slash
+  // Examples handled:
+  // https://github.com/owner/repo
+  // http://github.com/owner/repo/
+  // github.com/owner/repo
+  // git@github.com:owner/repo.git (basic handling)
+  const cleaned = repoUrl
+    .trim()
+    .replace(/^git@github\.com:/i, '')
+    .replace(/^https?:\/\/(www\.)?/i, '')
+    .replace(/^github\.com\//i, '')
+    .replace(/\.git$/i, '')
     .replace(/\/$/, '')
     .trim();
 
   return {
     repoUrl: repoUrl.trim(),
-    repoFullName: trimmed || null,
+    repoFullName: cleaned || null,
   };
 };
 
@@ -191,30 +200,49 @@ export const workspaceService = {
 
     const inviteUrl = buildInviteUrl(frontendBaseUrl, token);
 
-    const emailSent = await emailService.sendWorkspaceInviteEmail({
+    const invitePayload = {
       toEmail: email.toLowerCase(),
       workspaceName: workspace.name,
       inviteUrl,
-    });
+    };
 
-    if (!emailSent) {
-      publishEvent(QUEUES.NOTIFICATION_EVENTS, {
-        type: 'send_invite_email',
-        toEmail: email.toLowerCase(),
-        workspaceName: workspace.name,
-        inviteUrl,
-        workspaceId,
-        createdAt: new Date().toISOString(),
-      }).catch((err) => {
-        console.error('[Invite] Queue publish failed:', err.message);
+    // Fire-and-forget: attempt to send via emailService, fall back to queue on failure
+    Promise.resolve()
+      .then(() => emailService.sendWorkspaceInviteEmail(invitePayload))
+      .then((emailSent) => {
+        if (!emailSent) {
+          return publishEvent(QUEUES.NOTIFICATION_EVENTS, {
+            type: 'send_invite_email',
+            toEmail: email.toLowerCase(),
+            workspaceName: workspace.name,
+            inviteUrl,
+            workspaceId,
+            createdAt: new Date().toISOString(),
+          }).catch((err) => {
+            console.error('[Invite] Queue publish failed:', err.message);
+          });
+        }
+        return null;
+      })
+      .catch((err) => {
+        console.error('[Invite] Email send failed:', err?.message || err);
+        publishEvent(QUEUES.NOTIFICATION_EVENTS, {
+          type: 'send_invite_email',
+          toEmail: email.toLowerCase(),
+          workspaceName: workspace.name,
+          inviteUrl,
+          workspaceId,
+          createdAt: new Date().toISOString(),
+        }).catch((err2) => {
+          console.error('[Invite] Queue publish failed after send error:', err2.message);
+        });
       });
-    }
 
     return {
       inviteUrl,
       token,
-      emailSent: Boolean(emailSent),
-      emailQueued: !emailSent,
+      emailSent: false,
+      emailQueued: true,
     };
   },
 
@@ -557,17 +585,16 @@ export const workspaceService = {
     });
     if (!membership) throw { status: 403, message: 'Only owners can update repo' };
 
-    const repoFullName = repoUrl
-      .replace('https://github.com/', '')
-      .replace('http://github.com/', '')
-      .replace(/\/$/, '')
-      .trim();
+    const repoInfo = normalizeRepoUrl(repoUrl);
+    if (!repoInfo.repoFullName) {
+      throw { status: 400, message: 'Valid repoUrl is required' };
+    }
 
     await Workspace.findByIdAndUpdate(workspaceId, {
-      repoUrl,
-      repoFullName
+      repoUrl: repoInfo.repoUrl,
+      repoFullName: repoInfo.repoFullName,
     });
 
-    return { repoUrl, repoFullName };
+    return { repoUrl: repoInfo.repoUrl, repoFullName: repoInfo.repoFullName };
   },
 };
