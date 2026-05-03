@@ -1,14 +1,31 @@
 import nodemailer from 'nodemailer'
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.EMAIL_PORT) || 587,
-  secure: String(process.env.EMAIL_SECURE || 'false') === 'true',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+const getMailConfig = () => ({
+  host: process.env.SMTP_HOST || process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || process.env.EMAIL_PORT || '587', 10),
+  secure: String(process.env.SMTP_SECURE || process.env.EMAIL_SECURE || 'false') === 'true',
+  user: process.env.SMTP_USER || process.env.EMAIL_USER,
+  pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
+  from: process.env.SMTP_FROM || process.env.EMAIL_FROM,
 })
+
+const createTransporter = () => {
+  const config = getMailConfig()
+
+  if (!config.user || !config.pass) {
+    return null
+  }
+
+  return nodemailer.createTransport({
+    host: config.host,
+    port: config.port,
+    secure: config.secure,
+    auth: {
+      user: config.user,
+      pass: config.pass,
+    },
+  })
+}
 
 export const emailService = {
   async sendWorkspaceInviteEmail({
@@ -16,7 +33,10 @@ export const emailService = {
     workspaceName,
     inviteUrl,
   }) {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    const config = getMailConfig()
+    const transporter = createTransporter()
+
+    if (!transporter || !config.from) {
       console.log('[Email] Not configured — invite email skipped')
       return
     }
@@ -52,7 +72,7 @@ export const emailService = {
 
     try {
       await transporter.sendMail({
-        from: process.env.EMAIL_FROM,
+        from: config.from,
         to: toEmail,
         subject: `You have been invited to ${workspaceName} on CodeLens AI`,
         html,
@@ -72,8 +92,11 @@ export const emailService = {
     workspaceId,
     repoFullName,
   }) {
+    const config = getMailConfig()
+    const transporter = createTransporter()
+
     // Only send if email config exists
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    if (!transporter || !config.from) {
       console.log('[Email] Email not configured — skipping')
       return
     }
@@ -154,7 +177,7 @@ export const emailService = {
 
     try {
       await transporter.sendMail({
-        from: process.env.EMAIL_FROM,
+        from: config.from,
         to: toEmail,
         subject,
         html,
