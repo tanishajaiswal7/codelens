@@ -25,6 +25,22 @@
   transform: translateY(-1px);
 }
 
+/* Global fixed variant for pages that need a persistent back control */
+.page-back-button--global {
+  position: fixed;
+  top: 18px;
+  left: 18px;
+  z-index: 999;
+  border: 1px solid var(--border-2);
+  background: var(--bg-1);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+}
+
+.page-back-button--global:hover {
+  background: var(--bg-2);
+  border-color: var(--border-3);
+}
+
 .page-back-button:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.32);

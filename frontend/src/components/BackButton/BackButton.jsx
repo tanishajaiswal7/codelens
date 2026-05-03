@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import './BackButton.css';
 
-export default function BackButton({ fallback = '/' }) {
+export default function BackButton({ fallback = '/', variant = 'local' }) {
   const navigate = useNavigate();
 
   const handleBack = () => {
@@ -15,7 +15,7 @@ export default function BackButton({ fallback = '/' }) {
   return (
     <button
       type="button"
-      className="page-back-button"
+      className={`page-back-button ${variant === 'global' ? 'page-back-button--global' : ''}`}
       onClick={handleBack}
       aria-label="Go back"
       title="Go back"
