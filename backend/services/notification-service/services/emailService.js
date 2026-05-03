@@ -1,3 +1,4 @@
+import axios from 'axios'
 import nodemailer from 'nodemailer'
 
 const getMailConfig = () => ({
@@ -7,7 +8,18 @@ const getMailConfig = () => ({
   user: process.env.SMTP_USER || process.env.EMAIL_USER,
   pass: process.env.SMTP_PASS || process.env.EMAIL_PASS,
   from: process.env.SMTP_FROM || process.env.EMAIL_FROM,
+  provider: (process.env.EMAIL_PROVIDER || '').trim().toLowerCase(),
+  resendApiKey: process.env.RESEND_API_KEY,
+  sendgridApiKey: process.env.SENDGRID_API_KEY,
+  mailgunApiKey: process.env.MAILGUN_API_KEY,
+  mailgunDomain: process.env.MAILGUN_DOMAIN,
 })
+
+const buildPlainTextInvite = (workspaceName, inviteUrl) => (
+  `You have been invited to join ${workspaceName} on CodeLens AI.\n\n` +
+  `Open this link to join the workspace:\n${inviteUrl}\n\n` +
+  'This invite expires in 7 days.'
+)
 
 const createTransporter = (config) => {
   if (!config.user || !config.pass) {
@@ -65,6 +77,128 @@ const getTransportAttempts = (config) => {
   return attempts
 }
 
+const sendViaResend = async (config, { toEmail, workspaceName, inviteUrl }) => {
+  if (!config.resendApiKey) return false
+
+  const subject = `You have been invited to ${workspaceName} on CodeLens AI`
+  const html = buildInviteHtml(workspaceName, inviteUrl)
+
+  await axios.post(
+    'https://api.resend.com/emails',
+    {
+      from: config.from || 'CodeLens AI <noreply@codelens.ai>',
+      to: [toEmail],
+      subject,
+      html,
+      text: buildPlainTextInvite(workspaceName, inviteUrl),
+      reply_to: config.from || config.user || undefined,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${config.resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: Number(process.env.EMAIL_HTTP_TIMEOUT || 15000),
+    }
+  )
+
+  console.log(`[Email] Invite sent to ${toEmail} via Resend`)
+  return true
+}
+
+const sendViaSendGrid = async (config, { toEmail, workspaceName, inviteUrl }) => {
+  if (!config.sendgridApiKey) return false
+
+  const subject = `You have been invited to ${workspaceName} on CodeLens AI`
+
+  await axios.post(
+    'https://api.sendgrid.com/v3/mail/send',
+    {
+      personalizations: [{ to: [{ email: toEmail }], subject }],
+      from: {
+        email: (config.from || 'noreply@codelens.ai').replace(/^.*<|>$/g, '').trim(),
+        name: 'CodeLens AI',
+      },
+      reply_to: config.from ? { email: config.from.replace(/^.*<|>$/g, '').trim() } : undefined,
+      content: [
+        { type: 'text/plain', value: buildPlainTextInvite(workspaceName, inviteUrl) },
+        { type: 'text/html', value: buildInviteHtml(workspaceName, inviteUrl) },
+      ],
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${config.sendgridApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: Number(process.env.EMAIL_HTTP_TIMEOUT || 15000),
+    }
+  )
+
+  console.log(`[Email] Invite sent to ${toEmail} via SendGrid`)
+  return true
+}
+
+const sendViaMailgun = async (config, { toEmail, workspaceName, inviteUrl }) => {
+  if (!config.mailgunApiKey || !config.mailgunDomain) return false
+
+  const fromAddress = config.from || 'CodeLens AI <noreply@codelens.ai>'
+  const auth = {
+    username: 'api',
+    password: config.mailgunApiKey,
+  }
+
+  const form = new URLSearchParams()
+  form.set('from', fromAddress)
+  form.set('to', toEmail)
+  form.set('subject', `You have been invited to ${workspaceName} on CodeLens AI`)
+  form.set('text', buildPlainTextInvite(workspaceName, inviteUrl))
+  form.set('html', buildInviteHtml(workspaceName, inviteUrl))
+
+  await axios.post(
+    `https://api.mailgun.net/v3/${config.mailgunDomain}/messages`,
+    form,
+    {
+      auth,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      timeout: Number(process.env.EMAIL_HTTP_TIMEOUT || 15000),
+    }
+  )
+
+  console.log(`[Email] Invite sent to ${toEmail} via Mailgun`)
+  return true
+}
+
+const buildInviteHtml = (workspaceName, inviteUrl) => `
+  <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+    <div style="background:#09090b;padding:24px;border-radius:8px 8px 0 0">
+      <h1 style="color:white;font-size:20px;margin:0">CodeLens AI</h1>
+    </div>
+    <div style="background:#f9fafb;padding:32px;border-radius:0 0 8px 8px;border:1px solid #e5e7eb">
+      <h2 style="color:#111;font-size:18px;margin:0 0 16px">
+        You have been invited to join ${workspaceName}
+      </h2>
+      <p style="color:#555;font-size:14px;line-height:1.6;margin:0 0 24px">
+        Someone has invited you to collaborate on CodeLens AI.
+        Click the button below to join the workspace.
+      </p>
+      <a href="${inviteUrl}"
+         style="display:inline-block;background:#4f46e5;color:white;
+                padding:12px 24px;border-radius:6px;text-decoration:none;
+                font-size:14px;font-weight:500">
+        Join workspace
+      </a>
+      <p style="color:#9ca3af;font-size:12px;margin:24px 0 0">
+        If the button does not work, copy this link: ${inviteUrl}
+      </p>
+      <p style="color:#9ca3af;font-size:12px;margin:8px 0 0">
+        This invite expires in 7 days.
+      </p>
+    </div>
+  </div>
+`
+
 const buildMailHeaders = (config, subject) => {
   const senderEmail = config.user
   const configuredFrom = (config.from || '').trim()
@@ -91,6 +225,33 @@ export const emailService = {
   }) {
     const config = getMailConfig()
     const transporter = createTransporter(config)
+
+    if (config.provider === 'resend') {
+      try {
+        return await sendViaResend(config, { toEmail, workspaceName, inviteUrl })
+      } catch (err) {
+        console.error('[Email] Resend invite failed:', err.message)
+        return false
+      }
+    }
+
+    if (config.provider === 'sendgrid') {
+      try {
+        return await sendViaSendGrid(config, { toEmail, workspaceName, inviteUrl })
+      } catch (err) {
+        console.error('[Email] SendGrid invite failed:', err.message)
+        return false
+      }
+    }
+
+    if (config.provider === 'mailgun') {
+      try {
+        return await sendViaMailgun(config, { toEmail, workspaceName, inviteUrl })
+      } catch (err) {
+        console.error('[Email] Mailgun invite failed:', err.message)
+        return false
+      }
+    }
 
     if (!transporter || !config.from) {
       console.log('[Email] Not configured — invite email skipped')
@@ -181,6 +342,11 @@ export const emailService = {
   }) {
     const config = getMailConfig()
     const transporter = createTransporter(config)
+
+    if (config.provider === 'resend' || config.provider === 'sendgrid' || config.provider === 'mailgun') {
+      console.log('[Email] HTTP provider configured for invites only — skipping PR email')
+      return false
+    }
 
     // Only send if email config exists
     if (!transporter || !config.from) {
