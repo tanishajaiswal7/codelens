@@ -67,6 +67,8 @@ export default function MemberPRReviews({ workspaceId, onCountChange }) {
               <div className={`mpr-verdict mpr-verdict--${verdictKey}`}>{verdictLabel}</div>
             </div>
 
+            {review.summary && <div className="mpr-summary">{review.summary}</div>}
+
             <div className="mpr-card-meta">
               <span className="mpr-issues">{issueCount} issue{issueCount === 1 ? '' : 's'} found</span>
               {review.criticalCount > 0 && <span className="mpr-critical">{review.criticalCount} critical</span>}
@@ -90,6 +92,21 @@ export default function MemberPRReviews({ workspaceId, onCountChange }) {
 
             {verdictKey === 'minor_issues' && (
               <div className="mpr-minor-msg">{issueCount} suggestions to review before merging.</div>
+            )}
+
+            {review.suggestions?.length > 0 && (
+              <div className="mpr-suggestions-list">
+                {review.suggestions.map((suggestion) => (
+                  <div key={suggestion.id || suggestion.title} className={`mpr-suggestion mpr-suggestion--${suggestion.severity || 'info'}`}>
+                    <div className="mpr-suggestion-top">
+                      <span className="mpr-suggestion-severity">{suggestion.severity || 'info'}</span>
+                      <span className="mpr-suggestion-title">{suggestion.title}</span>
+                    </div>
+                    {suggestion.description && <p className="mpr-suggestion-desc">{suggestion.description}</p>}
+                    {suggestion.lineRef && <div className="mpr-suggestion-line">{suggestion.lineRef}</div>}
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         );

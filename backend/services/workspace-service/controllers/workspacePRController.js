@@ -72,7 +72,7 @@ export const workspacePRController = {
       }
       next(err);
     }
-  }
+  },
 
   async deletePR(req, res, next) {
     try {

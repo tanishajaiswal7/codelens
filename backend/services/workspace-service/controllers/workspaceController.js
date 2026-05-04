@@ -368,6 +368,7 @@ export const workspaceController = {
       const reviews = await Review.find({
         workspaceId: workspaceObjectId,
         userId: userObjectId,
+        deleted: { $ne: true },
       })
         .sort({ createdAt: -1 })
         .limit(20)

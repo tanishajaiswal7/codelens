@@ -305,6 +305,215 @@
   cursor: not-allowed;
 }
 
+.wpr-report-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.58);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.wpr-report-modal {
+  width: 100%;
+  max-width: 720px;
+  max-height: 88vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--r);
+  border: 1px solid var(--border-2);
+  background: var(--bg-1);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.wpr-report-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.wpr-report-kicker {
+  color: var(--text-3);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.wpr-report-title {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+}
+
+.wpr-report-subtitle {
+  margin-top: 4px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.wpr-report-close {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-2);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+.wpr-report-body {
+  padding: 18px 20px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wpr-report-banner {
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  border: 1px solid;
+}
+
+.wpr-report-banner--approved {
+  background: var(--green-bg);
+  border-color: rgba(5, 150, 105, 0.24);
+}
+
+.wpr-report-banner--needs_revision,
+.wpr-report-banner--rejected {
+  background: var(--red-bg);
+  border-color: rgba(220, 38, 38, 0.24);
+}
+
+.wpr-report-banner--minor_issues {
+  background: var(--amber-bg);
+  border-color: rgba(217, 119, 6, 0.24);
+}
+
+.wpr-report-banner-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.wpr-report-banner-summary {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.55;
+}
+
+.wpr-report-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wpr-report-stat {
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+}
+
+.wpr-report-stat-label {
+  display: block;
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.wpr-report-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.wpr-report-stat-value.red {
+  color: var(--red);
+}
+
+.wpr-report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wpr-report-item {
+  padding: 11px 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+}
+
+.wpr-report-item--critical {
+  border-color: rgba(239, 68, 68, 0.22);
+}
+
+.wpr-report-item--high {
+  border-color: rgba(245, 158, 11, 0.22);
+}
+
+.wpr-report-item--medium {
+  border-color: rgba(234, 179, 8, 0.22);
+}
+
+.wpr-report-item-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.wpr-report-item-severity {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-3);
+  background: var(--bg-3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.wpr-report-item-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.wpr-report-item-desc {
+  margin: 6px 0 0;
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.wpr-report-item-line {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.wpr-report-clean {
+  padding: 14px 16px;
+  border-radius: var(--r-sm);
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid rgba(5, 150, 105, 0.22);
+  font-size: 13px;
+}
+
 .wpr-spinner {
   width: 12px;
   height: 12px;

@@ -10,7 +10,7 @@ const personaLabels = {
   security: 'Security',
 };
 
-export default function WorkspacePRList({ workspaceId, onReviewComplete, refreshSignal = 0 }) {
+export default function WorkspacePRList({ workspaceId, onReviewComplete, refreshSignal = 0, canDeletePR = false }) {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,6 +19,7 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
   const [reviewingPR, setReviewingPR] = useState(null);
   const [deletingPR, setDeletingPR] = useState(null);
   const [completedReviews, setCompletedReviews] = useState({});
+  const [activeReviewReport, setActiveReviewReport] = useState(null);
   const [persona, setPersona] = useState('security');
 
   useEffect(() => {
@@ -46,6 +47,15 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
         jobId,
         (result) => {
           setCompletedReviews((prev) => ({ ...prev, [prNumber]: result }));
+          const reviewedPR = data?.pulls?.find((item) => item.prNumber === prNumber);
+          setActiveReviewReport({
+            ...result,
+            prNumber,
+            prTitle: reviewedPR?.title || `PR #${prNumber}`,
+            authorLogin: reviewedPR?.authorLogin || 'Unknown',
+            branch: reviewedPR?.branch || '',
+            baseBranch: reviewedPR?.baseBranch || '',
+          });
           setReviewingPR(null);
           if (onReviewComplete) onReviewComplete();
         },
@@ -177,19 +187,19 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
               </div>
 
               <div className="wpr-pr-action">
-                {result ? (
-                  <div className="wpr-result">
-                    <span className={`wpr-verdict wpr-verdict--${result.verdict}`}>
-                      {result.verdict === 'approved'
-                        ? 'Approved'
-                        : result.verdict === 'needs_revision'
-                        ? 'Needs revision'
-                        : 'Minor issues'}
-                    </span>
-                    <span className="wpr-issue-count">{result.suggestions?.length || 0} issues</span>
-                  </div>
-                ) : (
-                  <div className="wpr-action-stack">
+                <div className="wpr-action-stack">
+                  {result ? (
+                    <div className="wpr-result">
+                      <span className={`wpr-verdict wpr-verdict--${result.verdict}`}>
+                        {result.verdict === 'approved'
+                          ? 'Approved'
+                          : result.verdict === 'needs_revision'
+                          ? 'Needs revision'
+                          : 'Minor issues'}
+                      </span>
+                      <span className="wpr-issue-count">{result.suggestions?.length || 0} issues</span>
+                    </div>
+                  ) : (
                     <button className="wpr-review-btn" type="button" onClick={() => handleReview(pr.prNumber)} disabled={isReviewing || !!reviewingPR || deletingPR === pr.prNumber}>
                       {isReviewing ? (
                         <>
@@ -200,6 +210,9 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
                         'Review PR'
                       )}
                     </button>
+                  )}
+
+                  {canDeletePR && (
                     <button
                       className="wpr-delete-btn"
                       type="button"
@@ -208,13 +221,70 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
                     >
                       {deletingPR === pr.prNumber ? 'Deleting...' : 'Delete'}
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {activeReviewReport && (
+        <div className="wpr-report-overlay" onClick={() => setActiveReviewReport(null)}>
+          <div className="wpr-report-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="wpr-report-header">
+              <div>
+                <div className="wpr-report-kicker">PR review report</div>
+                <h3 className="wpr-report-title">{activeReviewReport.prTitle}</h3>
+                <div className="wpr-report-subtitle">
+                  #{activeReviewReport.prNumber} by {activeReviewReport.authorLogin}
+                  {activeReviewReport.branch ? ` · ${activeReviewReport.branch} → ${activeReviewReport.baseBranch}` : ''}
+                </div>
+              </div>
+              <button type="button" className="wpr-report-close" onClick={() => setActiveReviewReport(null)}>✕</button>
+            </div>
+
+            <div className="wpr-report-body">
+              <div className={`wpr-report-banner wpr-report-banner--${activeReviewReport.verdict}`}>
+                <div className="wpr-report-banner-title">
+                  {activeReviewReport.verdict === 'approved' ? 'Approved' : activeReviewReport.verdict === 'needs_revision' ? 'Needs revision' : 'Minor issues'}
+                </div>
+                <div className="wpr-report-banner-summary">{activeReviewReport.summary}</div>
+              </div>
+
+              <div className="wpr-report-stats">
+                <div className="wpr-report-stat">
+                  <span className="wpr-report-stat-label">Issues</span>
+                  <span className="wpr-report-stat-value">{activeReviewReport.suggestions?.length || 0}</span>
+                </div>
+                <div className="wpr-report-stat">
+                  <span className="wpr-report-stat-label">Critical</span>
+                  <span className="wpr-report-stat-value red">
+                    {activeReviewReport.suggestions?.filter((s) => s.severity === 'critical').length || 0}
+                  </span>
+                </div>
+              </div>
+
+              {activeReviewReport.suggestions?.length > 0 ? (
+                <div className="wpr-report-list">
+                  {activeReviewReport.suggestions.map((suggestion) => (
+                    <div key={suggestion.id || suggestion.title} className={`wpr-report-item wpr-report-item--${suggestion.severity || 'info'}`}>
+                      <div className="wpr-report-item-top">
+                        <span className="wpr-report-item-severity">{suggestion.severity || 'info'}</span>
+                        <span className="wpr-report-item-title">{suggestion.title}</span>
+                      </div>
+                      {suggestion.description && <p className="wpr-report-item-desc">{suggestion.description}</p>}
+                      {suggestion.lineRef && <div className="wpr-report-item-line">{suggestion.lineRef}</div>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="wpr-report-clean">No issues were found in this review.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
