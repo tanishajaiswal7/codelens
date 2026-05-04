@@ -78,8 +78,13 @@
   border-color: var(--blue);
 }
 
-.wpr-assign-confirm:hover {
+.wpr-assign-confirm:hover:not(:disabled) {
   opacity: 0.9;
+}
+
+.wpr-assign-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .wpr-assign-cancel {

@@ -161,12 +161,14 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
               defaultValue={Object.values(assignMemberForPR)[0] || ''}
               className="wpr-member-select"
             >
-              <option value="">-- Auto-detect (match GitHub author) --</option>
-              {members.map((m) => (
-                <option key={m._id} value={m._id}>
-                  {m.name || m.email} ({m.role})
-                </option>
-              ))}
+              <option value="">-- Select member --</option>
+              {members
+                .filter((m) => m.role !== 'owner')
+                .map((m) => (
+                  <option key={m._id} value={m._id}>
+                    {m.name || m.email}
+                  </option>
+                ))}
             </select>
             <div className="wpr-assign-actions">
               <button
@@ -175,6 +177,7 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
                   handleReview(prNum);
                 }}
                 className="wpr-assign-confirm"
+                disabled={!Object.values(assignMemberForPR)[0]}
               >
                 Review as
               </button>
