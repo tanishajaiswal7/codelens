@@ -61,7 +61,10 @@ export async function startReviewConsumer() {
           payload.repoFullName || null,
           payload.prNumber || null,
           payload.repoPath || null,
-          payload.reviewContext || 'personal'
+          payload.reviewContext || 'personal',
+          false,
+          payload.prTitle || null,
+          payload.requestedByUserId || null
         )
       }
 

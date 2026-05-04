@@ -28,6 +28,11 @@ const reviewSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    requestedByUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     code: {
       type: String,
       required: true,

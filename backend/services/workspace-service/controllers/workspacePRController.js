@@ -27,8 +27,8 @@ export const workspacePRController = {
       const { workspaceId, prNumber } = req.params;
       const { persona = 'security' } = req.body;
 
-      // Fetch PR files
-      const files = await workspacePRService.getPRFilesWithContent(
+      // Fetch PR files + metadata
+      const { files, prMeta } = await workspacePRService.getPRFilesWithContent(
         workspaceId,
         parseInt(prNumber),
         req.userId
@@ -41,14 +41,41 @@ export const workspacePRController = {
 
       // Get workspace for repoFullName
       const { Workspace } = await import('../models/Workspace.js');
+      const { WorkspaceMember } = await import('../models/WorkspaceMember.js');
+      const { User } = await import('../../auth-service/models/User.js');
       const workspace = await Workspace.findById(workspaceId).lean();
+
+      // Attribute review to PR author (member), not the manager who clicked review.
+      let reviewedForUserId = req.userId;
+      if (prMeta?.authorLogin) {
+        const prAuthor = await User.findOne({
+          githubUsername: { $regex: `^${prMeta.authorLogin}$`, $options: 'i' },
+        })
+          .select('_id')
+          .lean();
+
+        if (prAuthor?._id) {
+          const authorMembership = await WorkspaceMember.findOne({
+            workspaceId,
+            userId: prAuthor._id,
+            isActive: true,
+          })
+            .select('_id')
+            .lean();
+
+          if (authorMembership) {
+            reviewedForUserId = prAuthor._id.toString();
+          }
+        }
+      }
 
       // Queue the review job
       const jobId = uuidv4();
       await jobService.createJob(jobId, req.userId, 'review');
       await publishToQueue(QUEUES.REVIEW_JOBS, {
         jobId,
-        userId: req.userId,
+        userId: reviewedForUserId,
+        requestedByUserId: req.userId,
         type: 'review',
         code: combinedCode,
         persona,
@@ -56,6 +83,7 @@ export const workspacePRController = {
         workspaceId,
         repoFullName: workspace.repoFullName,
         prNumber: parseInt(prNumber),
+        prTitle: prMeta?.prTitle || null,
         repoPath: `PR #${prNumber}`,
         reviewContext: 'workspace'
       });

@@ -368,8 +368,11 @@ export const workspaceController = {
       const reviews = await Review.find({
         workspaceId: workspaceObjectId,
         userId: userObjectId,
+        source: 'github_pr',
+        reviewContext: 'workspace',
         deleted: { $ne: true },
       })
+        .populate('managerDecisionBy', 'name')
         .sort({ createdAt: -1 })
         .limit(20)
         .lean();
@@ -378,10 +381,14 @@ export const workspaceController = {
       const formattedReviews = reviews.map((r) => ({
         _id: r._id,
         prNumber: r.prNumber || null,
+        prTitle: r.prTitle || null,
         repoPath: r.repoPath || 'Code Review',
+        summary: r.summary || null,
         verdict: r.verdict,
         managerDecision: r.managerDecision || null,
         managerFeedback: r.managerFeedback || null,
+        managerDecisionAt: r.managerDecisionAt || null,
+        managerDecisionByName: r.managerDecisionBy?.name || null,
         criticalCount:
           r.suggestions?.filter((s) => s.severity === 'critical').length || 0,
         suggestions:

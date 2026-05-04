@@ -60,7 +60,7 @@ export default function MemberPRReviews({ workspaceId, onCountChange }) {
               <div className="mpr-pr-info">
                 {review.prNumber && <span className="mpr-pr-num">PR #{review.prNumber}</span>}
                 <div className="mpr-pr-copy">
-                  <span className="mpr-pr-title">{review.repoPath || 'Code Review'}</span>
+                  <span className="mpr-pr-title">{review.prTitle || review.repoPath || 'Code Review'}</span>
                   <span className="mpr-pr-date">Reviewed {new Date(review.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -76,6 +76,14 @@ export default function MemberPRReviews({ workspaceId, onCountChange }) {
 
             {verdictKey === 'approved' && (
               <div className="mpr-approved-msg">Your code has been approved and is ready to merge.</div>
+            )}
+
+            {(review.managerDecisionAt || review.managerDecisionByName) && (
+              <div className="mpr-decision-meta">
+                Finalized
+                {review.managerDecisionAt ? ` on ${new Date(review.managerDecisionAt).toLocaleDateString()}` : ''}
+                {review.managerDecisionByName ? ` by ${review.managerDecisionByName}` : ''}
+              </div>
             )}
 
             {(verdictKey === 'rejected' || verdictKey === 'needs_revision') && (

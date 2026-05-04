@@ -55,7 +55,9 @@ export const reviewService = {
     prNumber = null,
     repoPath = null,
     reviewContext = 'personal',
-    isOnboarding = false
+    isOnboarding = false,
+    prTitle = null,
+    requestedByUserId = null
   ) {
     try {
       // Build persona-specific prompt
@@ -93,6 +95,7 @@ export const reviewService = {
       // Save to MongoDB
       const savedReview = await Review.create({
         userId: toObjectId(userId),
+        requestedByUserId: toObjectId(requestedByUserId),
         code,
         persona,
         mode: mode || 'standard',
@@ -103,6 +106,7 @@ export const reviewService = {
         workspaceId: toObjectId(workspaceId),
         repoFullName,
         prNumber,
+        prTitle,
         repoPath,
         reviewContext: workspaceId ? 'workspace' : 'personal',
       });

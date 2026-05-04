@@ -317,6 +317,12 @@ export const workspacePRService = {
       })
     );
 
-    return filesWithContent.filter(Boolean);
+    return {
+      files: filesWithContent.filter(Boolean),
+      prMeta: {
+        prTitle: prDetail.title || null,
+        authorLogin: prDetail.user?.login || null,
+      },
+    };
   }
 };
