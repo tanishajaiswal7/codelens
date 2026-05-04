@@ -38,6 +38,7 @@
   border-radius: 4px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
 .sug-main { flex: 1; min-width: 0; }
 
 /* Ensure confidence badge does not get clipped on narrow containers */
