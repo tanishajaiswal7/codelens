@@ -399,25 +399,52 @@ function DashboardContent({ user }) {
     setError(null);
 
     try {
-      const result = await reviewApi.reReview(
+      const resp = await reviewApi.reReview(
         originalCode,
         currentCode,
         currentReview.suggestions,
         selectedPersona
       );
 
-      setPreviousReview(currentReview);
-      setCurrentReview((previous) => ({
-        ...previous,
-        summary: result.summary || previous.summary,
-        suggestions: result.suggestions || previous.suggestions,
-      }));
-      setReReviewMeta({
-        resolved: result.resolved || 0,
-        newCount: result.newCount || 0,
-        persistent: result.persistent || 0,
-      });
-      setOriginalCode(currentCode);
+      // If backend queued a job, poll for result
+      if (resp && resp.jobId) {
+        const cancel = pollJob(
+          resp.jobId,
+          (jobResult) => {
+            const result = jobResult || {};
+            setPreviousReview(currentReview);
+            setCurrentReview((previous) => ({
+              ...previous,
+              summary: result.summary || previous.summary,
+              suggestions: result.suggestions || previous.suggestions,
+            }));
+            setReReviewMeta({
+              resolved: result.resolved || 0,
+              newCount: result.newCount || 0,
+              persistent: result.persistent || 0,
+            });
+            setOriginalCode(currentCode);
+          },
+          (errMsg) => {
+            setError(errMsg || 'Re-review job failed');
+          }
+        );
+        // keep polling until completion; no need to cancel here
+      } else {
+        const result = resp || {};
+        setPreviousReview(currentReview);
+        setCurrentReview((previous) => ({
+          ...previous,
+          summary: result.summary || previous.summary,
+          suggestions: result.suggestions || previous.suggestions,
+        }));
+        setReReviewMeta({
+          resolved: result.resolved || 0,
+          newCount: result.newCount || 0,
+          persistent: result.persistent || 0,
+        });
+        setOriginalCode(currentCode);
+      }
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'Failed to submit re-review. Please try again.');

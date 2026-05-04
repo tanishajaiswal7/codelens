@@ -132,24 +132,48 @@ export default function FileBrowser({ owner, repo, onBack }) {
 
     setIsReReviewing(true)
     try {
-      const result = await reviewApi.reReview(
+      const resp = await reviewApi.reReview(
         originalCode,
         currentCode,
         reviewResult.suggestions,
         reviewPersona
       )
 
-      setReviewResult((previous) => ({
-        ...previous,
-        summary: result.summary || previous.summary,
-        suggestions: result.suggestions || previous.suggestions,
-      }))
-      setReReviewMeta({
-        resolved: result.resolved || 0,
-        newCount: result.newCount || 0,
-        persistent: result.persistent || 0,
-      })
-      setOriginalCode(currentCode)
+      if (resp && resp.jobId) {
+        const cancel = pollJob(
+          resp.jobId,
+          (jobResult) => {
+            const result = jobResult || {}
+            setReviewResult((previous) => ({
+              ...previous,
+              summary: result.summary || previous.summary,
+              suggestions: result.suggestions || previous.suggestions,
+            }))
+            setReReviewMeta({
+              resolved: result.resolved || 0,
+              newCount: result.newCount || 0,
+              persistent: result.persistent || 0,
+            })
+            setOriginalCode(currentCode)
+          },
+          (errMsg) => {
+            console.error('Re-review job failed:', errMsg)
+          }
+        )
+      } else {
+        const result = resp || {}
+        setReviewResult((previous) => ({
+          ...previous,
+          summary: result.summary || previous.summary,
+          suggestions: result.suggestions || previous.suggestions,
+        }))
+        setReReviewMeta({
+          resolved: result.resolved || 0,
+          newCount: result.newCount || 0,
+          persistent: result.persistent || 0,
+        })
+        setOriginalCode(currentCode)
+      }
     } catch (err) {
       console.error('Re-review failed:', err)
     } finally {
