@@ -117,18 +117,7 @@ export default function ReviewPanel({
         />
       )}
 
-      <div className="review-header-actions">
-        {!isHistoryView && onReReview && originalCode && (
-          <button
-            className="re-review-btn rr-btn"
-            onClick={onReReview}
-            disabled={isReReviewing}
-            title="Re-review only the changed lines"
-          >
-            {isReReviewing ? '↻ Checking changes...' : '↻ Re-Review Changes'}
-          </button>
-        )}
-      </div>
+      {/* header actions intentionally left empty - Re-Review Changes button removed */}
 
       <div className="verdict-strip">
         <div>
