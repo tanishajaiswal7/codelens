@@ -393,6 +393,7 @@ const ManagerDashboardPage = () => {
           <div className="mdb-card__body">
             <WorkspacePRList
               workspaceId={workspaceId}
+              canDeletePR={userRole === 'owner'}
               refreshSignal={prListRefreshSignal}
               onReviewComplete={() => {
                 dashboardApi

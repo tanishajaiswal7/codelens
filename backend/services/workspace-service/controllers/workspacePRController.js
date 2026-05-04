@@ -73,4 +73,17 @@ export const workspacePRController = {
       next(err);
     }
   }
+
+  async deletePR(req, res, next) {
+    try {
+      const { workspaceId, prNumber } = req.params;
+      const result = await workspacePRService.deletePR(workspaceId, prNumber, req.userId);
+      res.json(result);
+    } catch (err) {
+      if (err.status) {
+        return res.status(err.status).json({ error: err.message });
+      }
+      next(err);
+    }
+  }
 };

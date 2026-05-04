@@ -17,6 +17,7 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
   const [error, setError] = useState(null);
   const [errorDetail, setErrorDetail] = useState(null);
   const [reviewingPR, setReviewingPR] = useState(null);
+  const [deletingPR, setDeletingPR] = useState(null);
   const [completedReviews, setCompletedReviews] = useState({});
   const [persona, setPersona] = useState('security');
 
@@ -56,6 +57,25 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
     } catch (err) {
       setError(err.response?.data?.error || 'Review failed');
       setReviewingPR(null);
+    }
+  };
+
+  const handleDelete = async (prNumber) => {
+    const confirmed = window.confirm(`Delete PR #${prNumber} from this workspace dashboard?`);
+    if (!confirmed) return;
+
+    setDeletingPR(prNumber);
+    try {
+      await workspaceApi.deletePR(workspaceId, prNumber);
+      setData((current) => ({
+        ...current,
+        pulls: (current?.pulls || []).filter((pr) => pr.prNumber !== prNumber),
+      }));
+      if (onReviewComplete) onReviewComplete();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete PR');
+    } finally {
+      setDeletingPR(null);
     }
   };
 
@@ -169,16 +189,26 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
                     <span className="wpr-issue-count">{result.suggestions?.length || 0} issues</span>
                   </div>
                 ) : (
-                  <button className="wpr-review-btn" type="button" onClick={() => handleReview(pr.prNumber)} disabled={isReviewing || !!reviewingPR}>
-                    {isReviewing ? (
-                      <>
-                        <span className="wpr-spinner" />
-                        Reviewing...
-                      </>
-                    ) : (
-                      'Review PR'
-                    )}
-                  </button>
+                  <div className="wpr-action-stack">
+                    <button className="wpr-review-btn" type="button" onClick={() => handleReview(pr.prNumber)} disabled={isReviewing || !!reviewingPR || deletingPR === pr.prNumber}>
+                      {isReviewing ? (
+                        <>
+                          <span className="wpr-spinner" />
+                          Reviewing...
+                        </>
+                      ) : (
+                        'Review PR'
+                      )}
+                    </button>
+                    <button
+                      className="wpr-delete-btn"
+                      type="button"
+                      onClick={() => handleDelete(pr.prNumber)}
+                      disabled={isReviewing || !!reviewingPR || deletingPR === pr.prNumber}
+                    >
+                      {deletingPR === pr.prNumber ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>

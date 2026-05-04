@@ -63,7 +63,8 @@ export const dashboardService = {
     // ONLY get reviews tagged with this workspaceId
     // Personal reviews (workspaceId: null) are NEVER included
     const reviews = await Review.find({
-      workspaceId: new mongoose.Types.ObjectId(workspaceId)
+      workspaceId: new mongoose.Types.ObjectId(workspaceId),
+      deleted: { $ne: true },
     })
     .sort({ createdAt: -1 })
     .lean();
@@ -117,6 +118,7 @@ export const dashboardService = {
         const memberReviews = await Review.find({
           workspaceId: workspaceObjectId,
           userId: memberUserId,
+          deleted: { $ne: true },
         }).sort({ createdAt: -1 }).lean();
 
         totalReviews = memberReviews.length;

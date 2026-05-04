@@ -249,6 +249,13 @@
   flex-shrink: 0;
 }
 
+.wpr-action-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
 .wpr-review-btn {
   min-height: 32px;
   padding: 0 14px;
@@ -271,6 +278,29 @@
 }
 
 .wpr-review-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wpr-delete-btn {
+  min-height: 28px;
+  padding: 0 12px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--r-sm);
+  background: rgba(239, 68, 68, 0.08);
+  color: #ff9a9a;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.16s ease, transform 0.16s ease;
+}
+
+.wpr-delete-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.16);
+  transform: translateY(-1px);
+}
+
+.wpr-delete-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -341,8 +371,16 @@
     align-items: flex-start;
   }
 
+  .wpr-action-stack {
+    align-items: stretch;
+  }
+
   .wpr-review-btn {
     width: 100%;
     justify-content: center;
+  }
+
+  .wpr-delete-btn {
+    width: 100%;
   }
 }

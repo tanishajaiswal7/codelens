@@ -2,6 +2,7 @@ import { Workspace } from '../models/Workspace.js';
 import { WorkspaceMember } from '../models/WorkspaceMember.js';
 import { User } from '../../auth-service/models/User.js';
 import { decryptToken } from '../../github-auth-service/services/githubAuthService.js';
+import mongoose from 'mongoose';
 
 export const workspacePRService = {
 
@@ -51,9 +52,12 @@ export const workspacePRService = {
     }
 
     const prs = await response.json();
+    const hiddenPrNumbers = new Set((workspace.hiddenPrNumbers || []).map((value) => Number(value)));
 
     const detailedPulls = await Promise.all(
-      prs.map(async (pr) => {
+      prs
+        .filter((pr) => !hiddenPrNumbers.has(pr.number))
+        .map(async (pr) => {
         try {
           const detailRes = await fetch(
             `https://api.github.com/repos/${workspace.repoFullName}/pulls/${pr.number}`,
@@ -111,6 +115,41 @@ export const workspacePRService = {
         url: pr.html_url
       }))
     };
+  },
+
+  async deletePR(workspaceId, prNumber, requestingUserId) {
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) {
+      throw { status: 404, message: 'Workspace not found' };
+    }
+
+    if (workspace.ownerId.toString() !== requestingUserId.toString()) {
+      throw { status: 403, message: 'Only the workspace creator can delete PRs' };
+    }
+
+    const numericPrNumber = Number(prNumber);
+    if (!Number.isFinite(numericPrNumber)) {
+      throw { status: 400, message: 'Invalid PR number' };
+    }
+
+    if (!workspace.hiddenPrNumbers.includes(numericPrNumber)) {
+      workspace.hiddenPrNumbers.push(numericPrNumber);
+      await workspace.save();
+    }
+
+    const { Review } = await import('../../review-service/models/Review.js');
+    await Review.updateMany(
+      {
+        workspaceId: new mongoose.Types.ObjectId(workspaceId),
+        prNumber: numericPrNumber,
+        deleted: { $ne: true },
+      },
+      {
+        deleted: true,
+      }
+    );
+
+    return { message: 'PR deleted from workspace dashboard' };
   },
 
   async getPRFilesWithContent(workspaceId, prNumber, requestingUserId) {

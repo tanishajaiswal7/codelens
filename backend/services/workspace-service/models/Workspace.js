@@ -34,6 +34,10 @@ const workspaceSchema = new mongoose.Schema(
       // example: "TechCorp/backend-api"
       // extracted from repoUrl automatically
     },
+    hiddenPrNumbers: {
+      type: [Number],
+      default: [],
+    },
   },
   { timestamps: true }
 );

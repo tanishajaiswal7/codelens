@@ -52,6 +52,9 @@ export const workspaceApi = {
       { persona }
     ).then((r) => r.data),
 
+  deletePR: (workspaceId, prNumber) =>
+    axiosInstance.delete(`/api/workspace/${workspaceId}/pulls/${prNumber}`).then((r) => r.data),
+
   updateRepo: (workspaceId, repoUrl) =>
     axiosInstance.patch(
       `/api/workspace/${workspaceId}/repo`,

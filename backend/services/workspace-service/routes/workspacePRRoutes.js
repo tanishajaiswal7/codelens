@@ -10,4 +10,7 @@ router.get('/:workspaceId/pulls', authMiddleware, workspacePRController.getOpenP
 // Review a specific PR (manager triggers this)
 router.post('/:workspaceId/pulls/:prNumber/review', authMiddleware, workspacePRController.reviewPR);
 
+// Delete a PR from the workspace dashboard (workspace creator only)
+router.delete('/:workspaceId/pulls/:prNumber', authMiddleware, workspacePRController.deletePR);
+
 export default router;
