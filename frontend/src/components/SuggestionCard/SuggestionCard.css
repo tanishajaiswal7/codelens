@@ -2,7 +2,12 @@
   border-radius: var(--r);
   border: 1px solid var(--border);
   background: rgba(255,255,255,0.015);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: clamp(240px, 36vh, 420px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
   transition: all 0.12s ease;
 }
 
