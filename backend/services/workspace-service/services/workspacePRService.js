@@ -132,9 +132,15 @@ export const workspacePRService = {
       throw { status: 400, message: 'Invalid PR number' };
     }
 
-    if (!workspace.hiddenPrNumbers.includes(numericPrNumber)) {
-      workspace.hiddenPrNumbers.push(numericPrNumber);
-      await workspace.save();
+    const currentHiddenPrNumbers = Array.isArray(workspace.hiddenPrNumbers)
+      ? workspace.hiddenPrNumbers
+      : [];
+
+    if (!currentHiddenPrNumbers.includes(numericPrNumber)) {
+      await Workspace.updateOne(
+        { _id: workspace._id },
+        { $addToSet: { hiddenPrNumbers: numericPrNumber } }
+      );
     }
 
     const { Review } = await import('../../review-service/models/Review.js');
