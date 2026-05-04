@@ -13,7 +13,7 @@ const getVerdictLabel = (review) => {
   return 'Under review';
 };
 
-export default function MemberPRReviews({ workspaceId }) {
+export default function MemberPRReviews({ workspaceId, onCountChange }) {
   const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -22,10 +22,14 @@ export default function MemberPRReviews({ workspaceId }) {
       .get(`/api/workspace/${workspaceId}/my-reviews`)
       .then((response) => {
         setReviews(response.data);
+        onCountChange?.(response.data.length);
         setIsLoading(false);
       })
-      .catch(() => setIsLoading(false));
-  }, [workspaceId]);
+      .catch(() => {
+        onCountChange?.(0);
+        setIsLoading(false);
+      });
+  }, [workspaceId, onCountChange]);
 
   if (isLoading) {
     return <div className="mpr-loading">Loading your reviews...</div>;

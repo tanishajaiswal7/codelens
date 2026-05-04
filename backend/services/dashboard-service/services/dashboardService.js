@@ -94,61 +94,57 @@ export const dashboardService = {
       }
     }
 
+    const workspaceObjectId = new mongoose.Types.ObjectId(workspaceId);
+
     // Per member stats
     const memberStats = await Promise.all(members.map(async (m) => {
-      const memberWorkspaceReviews = await Review.find({
-        workspaceId: new mongoose.Types.ObjectId(workspaceId),
-        userId: new mongoose.Types.ObjectId(m.userId._id),
-        reviewContext: 'workspace',
-        deleted: { $ne: true },
-      })
-        .sort({ createdAt: -1 })
-        .lean();
+      const memberUserId = new mongoose.Types.ObjectId(m.userId._id.toString());
+      const role = m.role;
 
-      let reviewCount = 0;
-      let decisionCount = 0;
+      let totalReviews = 0;
+      let avgIssues = 0;
+      let criticalIssues = 0;
+      let reviewLabel = 'reviews';
+      let lastReviewAt = null;
 
-      if (m.role === 'owner' || m.role === 'admin') {
-        decisionCount = await Review.countDocuments({
-          workspaceId: new mongoose.Types.ObjectId(workspaceId),
-          managerDecisionBy: new mongoose.Types.ObjectId(m.userId._id),
-          managerDecision: { $in: ['approved', 'rejected'] },
-          deleted: { $ne: true },
+      if (role === 'owner' || role === 'admin') {
+        totalReviews = await Review.countDocuments({
+          workspaceId: workspaceObjectId,
+          managerDecisionBy: memberUserId,
         });
-        reviewCount = decisionCount;
+        reviewLabel = 'decisions';
       } else {
-        reviewCount = memberWorkspaceReviews.length;
-      }
+        const memberReviews = await Review.find({
+          workspaceId: workspaceObjectId,
+          userId: memberUserId,
+        }).sort({ createdAt: -1 }).lean();
 
-      const issueCounts = memberWorkspaceReviews.map((r) => r.suggestions?.length || 0);
-      const averageIssues = issueCounts.length > 0
-        ? Math.round(issueCounts.reduce((acc, value) => acc + value, 0) / issueCounts.length)
-        : 0;
-      const severityRank = { info: 1, low: 2, medium: 3, high: 4, critical: 5 };
-      const worstSeverity = memberWorkspaceReviews.reduce((current, review) => {
-        const reviewWorst = (review.suggestions || []).reduce((worst, suggestion) => {
-          const severity = suggestion.severity || 'info';
-          return severityRank[severity] > severityRank[worst] ? severity : worst;
-        }, 'info');
-        return severityRank[reviewWorst] > severityRank[current] ? reviewWorst : current;
-      }, 'info');
+        totalReviews = memberReviews.length;
+        reviewLabel = 'PRs reviewed';
+        lastReviewAt = memberReviews[0]?.createdAt || null;
+
+        if (memberReviews.length > 0) {
+          const totalIssues = memberReviews.reduce((acc, review) => acc + (review.suggestions?.length || 0), 0);
+          avgIssues = Math.round(totalIssues / memberReviews.length);
+          criticalIssues = memberReviews.reduce(
+            (acc, review) => acc + (review.suggestions?.filter((suggestion) => suggestion.severity === 'critical').length || 0),
+            0
+          );
+        }
+      }
 
       return {
         userId: m.userId._id,
         name: m.userId.name,
         email: m.userId.email,
-        role: m.role,
-        totalReviews: reviewCount,
-        reviewLabel: (m.role === 'owner' || m.role === 'admin') ? 'decisions' : 'PRs reviewed',
-        criticalIssues: memberWorkspaceReviews.reduce((acc, r) =>
-          acc + (r.suggestions?.filter(s => s.severity === 'critical').length || 0)
-        , 0),
-        lastReviewAt: memberWorkspaceReviews[0]?.createdAt || null,
-        latestVerdict: memberWorkspaceReviews[0]?.verdict || null,
-        avatar: m.userId.avatarUrl || m.userId.githubAvatar || null,
-        prCount: reviewCount,
-        avgSuggestions: averageIssues,
-        worstSeverity,
+        profilePicture: m.userId.profilePicture || null,
+        githubAvatar: m.userId.githubAvatar || null,
+        role,
+        totalReviews,
+        reviewLabel,
+        avgIssues,
+        criticalIssues,
+        lastReviewAt,
       };
     }));
 
@@ -216,7 +212,7 @@ export const dashboardService = {
 
     // Get all PR reviews
     const prReviews = await Review.find({
-      workspaceId: new mongoose.Types.ObjectId(workspaceId),
+      workspaceId: workspaceObjectId,
       source: 'github_pr',
       deleted: { $ne: true },
     }).populate('userId', 'name avatarUrl githubAvatar githubUsername').sort({ createdAt: -1 }).lean();
@@ -288,6 +284,9 @@ export const dashboardService = {
         title: r.title,
         file: r.filePath || r.repoFullName || 'Unknown file',
         prNumber: r.prNumber ? `#${r.prNumber}` : 'N/A',
+        authorName: r.authorName || null,
+        criticalCount: r.criticalCount || 0,
+        issueCount: r.totalIssues || 0,
         severity: 'critical',
         recommendation: 'Fix the blocking issue before merging.',
       })),
@@ -295,6 +294,9 @@ export const dashboardService = {
         title: r.title,
         file: r.filePath || r.repoFullName || 'Unknown file',
         prNumber: r.prNumber ? `#${r.prNumber}` : 'N/A',
+        authorName: r.authorName || null,
+        criticalCount: r.criticalCount || 0,
+        issueCount: r.totalIssues || 0,
         severity: 'high',
         recommendation: 'Address this issue before the release goes out.',
       })),

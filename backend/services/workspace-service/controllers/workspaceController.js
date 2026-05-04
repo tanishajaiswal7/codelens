@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { workspaceService } from '../services/workspaceService.js';
 import { WorkspaceInvite } from '../models/WorkspaceInvite.js';
 
@@ -361,10 +362,12 @@ export const workspaceController = {
 
       // Get only THIS user's reviews in this workspace
       const { Review } = await import('../../review-service/models/Review.js');
+      const workspaceObjectId = new mongoose.Types.ObjectId(workspaceId);
+      const userObjectId = new mongoose.Types.ObjectId(userId);
 
       const reviews = await Review.find({
-        workspaceId,
-        userId,
+        workspaceId: workspaceObjectId,
+        userId: userObjectId,
       })
         .sort({ createdAt: -1 })
         .limit(20)

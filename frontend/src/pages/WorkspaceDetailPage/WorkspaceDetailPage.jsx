@@ -30,6 +30,7 @@ function WorkspaceDetailPage() {
   const [editRepoUrl, setEditRepoUrl] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [workspaceStats, setWorkspaceStats] = useState(null);
+  const [myReviewCount, setMyReviewCount] = useState(0);
 
   useEffect(() => {
     fetchWorkspaceDetail();
@@ -584,10 +585,10 @@ function WorkspaceDetailPage() {
     <div className="wsd-card">
       <div className="wsd-card__header">
         <span>Your PR reviews</span>
-        <span className="wsd-mini-count">{reviewedMembers.length}</span>
+        <span className="wsd-mini-count">{myReviewCount}</span>
       </div>
       <div className="wsd-card__body">
-        <MemberPRReviews workspaceId={id} />
+        <MemberPRReviews workspaceId={id} onCountChange={setMyReviewCount} />
       </div>
     </div>
   );

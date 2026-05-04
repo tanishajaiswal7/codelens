@@ -6,6 +6,12 @@ import WorkspacePRList from '../../components/WorkspacePRList/WorkspacePRList';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
 import './ManagerDashboardPage.css';
 
+const verdictDisplay = {
+  ready: { label: 'Ready to ship', className: 'ready' },
+  not_ready: { label: 'Not ready', className: 'not-ready' },
+  needs_review: { label: 'Needs review', className: 'needs-review' },
+};
+
 const timeAgo = (value) => {
   if (!value) return 'Just now';
   const diffMs = Date.now() - new Date(value).getTime();
@@ -48,6 +54,7 @@ const ManagerDashboardPage = () => {
   const [generating, setGenerating] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [generatedReport, setGeneratedReport] = useState(null);
+  const [viewingReport, setViewingReport] = useState(null);
   const [prListRefreshSignal, setPrListRefreshSignal] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [decisionFeedbacks, setDecisionFeedbacks] = useState({});
@@ -446,15 +453,29 @@ const ManagerDashboardPage = () => {
                 </div>
               ) : (
                 <div className="mdb-report-list">
-                  {reports.map((report) => (
-                    <div key={report.id} className="mdb-report-row">
-                      <span className="mdb-report-name">{report.sprintName}</span>
-                      <span className={`mdb-verdict-badge mdb-verdict-badge--${verdictTone(report.verdict)}`}>
-                        {report.verdict}
-                      </span>
-                      <span className="mdb-report-date">{new Date(report.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  ))}
+                  {reports.map((report) => {
+                    const verdict = verdictDisplay[report.verdict] || {
+                      label: report.verdict,
+                      className: 'unknown',
+                    };
+
+                    return (
+                      <div key={report.id} className="mdb-report-row">
+                        <span className="mdb-report-name">{report.sprintName}</span>
+                        <span className={`report-badge report-badge--${verdict.className}`}>
+                          {verdict.label}
+                        </span>
+                        <span className="mdb-report-date">{new Date(report.createdAt).toLocaleDateString()}</span>
+                        <button
+                          type="button"
+                          className="report-view-btn"
+                          onClick={() => setViewingReport(report)}
+                        >
+                          View
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -486,8 +507,10 @@ const ManagerDashboardPage = () => {
                     <div className="mdb-member-role">{member.role}</div>
                     <div className="mdb-member-stats">
                       <span>{member.totalReviews} {member.reviewLabel || 'reviews'}</span>
-                      <span>{member.avgSuggestions} avg issues</span>
-                      <span className={`mdb-severity-${member.worstSeverity}`}>{member.worstSeverity}</span>
+                      <span>{member.avgIssues ?? 0} avg issues</span>
+                      {Number(member.criticalIssues || 0) > 0 && (
+                        <span className="mdb-severity-critical">critical</span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -498,6 +521,103 @@ const ManagerDashboardPage = () => {
       )}
 
       {showReportModal && generatedReport && <ReleaseReportModal report={generatedReport} onClose={() => setShowReportModal(false)} />}
+
+      {viewingReport && (
+        <div className="report-modal-overlay" onClick={() => setViewingReport(null)}>
+          <div className="report-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="report-modal-header">
+              <div>
+                <h2 className="report-modal-title">{viewingReport.sprintName}</h2>
+                <span className="report-modal-date">
+                  Generated {new Date(viewingReport.createdAt).toLocaleDateString()}
+                </span>
+              </div>
+              <button className="report-modal-close" onClick={() => setViewingReport(null)}>
+                ✕
+              </button>
+            </div>
+
+            <div className="report-modal-body">
+              <div className={`report-verdict-banner report-verdict-banner--${viewingReport.verdict}`}>
+                <span className="rvb-emoji">{viewingReport.verdict === 'ready' ? '✅' : '❌'}</span>
+                <div>
+                  <div className="rvb-title">
+                    {viewingReport.verdict === 'ready' ? 'READY TO SHIP' : 'NOT READY TO SHIP'}
+                  </div>
+                  <div className="rvb-summary">{viewingReport.executiveSummary || viewingReport.summary}</div>
+                </div>
+              </div>
+
+              <div className="report-stats-row">
+                <div className="report-stat">
+                  <div className="report-stat-label">Total reviews</div>
+                  <div className="report-stat-val">{viewingReport.totalReviews || 0}</div>
+                </div>
+                <div className="report-stat">
+                  <div className="report-stat-label">Quality score</div>
+                  <div className="report-stat-val">
+                    {viewingReport.qualityScore != null ? `${viewingReport.qualityScore}%` : '—'}
+                  </div>
+                </div>
+                <div className="report-stat">
+                  <div className="report-stat-label">Blockers</div>
+                  <div className="report-stat-val red">{viewingReport.blockerCount || 0}</div>
+                </div>
+                <div className="report-stat">
+                  <div className="report-stat-label">Warnings</div>
+                  <div className="report-stat-val amber">{viewingReport.warningCount || 0}</div>
+                </div>
+              </div>
+
+              {viewingReport.blockers?.length > 0 && (
+                <div className="report-section">
+                  <h3 className="report-section-title red">Critical blockers — must fix before shipping</h3>
+                  {viewingReport.blockers.map((blocker, index) => (
+                    <div key={index} className="report-blocker-item">
+                      <div className="rbi-top">
+                        <span className="rbi-badge critical">Critical</span>
+                        <span className="rbi-title">{blocker.title}</span>
+                      </div>
+                      {blocker.authorName && (
+                        <span className="rbi-meta">
+                          By {blocker.authorName}
+                          {blocker.criticalCount > 1 ? ` · ${blocker.criticalCount} critical issues` : ''}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {viewingReport.warnings?.length > 0 && (
+                <div className="report-section">
+                  <h3 className="report-section-title amber">Warnings — recommended to fix</h3>
+                  {viewingReport.warnings.map((warning, index) => (
+                    <div key={index} className="report-warning-item">
+                      <span className="rbi-badge medium">Medium</span>
+                      <span className="rbi-title">{warning.title}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(!viewingReport.blockers || viewingReport.blockers.length === 0) &&
+                (!viewingReport.warnings || viewingReport.warnings.length === 0) && (
+                  <div className="report-clean">✅ No blockers or warnings found. This sprint is clean.</div>
+                )}
+            </div>
+
+            <div className="report-modal-footer">
+              <button className="report-print-btn" onClick={() => window.print()}>
+                Print report
+              </button>
+              <button className="report-close-btn" onClick={() => setViewingReport(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

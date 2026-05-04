@@ -11,6 +11,305 @@
   letter-spacing: -0.03em;
 }
 
+.report-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.report-badge--ready {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.report-badge--not-ready {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.report-badge--needs-review {
+  background: var(--amber-bg);
+  color: var(--amber);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.report-badge--unknown {
+  background: var(--bg-3);
+  color: var(--text-3);
+  border: 1px solid var(--border-2);
+}
+
+.report-view-btn {
+  height: 28px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--accent-2);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.report-view-btn:hover {
+  background: var(--accent-glow);
+}
+
+.report-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.report-modal {
+  background: var(--bg-1);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r);
+  width: 100%;
+  max-width: 620px;
+  max-height: 85vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.report-modal-title {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text);
+  margin: 0 0 4px 0;
+}
+
+.report-modal-date {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.report-modal-close {
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.report-modal-close:hover {
+  color: var(--text);
+  border-color: var(--border-3);
+}
+
+.report-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+.report-verdict-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--r-sm);
+  border: 1px solid;
+}
+
+.report-verdict-banner--ready {
+  background: var(--green-bg);
+  border-color: rgba(5, 150, 105, 0.25);
+}
+
+.report-verdict-banner--not_ready {
+  background: var(--red-bg);
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+.rvb-emoji {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.rvb-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.rvb-summary {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.report-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.report-stat {
+  background: var(--bg-2);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+}
+
+.report-stat-label {
+  font-size: 10px;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.report-stat-val {
+  font-size: 20px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text);
+}
+
+.report-stat-val.red {
+  color: var(--red);
+}
+
+.report-stat-val.amber {
+  color: var(--amber);
+}
+
+.report-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+}
+
+.report-section-title.red {
+  color: var(--red);
+}
+
+.report-section-title.amber {
+  color: var(--amber);
+}
+
+.report-blocker-item,
+.report-warning-item {
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+
+.rbi-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.rbi-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.rbi-badge.critical {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.rbi-badge.medium {
+  background: var(--amber-bg);
+  color: var(--amber);
+  border: 1px solid rgba(217, 119, 6, 0.2);
+}
+
+.rbi-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.rbi-meta {
+  font-size: 11px;
+  color: var(--text-3);
+  display: block;
+  margin-top: 2px;
+}
+
+.report-clean {
+  font-size: 13px;
+  color: var(--green);
+  padding: 14px;
+  background: var(--green-bg);
+  border-radius: var(--r-sm);
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.report-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.report-print-btn {
+  height: 34px;
+  padding: 0 16px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.report-close-btn {
+  height: 34px;
+  padding: 0 16px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
 .dashboard-intro {
   position: relative;
   display: flex;

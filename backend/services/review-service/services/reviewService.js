@@ -1,4 +1,5 @@
 import axios from 'axios';
+import mongoose from 'mongoose';
 import { buildPersonaPrompt } from './promptService.js';
 import { promptService } from './promptService.js';
 import { parseAIResponse } from './confidenceParser.js';
@@ -10,6 +11,8 @@ const ANTHROPIC_MODEL = 'claude-opus-4-20250514';
 const REVIEW_TEMPERATURE = Number.isFinite(Number(process.env.REVIEW_TEMPERATURE))
   ? Number(process.env.REVIEW_TEMPERATURE)
   : 0.1;
+
+const toObjectId = (value) => (value ? new mongoose.Types.ObjectId(value.toString()) : null);
 
 const createFallbackReview = (reason, code, persona) => ({
   summary: `Review service fallback: ${reason}`,
@@ -89,7 +92,7 @@ export const reviewService = {
 
       // Save to MongoDB
       const savedReview = await Review.create({
-        userId,
+        userId: toObjectId(userId),
         code,
         persona,
         mode: mode || 'standard',
@@ -97,7 +100,7 @@ export const reviewService = {
         summary: review.summary,
         verdict: review.verdict,
         suggestions: review.suggestions,
-        workspaceId,
+        workspaceId: toObjectId(workspaceId),
         repoFullName,
         prNumber,
         repoPath,
@@ -162,7 +165,7 @@ export const reviewService = {
 
       // Prepare review data
       const reviewData = {
-        userId,
+        userId: toObjectId(userId),
         code: content,
         persona,
         mode: 'standard',
@@ -177,6 +180,11 @@ export const reviewService = {
         reviewData.repoFullName = context.repoFullName;
         reviewData.repoPath = context.path;
         reviewData.repoRef = context.ref;
+      }
+
+      if (context.workspaceId) {
+        reviewData.workspaceId = toObjectId(context.workspaceId);
+        reviewData.reviewContext = 'workspace';
       }
 
       // Save to MongoDB
