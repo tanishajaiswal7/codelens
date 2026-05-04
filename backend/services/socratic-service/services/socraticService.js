@@ -1,5 +1,7 @@
 import axios from 'axios'
 import SocraticSession from '../models/SocraticSession.js'
+import { diffService } from '../../review-service/services/diffService.js'
+import { promptService as reviewPromptService } from '../../review-service/services/promptService.js'
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const MODEL = 'llama-3.3-70b-versatile'
@@ -636,6 +638,54 @@ export const socraticService = {
       currentBugIndex: session.currentBugIndex,
       language: session.language,
       quality: session.quality,
+    }
+  },
+
+  // New: handle code-aware socratic reply triggered asynchronously by a worker
+  async continueSessionWithCode(sessionId, userMessage, codeSnapshot, originalCode = null) {
+    const session = await SocraticSession.findById(sessionId)
+    if (!session) {
+      throw new Error('Session not found')
+    }
+
+    // If no change detected, fall back to standard continueSession
+    const changedContext = diffService.buildChangedContext(originalCode || session.currentCode || '', codeSnapshot || '')
+    if (!changedContext || !changedContext.changedLineNumbers || changedContext.changedLineNumbers.length === 0) {
+      return this.continueSession(sessionId, userMessage, codeSnapshot)
+    }
+
+    // Build a Socratic prompt that focuses on changed lines and the user's reply
+    const { systemPrompt, userMessage: builtUserMessage } = reviewPromptService.buildSocraticCodeAwarePrompt(
+      session.persona,
+      changedContext,
+      userMessage,
+      session.messages || []
+    )
+
+    // Call AI directly for an immediate Socratic follow-up
+    const raw = await callAI(systemPrompt, [{ role: 'user', content: builtUserMessage }], 300)
+    const aiMessage = stripCodeFences(raw.trim())
+
+    session.messages.push({ role: 'user', content: userMessage })
+    session.messages.push({ role: 'ai', content: aiMessage })
+    session.turnCount += 1
+    session.currentCode = codeSnapshot || session.currentCode
+
+    let completed = false
+    if (session.turnCount >= session.maxTurns) {
+      session.status = 'completed'
+      completed = true
+    }
+
+    await session.save()
+
+    return {
+      sessionId: session._id.toString(),
+      aiMessage,
+      turnCount: session.turnCount,
+      maxTurns: session.maxTurns,
+      completed,
+      codeAware: true,
     }
   },
 }

@@ -15,4 +15,8 @@
     "docker:ps": "docker-compose ps",
     "docker:clean": "docker system prune -f"
   }
+  ,
+  "dependencies": {
+    "diff": "^5.0.0"
+  }
 }

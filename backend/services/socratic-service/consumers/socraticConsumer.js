@@ -46,11 +46,21 @@ export async function startSocraticConsumer() {
         })
 
       } else if (payload.action === 'reply') {
-        result = await socraticService.continueSession(
-          payload.sessionId,
-          payload.userMessage,
-          payload.codeSnapshot || null
-        )
+        if (payload.codeSnapshot && payload.originalCode) {
+          // code-aware reply triggered when developer edited code while responding
+          result = await socraticService.continueSessionWithCode(
+            payload.sessionId,
+            payload.userMessage,
+            payload.codeSnapshot,
+            payload.originalCode,
+          )
+        } else {
+          result = await socraticService.continueSession(
+            payload.sessionId,
+            payload.userMessage,
+            payload.codeSnapshot || null
+          )
+        }
 
         // If session completed (10 turns reached)
         if (result.completed) {

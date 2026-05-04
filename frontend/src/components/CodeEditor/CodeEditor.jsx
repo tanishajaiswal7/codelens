@@ -120,16 +120,25 @@ export default function CodeEditor({
 
       <div className="editor-footer">
         {!socraticMode ? (
-          <button
-            className="review-btn"
-            onClick={() => {
-              const codeValue = code || ''
-              onSubmit(codeValue, false)
-            }}
-            disabled={isLoading || !canSubmit}
-          >
-            {isLoading ? 'Reviewing...' : '▶ Review Code'}
-          </button>
+          <>
+            <button
+              className="review-btn"
+              onClick={() => {
+                const codeValue = code || ''
+                onSubmit(codeValue, false)
+              }}
+              disabled={isLoading || !canSubmit}
+            >
+              {isLoading ? 'Reviewing...' : '▶ Review Code'}
+            </button>
+
+            {/* Re-review button appears when a review exists and there are edits */}
+            <ReReviewButton
+              onClick={() => onReReview(code)}
+              isLoading={isReReviewing}
+              hasChanges={reviewExists && hasChanges}
+            />
+          </>
         ) : (
           <div />
         )}

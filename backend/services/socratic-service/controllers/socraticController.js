@@ -45,7 +45,7 @@ export const startSession = async (req, res, next) => {
 
 export const replyToSession = async (req, res, next) => {
   try {
-    const { sessionId, userMessage, currentCode } = req.body
+    const { sessionId, userMessage, currentCode, codeSnapshot, originalCode } = req.body
 
     if (!sessionId) {
       return res.status(400).json({ error: 'sessionId is required' })
@@ -64,7 +64,9 @@ export const replyToSession = async (req, res, next) => {
       action: 'reply',
       sessionId,
       userMessage,
-      currentCode: currentCode || null,
+      // prefer explicit codeSnapshot/originalCode when present
+      codeSnapshot: codeSnapshot || currentCode || null,
+      originalCode: originalCode || null,
     })
 
     res.status(202).json({

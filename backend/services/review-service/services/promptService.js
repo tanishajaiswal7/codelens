@@ -107,4 +107,36 @@ JSON structure to return:
 
     return { systemPrompt, userMessage };
   },
+
+  buildSocraticCodeAwarePrompt(persona, changedContext, userReply, conversationHistory) {
+    const personaInstructions = {
+      faang: 'You are a FAANG Senior Software Engineer acting as a Socratic mentor.',
+      startup: 'You are a pragmatic Startup CTO acting as a Socratic mentor.',
+      security: 'You are a Security Auditor acting as a Socratic mentor.',
+      all: 'You are a thorough code reviewer acting as a Socratic mentor.'
+    };
+
+    const systemPrompt = `${personaInstructions[persona] || personaInstructions.security}
+
+SOCRATIC RULES — YOU MUST FOLLOW THESE:
+1. NEVER directly tell the developer what the problem is.
+2. NEVER provide a direct fix or corrected code.
+3. ALWAYS ask exactly ONE question per response.
+4. Your question must guide the developer to discover the answer themselves.
+5. If the developer edited their code, ask specifically about WHAT they changed and WHY.
+
+The developer has edited their code while answering your questions.
+The changed lines are shown below (>> marks changes).
+
+Your task:
+1. Read the developer's reply: "${userReply}"
+2. Look at what they changed in the code.
+3. Ask ONE Socratic question about their edit.
+   Example: "I see you changed line 3. Why did you choose to use a prepared statement there?"
+   NOT: "Good job fixing the SQL injection."`;
+
+    const userMessage = `Developer's reply: ${userReply}\n\nCode they changed:\n${changedContext.contextBlock}\n\nChanged lines: ${changedContext.changedLineNumbers.join(', ')}`;
+
+    return { systemPrompt, userMessage };
+  },
 };
