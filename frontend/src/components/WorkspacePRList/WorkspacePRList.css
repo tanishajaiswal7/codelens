@@ -10,6 +10,83 @@
   background: var(--bg-2);
 }
 
+.wpr-assign-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.wpr-assign-modal {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+}
+
+.wpr-assign-modal h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.wpr-assign-modal p {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.wpr-member-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--text);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.wpr-assign-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wpr-assign-confirm,
+.wpr-assign-cancel {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border-2);
+}
+
+.wpr-assign-confirm {
+  background: var(--blue);
+  color: white;
+  border-color: var(--blue);
+}
+
+.wpr-assign-confirm:hover {
+  opacity: 0.9;
+}
+
+.wpr-assign-cancel {
+  background: transparent;
+  color: var(--text-2);
+}
+
 .wpr-empty-icon {
   margin-bottom: 10px;
   color: var(--text-3);

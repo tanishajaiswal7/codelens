@@ -25,7 +25,7 @@ export const workspacePRController = {
   async reviewPR(req, res, next) {
     try {
       const { workspaceId, prNumber } = req.params;
-      const { persona = 'security' } = req.body;
+      const { persona = 'security', assignToMemberId = null } = req.body;
 
       // Fetch PR files + metadata
       const { files, prMeta } = await workspacePRService.getPRFilesWithContent(
@@ -45,9 +45,24 @@ export const workspacePRController = {
       const { User } = await import('../../auth-service/models/User.js');
       const workspace = await Workspace.findById(workspaceId).lean();
 
-      // Attribute review to PR author (member), not the manager who clicked review.
+      // Attribute review to assigned member, or fall back to PR author detection
       let reviewedForUserId = req.userId;
-      if (prMeta?.authorLogin) {
+
+      if (assignToMemberId) {
+        // If owner explicitly assigned this review to a member, use that
+        const assignedMember = await WorkspaceMember.findOne({
+          _id: assignToMemberId,
+          workspaceId,
+          isActive: true,
+        })
+          .select('userId')
+          .lean();
+
+        if (assignedMember) {
+          reviewedForUserId = assignedMember.userId.toString();
+        }
+      } else if (prMeta?.authorLogin) {
+        // Otherwise, try to match PR author to workspace member by GitHub username
         const prAuthor = await User.findOne({
           githubUsername: { $regex: `^${prMeta.authorLogin}$`, $options: 'i' },
         })
