@@ -48,6 +48,9 @@ router.delete('/:id/pending-invites/:inviteId', verifyToken, workspaceController
 router.post('/:id/pending-invites/:inviteId/delete', verifyToken, workspaceController.deletePendingInvite);
 router.delete('/:workspaceId/invites/:inviteId', verifyToken, workspaceController.deleteInvite);
 
+// DELETE /api/workspace/:workspaceId — delete workspace (owner only)
+router.delete('/:workspaceId', verifyToken, workspaceController.deleteWorkspace);
+
 // PATCH /api/workspace/:id/repo — update workspace repo link (owner/admin only)
 router.patch('/:id/repo', verifyToken, workspaceController.updateWorkspaceRepo);
 

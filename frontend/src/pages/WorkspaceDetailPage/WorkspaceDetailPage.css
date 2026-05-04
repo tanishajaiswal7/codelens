@@ -997,6 +997,79 @@
   font-weight: 700;
 }
 
+/* Danger zone styles for workspace owner actions */
+.wsd-danger-zone {
+  margin-top: 32px;
+  padding: 20px 24px;
+  border: 1px solid rgba(220,38,38,0.2);
+  border-radius: var(--r);
+  background: var(--red-bg);
+}
+
+.wsd-danger-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--red);
+  margin: 0 0 14px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.wsd-danger-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.wsd-danger-info strong {
+  font-size: 13px;
+  color: var(--text);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.wsd-danger-info p {
+  font-size: 12px;
+  color: var(--text-2);
+  margin: 0;
+  line-height: 1.5;
+  max-width: 440px;
+}
+
+.wsd-delete-btn {
+  height: 34px;
+  padding: 0 16px;
+  background: transparent;
+  color: var(--red);
+  border: 1px solid rgba(220,38,38,0.4);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.wsd-delete-btn:hover {
+  background: var(--red);
+  color: white;
+}
+
+.wsd-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.link-btn.danger {
+  color: var(--red);
+  border-color: rgba(220,38,38,0.3);
+}
+
+.link-btn.danger:hover {
+  background: var(--red-bg);
+}
+
 .verdict-badge {
   background: rgba(248, 113, 113, 0.18);
   color: #f87171;

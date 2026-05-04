@@ -110,6 +110,15 @@ export const workspaceService = {
       throw error;
     }
 
+    // Allow clearing the repo by passing empty string
+    if (!repoUrl || repoUrl.trim() === '') {
+      await Workspace.findByIdAndUpdate(workspaceId, {
+        repoUrl: null,
+        repoFullName: null,
+      });
+      return { repoUrl: null, repoFullName: null };
+    }
+
     const repoInfo = normalizeRepoUrl(repoUrl);
     if (!repoInfo.repoFullName) {
       const error = new Error('Valid repoUrl is required');
@@ -123,6 +132,42 @@ export const workspaceService = {
     });
 
     return repoInfo;
+  },
+
+  async deleteWorkspace(workspaceId, userId) {
+    // Only owner can delete
+    const membership = await WorkspaceMember.findOne({
+      workspaceId,
+      userId,
+      role: 'owner'
+    });
+    if (!membership) {
+      const err = new Error('Only the workspace owner can delete this workspace');
+      err.status = 403;
+      throw err;
+    }
+
+    // Delete members and invites
+    await WorkspaceMember.deleteMany({ workspaceId });
+    await WorkspaceInvite.deleteMany({ workspaceId });
+
+    // Soft unlink reviews — keep them but set workspaceId to null and mark personal context
+    try {
+      const ReviewModule = await import('../../review-service/models/Review.js');
+      const ReviewModel = ReviewModule.Review || ReviewModule.default || ReviewModule;
+      await ReviewModel.updateMany(
+        { workspaceId },
+        { $set: { workspaceId: null, reviewContext: 'personal' } }
+      );
+    } catch (e) {
+      // If the review model can't be updated for any reason, log and continue
+      console.error('Failed to unlink reviews during workspace deletion:', e?.message || e);
+    }
+
+    // Delete the workspace itself
+    await Workspace.findByIdAndDelete(workspaceId);
+
+    return { success: true };
   },
 
   async getUserWorkspaces(userId) {

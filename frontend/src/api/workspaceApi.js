@@ -57,4 +57,6 @@ export const workspaceApi = {
       `/api/workspace/${workspaceId}/repo`,
       { repoUrl }
     ).then((r) => r.data),
+  deleteWorkspace: (workspaceId) =>
+    axiosInstance.delete(`/api/workspace/${workspaceId}`).then((r) => r.data),
 };

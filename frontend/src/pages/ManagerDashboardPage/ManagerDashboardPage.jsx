@@ -206,7 +206,23 @@ const ManagerDashboardPage = () => {
         {statCards.map((card) => (
           <div key={card.label} className={`mdb-stat-card mdb-stat-card--${card.tone}`}>
             <div className="mdb-stat-label">{card.label}</div>
-            <div className="mdb-stat-value">{card.value}</div>
+            {card.label === 'Quality score' ? (
+              stats?.qualityScore === null ? (
+                <div>
+                  <span className="stat-val stat-nodata">—</span>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)' }}>No reviews yet</div>
+                </div>
+              ) : (
+                <span className={`stat-val ${
+                  stats.qualityScore >= 80 ? 'green' :
+                  stats.qualityScore >= 50 ? 'amber' : 'red'
+                }`}>
+                  {stats.qualityScore}%
+                </span>
+              )
+            ) : (
+              <div className="mdb-stat-value">{card.value}</div>
+            )}
           </div>
         ))}
       </div>

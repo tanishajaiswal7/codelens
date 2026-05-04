@@ -15,6 +15,7 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [errorDetail, setErrorDetail] = useState(null);
   const [reviewingPR, setReviewingPR] = useState(null);
   const [completedReviews, setCompletedReviews] = useState({});
   const [persona, setPersona] = useState('security');
@@ -31,6 +32,7 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
       })
       .catch((err) => {
         setError(err.response?.data?.error || 'Failed to load PRs');
+        setErrorDetail(err.response?.data?.detail || null);
         setIsLoading(false);
       });
   }, [workspaceId, refreshSignal]);
@@ -87,7 +89,10 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
 
     return (
       <div className="wpr-error">
-        <p>{error}</p>
+        <strong>{error}</strong>
+        {errorDetail && (
+          <p className="wpr-error-detail">{errorDetail}</p>
+        )}
         {error.includes('GitHub') && <p className="wpr-error-hint">Go to Settings → Connect your GitHub account first.</p>}
         {error.includes('repo') && <p className="wpr-error-hint">Add a GitHub repo link to this workspace in settings.</p>}
       </div>

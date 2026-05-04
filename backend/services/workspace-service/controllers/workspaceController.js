@@ -54,6 +54,37 @@ export const workspaceController = {
     }
   },
 
+  async updateWorkspaceRepo(req, res, next) {
+    try {
+      const userId = req.userId;
+      const { id } = req.params;
+      const { repoUrl } = req.body;
+
+      const result = await workspaceService.updateWorkspaceRepo(id, userId, repoUrl);
+      return res.json(result);
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ error: error.message });
+      }
+      return next(error);
+    }
+  },
+
+  async deleteWorkspace(req, res, next) {
+    try {
+      await workspaceService.deleteWorkspace(
+        req.params.workspaceId || req.params.id,
+        req.userId
+      );
+      res.json({ success: true });
+    } catch (err) {
+      if (err.status) {
+        return res.status(err.status).json({ error: err.message });
+      }
+      next(err);
+    }
+  },
+
   async inviteMember(req, res, next) {
     try {
       const userId = req.userId;

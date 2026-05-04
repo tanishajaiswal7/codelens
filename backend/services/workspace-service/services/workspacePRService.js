@@ -163,24 +163,59 @@ export const workspacePRService = {
 
     // Take top 5 most changed files (skip removed files)
     const reviewableExtensions = [
-      '.js','.jsx','.ts','.tsx','.py','.java','.go','.rs',
-      '.cpp','.c','.cs','.php','.rb','.swift','.kt','.vue',
-      '.html','.css','.sql','.sh'
+      '.js', '.jsx', '.ts', '.tsx',
+      '.py', '.java', '.go', '.rs',
+      '.cpp', '.c', '.cs', '.php',
+      '.rb', '.swift', '.kt', '.vue',
+      '.html', '.css', '.scss', '.sass',
+      '.json', '.yaml', '.yml',
+      '.md', '.mdx', '.txt',
+      '.sh', '.bash', '.zsh',
+      '.sql', '.graphql', '.gql',
+      '.env.example', '.config.js',
+      '.toml', '.ini'
     ];
 
-    const topFiles = filesList
+    const SKIP_EXTENSIONS = [
+      '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp',
+      '.pdf', '.zip', '.tar', '.gz', '.exe', '.dll', '.so',
+      '.lock',
+      '.map'
+    ];
+
+    const SKIP_FILENAMES = [
+      'package-lock.json',
+      'yarn.lock',
+      'pnpm-lock.yaml',
+      'composer.lock'
+    ];
+
+    const codeFiles = filesList
       .filter(f => f.status !== 'removed')
-      .filter(f => reviewableExtensions.some(ext => f.filename.endsWith(ext)))
+      .filter((f) => {
+        const filename = f.filename.split('/').pop();
+        const parts = filename.split('.');
+        const ext = parts.length > 1 ? ('.' + parts.pop().toLowerCase()) : '';
+        if (SKIP_FILENAMES.includes(filename)) return false;
+        if (SKIP_EXTENSIONS.includes(ext)) return false;
+        // include everything else (covers many text/config files)
+        return true;
+      })
       .sort((a, b) => (b.additions + b.deletions) - (a.additions + a.deletions))
       .slice(0, 5);
 
-    if (topFiles.length === 0) {
-      throw { status: 400, message: 'No reviewable code files found in this PR' };
+    if (codeFiles.length === 0) {
+      throw {
+        status: 400,
+        message: 'No reviewable files found in this PR',
+        detail: 'This PR may only contain binary files, lock files, or no changed files. Add some code changes and try again.',
+        suggestion: 'Make sure your PR includes at least one changed code file.'
+      };
     }
 
     // Fetch content for each file
     const filesWithContent = await Promise.all(
-      topFiles.map(async (file) => {
+      codeFiles.map(async (file) => {
         try {
           const contentRes = await fetch(
             `https://api.github.com/repos/${workspace.repoFullName}/contents/${file.filename}?ref=${prDetail.head?.sha || prDetail.head?.ref || 'main'}`,

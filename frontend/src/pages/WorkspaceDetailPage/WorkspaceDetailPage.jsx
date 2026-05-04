@@ -26,6 +26,9 @@ function WorkspaceDetailPage() {
   const [pendingInvites, setPendingInvites] = useState([]);
   const [repoUrl, setRepoUrl] = useState('');
   const [showRepoInput, setShowRepoInput] = useState(false);
+  const [isEditingRepo, setIsEditingRepo] = useState(false);
+  const [editRepoUrl, setEditRepoUrl] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const [workspaceStats, setWorkspaceStats] = useState(null);
 
   useEffect(() => {
@@ -217,6 +220,41 @@ function WorkspaceDetailPage() {
     }
   };
 
+  const handleRemoveRepo = async () => {
+    const confirmed = window.confirm('Remove the linked repo? The dashboard will stop showing PRs.');
+    if (!confirmed) return;
+
+    try {
+      await workspaceApi.updateRepo(id, '');
+      const updated = await workspaceApi.getDetails(id);
+      setWorkspace(updated.workspace);
+      setRepoUrl('');
+      setShowRepoInput(false);
+      setIsEditingRepo(false);
+    } catch (err) {
+      alert('Failed to remove repo');
+    }
+  };
+
+  const handleDeleteWorkspace = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${workspace.name}"?\n\nThis will:\n• Remove all team members\n• Delete all pending invites\n• This cannot be undone`
+    );
+    if (!confirmed) return;
+
+    const doubleConfirmed = window.prompt('This is permanent. Type OK to confirm deletion.');
+    if (doubleConfirmed !== 'OK') return;
+
+    setIsDeleting(true);
+    try {
+      await workspaceApi.deleteWorkspace(id);
+      navigate('/workspace');
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete workspace');
+      setIsDeleting(false);
+    }
+  };
+
   const handleLeaveWorkspace = async () => {
     const confirmed = window.confirm(
       'Are you sure you want to leave this workspace? You will need a new invite to rejoin.'
@@ -314,10 +352,23 @@ function WorkspaceDetailPage() {
       <div className="wsd-card">
         <div className="wsd-card__header">
           <span>GitHub repository</span>
-          {!readOnly && hasRepo && (
-            <button type="button" className="wsd-btn wsd-btn--link" onClick={() => setShowRepoInput((current) => !current)}>
-              Change
-            </button>
+          {!readOnly && hasRepo && isOwnerOrAdmin && (
+            <div>
+              <button
+                type="button"
+                className="wsd-btn wsd-btn--link"
+                onClick={() => {
+                  setEditRepoUrl(workspace.repoUrl || '');
+                  setShowRepoInput(true);
+                  setIsEditingRepo(true);
+                }}
+              >
+                Edit
+              </button>
+              <button type="button" className="wsd-btn wsd-btn--link link-btn danger" onClick={handleRemoveRepo}>
+                Remove
+              </button>
+            </div>
           )}
         </div>
         <div className="wsd-card__body">
@@ -350,20 +401,42 @@ function WorkspaceDetailPage() {
                 <input
                   type="text"
                   placeholder="https://github.com/owner/repo"
-                  value={repoUrl}
-                  onChange={(e) => setRepoUrl(e.target.value)}
+                  value={isEditingRepo ? editRepoUrl : repoUrl}
+                  onChange={(e) => isEditingRepo ? setEditRepoUrl(e.target.value) : setRepoUrl(e.target.value)}
                   className="wsd-input"
                 />
                 <div className="wsd-inline-actions">
-                  <button type="button" className="wsd-btn wsd-btn--primary" onClick={handleUpdateRepo} disabled={!repoUrl.trim()}>
-                    Link repo
+                  <button
+                    type="button"
+                    className="wsd-btn wsd-btn--primary"
+                    onClick={async () => {
+                      try {
+                        if (isEditingRepo) {
+                          await workspaceApi.updateRepo(id, editRepoUrl.trim());
+                        } else {
+                          await workspaceApi.updateRepo(id, repoUrl.trim());
+                        }
+                        const updated = await workspaceApi.getDetails(id);
+                        setWorkspace(updated.workspace);
+                        setRepoUrl(updated.workspace?.repoUrl || '');
+                        setShowRepoInput(false);
+                        setIsEditingRepo(false);
+                      } catch (err) {
+                        alert(err.response?.data?.error || 'Failed to update repo');
+                      }
+                    }}
+                    disabled={!(isEditingRepo ? editRepoUrl.trim() : repoUrl.trim())}
+                  >
+                    {isEditingRepo ? 'Save' : 'Link repo'}
                   </button>
-                  {workspace.repoUrl && !readOnly && showRepoInput && (
+                  {(workspace.repoUrl || isEditingRepo) && !readOnly && showRepoInput && (
                     <button
                       type="button"
                       className="wsd-btn wsd-btn--ghost"
                       onClick={() => {
                         setShowRepoInput(false);
+                        setIsEditingRepo(false);
+                        setEditRepoUrl('');
                         setRepoUrl(workspace.repoUrl || '');
                       }}
                     >
@@ -648,6 +721,25 @@ function WorkspaceDetailPage() {
         </div>
 
         {isOwnerOrAdmin && renderPendingInvitesCard()}
+
+        {requestingUserRole === 'owner' && (
+          <div className="wsd-danger-zone">
+            <h3 className="wsd-danger-title">Danger zone</h3>
+            <div className="wsd-danger-row">
+              <div className="wsd-danger-info">
+                <strong>Delete workspace</strong>
+                <p>Permanently delete this workspace and remove all members. This cannot be undone.</p>
+              </div>
+              <button
+                className="wsd-delete-btn"
+                onClick={handleDeleteWorkspace}
+                disabled={isDeleting}
+              >
+                {isDeleting ? 'Deleting...' : 'Delete workspace'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       <InviteModal

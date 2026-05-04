@@ -75,7 +75,7 @@ export const dashboardService = {
     const approvedCount = reviews.filter(r => r.verdict === 'approved').length;
     const qualityScore = totalReviews > 0
       ? Math.round((approvedCount / totalReviews) * 100)
-      : 100;
+      : null;
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const reviewsThisWeek = reviews.filter(
       r => new Date(r.createdAt) > oneWeekAgo

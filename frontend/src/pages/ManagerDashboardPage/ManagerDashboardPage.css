@@ -757,6 +757,18 @@
   font-size: 13px;
 }
 
+/* No-data presentation for quality score */
+.stat-nodata {
+  color: var(--text-3);
+  font-size: 22px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.stat-val.green { color: var(--green); }
+.stat-val.amber { color: var(--amber); }
+.stat-val.red { color: var(--red); }
+
 .manager-dashboard-page {
   width: 100%;
   max-width: 1100px;
