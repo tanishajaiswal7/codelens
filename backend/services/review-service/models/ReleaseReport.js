@@ -48,6 +48,14 @@ const releaseReportSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    qualityScore: {
+      type: Number,
+      default: null,
+    },
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
     approvedPRCount: {
       type: Number,
       required: true,

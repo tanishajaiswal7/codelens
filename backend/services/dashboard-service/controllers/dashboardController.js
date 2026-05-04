@@ -56,7 +56,7 @@ export const dashboardController = {
   async generateReport(req, res) {
     try {
       const { workspaceId } = req.params;
-      const { sprintName } = req.body;
+      const { sprintName, selectedReviewIds = [] } = req.body;
       const requestingUserId = req.userId;
 
       if (!sprintName || typeof sprintName !== 'string') {
@@ -65,7 +65,12 @@ export const dashboardController = {
         });
       }
 
-      const report = await dashboardService.generateReleaseReport(workspaceId, requestingUserId, sprintName);
+      const report = await dashboardService.generateReleaseReport(
+        workspaceId,
+        requestingUserId,
+        sprintName,
+        Array.isArray(selectedReviewIds) ? selectedReviewIds : []
+      );
 
       res.json({
         message: 'Release report generated',
@@ -172,6 +177,42 @@ export const dashboardController = {
       console.error('Get report error:', error.message);
       res.status(500).json({
         message: 'Failed to retrieve report',
+        error: error.message,
+      });
+    }
+  },
+
+  async deleteReport(req, res) {
+    try {
+      const { workspaceId, reportId } = req.params;
+      const requestingUserId = req.userId;
+
+      const member = await WorkspaceMember.findOne({
+        workspaceId,
+        userId: requestingUserId,
+        role: { $in: ['owner', 'admin'] },
+        isActive: true,
+      });
+      if (!member) {
+        return res.status(403).json({
+          message: 'Forbidden: Only workspace owners and admins can delete reports',
+        });
+      }
+
+      const report = await ReleaseReport.findOneAndDelete({
+        _id: reportId,
+        workspaceId,
+      });
+
+      if (!report) {
+        return res.status(404).json({ message: 'Report not found' });
+      }
+
+      res.json({ message: 'Report deleted' });
+    } catch (error) {
+      console.error('Delete report error:', error.message);
+      res.status(500).json({
+        message: 'Failed to delete report',
         error: error.message,
       });
     }

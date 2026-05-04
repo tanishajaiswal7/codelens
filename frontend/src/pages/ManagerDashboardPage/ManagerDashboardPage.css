@@ -1633,6 +1633,22 @@
   font-size: 12px;
 }
 
+.mdb-report-select-label {
+  margin-top: 10px;
+}
+
+.mdb-report-select {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+}
+
 .mdb-past-reports {
   margin-top: 16px;
 }
@@ -1671,6 +1687,33 @@
   color: var(--text-3);
   font-size: 11px;
   white-space: nowrap;
+}
+
+.report-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.report-delete-btn {
+  height: 28px;
+  padding: 0 12px;
+  background: rgba(220, 38, 38, 0.08);
+  color: var(--red);
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  border-radius: var(--r-sm);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.report-delete-btn:hover:not(:disabled) {
+  background: rgba(220, 38, 38, 0.16);
+}
+
+.report-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .mdb-member-grid {

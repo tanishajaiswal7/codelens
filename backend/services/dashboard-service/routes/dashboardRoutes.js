@@ -22,6 +22,9 @@ router.get('/:workspaceId/reports', dashboardController.getReports);
 // GET /api/dashboard/:workspaceId/reports/:reportId - Get one report
 router.get('/:workspaceId/reports/:reportId', dashboardController.getReport);
 
+// DELETE /api/dashboard/:workspaceId/reports/:reportId - Delete one report
+router.delete('/:workspaceId/reports/:reportId', dashboardController.deleteReport);
+
 // POST /api/dashboard/:workspaceId/reviews/:reviewId/decision - Approve or reject review (owner/admin only)
 router.post('/:workspaceId/reviews/:reviewId/decision', dashboardController.makeDecision);
 

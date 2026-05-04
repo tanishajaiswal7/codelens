@@ -204,13 +204,7 @@ export const dashboardService = {
       throw new Error('Forbidden: Only workspace owners and admins can access dashboard');
     }
 
-    // Get all active member userIds
-    const members = await WorkspaceMember.find({
-      workspaceId,
-      isActive: true,
-    }).select('userId');
-
-    const memberUserIds = members.map(m => m.userId);
+    const workspaceObjectId = new mongoose.Types.ObjectId(workspaceId);
 
     // Get all PR reviews
     const prReviews = await Review.find({
@@ -238,7 +232,7 @@ export const dashboardService = {
     });
   },
 
-  async generateReleaseReport(workspaceId, requestingUserId, sprintName) {
+  async generateReleaseReport(workspaceId, requestingUserId, sprintName, selectedReviewIds = []) {
     // Verify owner or admin
     const member = await WorkspaceMember.findOne({
       workspaceId,
@@ -247,38 +241,79 @@ export const dashboardService = {
     });
     if (!member) throw { status: 403, message: 'Access denied' };
 
-    const stats = await this.getWorkspaceStats(workspaceId, requestingUserId);
+    const workspaceObjectId = new mongoose.Types.ObjectId(workspaceId);
+    const workspace = await Workspace.findById(workspaceId).lean();
 
-    const blockers = stats.reviewRows.filter(
+    const reviewQuery = {
+      workspaceId: workspaceObjectId,
+      source: 'github_pr',
+      deleted: { $ne: true },
+    };
+
+    if (selectedReviewIds.length > 0) {
+      reviewQuery._id = {
+        $in: selectedReviewIds.map((id) => new mongoose.Types.ObjectId(id)),
+      };
+    }
+
+    const selectedReviews = await Review.find(reviewQuery)
+      .populate('userId', 'name')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (selectedReviews.length === 0) {
+      throw { status: 400, message: 'No reviewed PRs found for report generation' };
+    }
+
+    const reviewRows = selectedReviews.map((review) => ({
+      reviewId: review._id,
+      prNumber: review.prNumber,
+      title: review.prTitle || review.repoPath || `PR #${review.prNumber || ''}`,
+      filePath: review.repoPath || null,
+      repoFullName: review.repoFullName || workspace?.repoFullName || null,
+      authorName: review.userId?.name || 'Unknown',
+      issueCount: review.suggestions?.length || 0,
+      criticalCount: review.suggestions?.filter((s) => s.severity === 'critical').length || 0,
+      highCount: review.suggestions?.filter((s) => s.severity === 'high').length || 0,
+      verdict: review.verdict || 'unknown',
+      createdAt: review.createdAt,
+    }));
+
+    const blockers = reviewRows.filter(
       r => r.criticalCount > 0 || r.verdict === 'needs_revision'
     );
-    const warnings = stats.reviewRows.filter(
+    const warnings = reviewRows.filter(
       r => r.highCount > 0 || r.verdict === 'minor_issues'
     );
-    const approved = stats.reviewRows.filter(
+    const approved = reviewRows.filter(
       r => r.verdict === 'approved'
     );
+
+    const totalReviews = reviewRows.length;
+    const qualityScore = totalReviews > 0
+      ? Math.round((approved.length / totalReviews) * 100)
+      : null;
 
     const isReady = blockers.length === 0 && warnings.length === 0;
     const verdict = isReady ? 'ready' : 'not_ready';
     const reportSummary = isReady
-      ? `All ${stats.reviewedPrCount} reviewed pull requests are in good shape. The sprint is ready to ship.`
+      ? `All ${totalReviews} reviewed pull requests are in good shape. The sprint is ready to ship.`
       : `${blockers.length} PR(s) have blocking issues and ${warnings.length} additional PR(s) need attention before release.`;
     const recommendations = isReady
       ? 'Proceed with the release, merge approved pull requests, and keep monitoring the next sprint.'
       : 'Resolve all blockers first, then revisit warnings and re-run reviews before merging.';
-    const prReviewIds = stats.reviewRows.map((review) => review.reviewId);
+    const prReviewIds = reviewRows.map((review) => review.reviewId);
 
     const report = {
       sprintName: sprintName || 'Sprint',
       workspaceId,
-      repoFullName: stats.repoFullName,
+      repoFullName: workspace?.repoFullName || null,
       generatedAt: new Date(),
       isReady,
       verdict,
       executiveSummary: reportSummary,
-      qualityScore: stats.qualityScore,
-      totalReviews: stats.reviewedPrCount,
+      qualityScore,
+      totalReviews,
       approvedCount: approved.length,
       blockerCount: blockers.length,
       warningCount: warnings.length,
@@ -319,6 +354,8 @@ export const dashboardService = {
       blockers: report.blockers,
       risks: report.warnings,
       recommendations: report.recommendations,
+      qualityScore: report.qualityScore,
+      totalReviews: report.totalReviews,
       approvedPRCount: report.approvedPRCount,
       flaggedPRCount: report.flaggedPRCount,
     });

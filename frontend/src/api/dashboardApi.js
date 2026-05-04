@@ -13,9 +13,10 @@ export const dashboardApi = {
     return response.data.prs;
   },
 
-  async generateReport(workspaceId, sprintName) {
+  async generateReport(workspaceId, sprintName, selectedReviewIds = []) {
     const response = await axiosInstance.post(`${API_BASE}/${workspaceId}/report`, {
       sprintName,
+      selectedReviewIds,
     });
     return response.data.report;
   },
@@ -28,6 +29,11 @@ export const dashboardApi = {
   async getReport(workspaceId, reportId) {
     const response = await axiosInstance.get(`${API_BASE}/${workspaceId}/reports/${reportId}`);
     return response.data.report;
+  },
+
+  async deleteReport(workspaceId, reportId) {
+    const response = await axiosInstance.delete(`${API_BASE}/${workspaceId}/reports/${reportId}`);
+    return response.data;
   },
 
   async makeDecision(workspaceId, reviewId, decision, feedback) {

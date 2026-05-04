@@ -46,6 +46,7 @@ const ManagerDashboardPage = () => {
   const [prs, setPrs] = useState([]);
   const [selectedPRs, setSelectedPRs] = useState([]);
   const [sprintName, setSprintName] = useState('');
+  const [selectedReportReviewId, setSelectedReportReviewId] = useState('all');
   const [reports, setReports] = useState([]);
   const [expandedPR, setExpandedPR] = useState(null);
   const [filter, setFilter] = useState('All');
@@ -55,6 +56,7 @@ const ManagerDashboardPage = () => {
   const [showReportModal, setShowReportModal] = useState(false);
   const [generatedReport, setGeneratedReport] = useState(null);
   const [viewingReport, setViewingReport] = useState(null);
+  const [deletingReportId, setDeletingReportId] = useState(null);
   const [prListRefreshSignal, setPrListRefreshSignal] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [decisionFeedbacks, setDecisionFeedbacks] = useState({});
@@ -112,7 +114,8 @@ const ManagerDashboardPage = () => {
 
     setGenerating(true);
     try {
-      const report = await dashboardApi.generateReport(workspaceId, sprintName.trim());
+      const selectedReviewIds = selectedReportReviewId === 'all' ? [] : [selectedReportReviewId];
+      const report = await dashboardApi.generateReport(workspaceId, sprintName.trim(), selectedReviewIds);
       setGeneratedReport(report);
       setShowReportModal(true);
       const reportsData = await dashboardApi.getReports(workspaceId);
@@ -121,6 +124,24 @@ const ManagerDashboardPage = () => {
       console.error('Failed to generate report:', reportError);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleDeleteReport = async (reportId) => {
+    const confirmed = window.confirm('Delete this generated report?');
+    if (!confirmed) return;
+
+    setDeletingReportId(reportId);
+    try {
+      await dashboardApi.deleteReport(workspaceId, reportId);
+      setReports((prev) => prev.filter((report) => report.id !== reportId));
+      if (viewingReport?.id === reportId) {
+        setViewingReport(null);
+      }
+    } catch (deleteError) {
+      console.error('Failed to delete report:', deleteError);
+    } finally {
+      setDeletingReportId(null);
     }
   };
 
@@ -151,6 +172,7 @@ const ManagerDashboardPage = () => {
   });
 
   const recentNotifications = prs.slice(0, 5);
+  const reviewedPrOptions = prs.filter((pr) => !!pr.id);
   const hasReviewedPRs = (stats?.reviewedPrCount || 0) > 0;
   const hasLinkedRepo = Boolean(stats?.repoFullName);
   const memberStats = Array.isArray(stats?.memberStats) ? stats.memberStats : [];
@@ -432,6 +454,21 @@ const ManagerDashboardPage = () => {
                   onChange={(event) => setSprintName(event.target.value)}
                   className="mdb-sprint-input"
                 />
+
+                <label htmlFor="review-selector" className="mdb-sprint-label mdb-report-select-label">Reviewed PR</label>
+                <select
+                  id="review-selector"
+                  value={selectedReportReviewId}
+                  onChange={(event) => setSelectedReportReviewId(event.target.value)}
+                  className="mdb-report-select"
+                >
+                  <option value="all">All reviewed PRs</option>
+                  {reviewedPrOptions.map((pr) => (
+                    <option key={pr.id} value={pr.id}>
+                      #{pr.prNumber || 'N/A'} · {pr.authorName || 'Unknown'} · {pr.prTitle || 'PR review'}
+                    </option>
+                  ))}
+                </select>
               </div>
               <button
                 type="button"
@@ -467,13 +504,23 @@ const ManagerDashboardPage = () => {
                           {verdict.label}
                         </span>
                         <span className="mdb-report-date">{new Date(report.createdAt).toLocaleDateString()}</span>
-                        <button
-                          type="button"
-                          className="report-view-btn"
-                          onClick={() => setViewingReport(report)}
-                        >
-                          View
-                        </button>
+                        <div className="report-row-actions">
+                          <button
+                            type="button"
+                            className="report-view-btn"
+                            onClick={() => setViewingReport(report)}
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            className="report-delete-btn"
+                            onClick={() => handleDeleteReport(report.id)}
+                            disabled={deletingReportId === report.id}
+                          >
+                            {deletingReportId === report.id ? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
