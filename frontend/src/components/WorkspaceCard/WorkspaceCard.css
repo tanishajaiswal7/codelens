@@ -1,97 +1,54 @@
-.workspace-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 24px;
-  padding: 1.5rem;
-  cursor: pointer;
-  transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
-  background: rgba(255, 255, 255, 0.03);
-  min-height: 170px;
+.wc {
+  position: relative;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-1);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-}
-
-.workspace-card:hover {
-  border-color: rgba(96, 165, 250, 0.4);
-  box-shadow: 0 28px 70px rgba(19, 46, 93, 0.16);
-  transform: translateY(-3px);
-}
-
-.workspace-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.workspace-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-  color: var(--text);
-  font-weight: 700;
-}
-
-.role-badge {
-  font-size: 0.75rem;
-  padding: 0.4rem 0.75rem;
-  border-radius: 999px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.role-owner {
-  background: rgba(250, 204, 21, 0.16);
-  color: #facc15;
-}
-
-.role-admin {
-  background: rgba(251, 146, 60, 0.16);
-  color: #fdba74;
-}
-
-.role-member {
-  background: rgba(96, 165, 250, 0.16);
-  color: #93c5fd;
-}
-
-.workspace-plan {
-  font-size: 0.95rem;
-  color: var(--text-2);
-  margin-bottom: 1.25rem;
-  text-transform: capitalize;
-}
-
-.workspace-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  color: var(--text-3);
-  font-size: 0.88rem;
-}
-
-.workspace-delete-btn {
-  border: 1px solid rgba(220, 38, 38, 0.32);
-  background: rgba(220, 38, 38, 0.1);
-  color: #fca5a5;
-  border-radius: 999px;
-  padding: 0.45rem 0.85rem;
-  font-size: 0.78rem;
-  font-weight: 700;
+  overflow: hidden;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
 }
 
-.workspace-delete-btn:hover {
-  background: rgba(220, 38, 38, 0.18);
-  border-color: rgba(248, 113, 113, 0.5);
+.wc:hover {
+  border-color: var(--border-2);
   transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
-.workspace-delete-btn:disabled {
-  opacity: 0.65;
-  cursor: wait;
-  transform: none;
+.wc-accent-line { height: 2px; width: 100%; flex-shrink: 0; }
+
+.wc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 16px 12px;
 }
+
+.wc-avatar {
+  width: 40px; height: 40px; border-radius: 10px; border: 1px solid; display:flex; align-items:center; justify-content:center; font-size:18px; font-weight:600; flex-shrink:0;
+}
+
+.wc-info { flex:1; min-width:0 }
+.wc-name { font-size:14px; font-weight:600; color:var(--text); letter-spacing:-0.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis }
+.wc-role { font-size:11px; color:var(--text-3); margin-top:2px }
+
+.wc-badges { display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex-shrink:0 }
+.wc-badge { font-size:9px; font-weight:600; padding:2px 7px; border-radius:20px; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap }
+.wc-badge-owner { background: rgba(245,158,11,0.12); color: var(--amber); border:1px solid rgba(245,158,11,0.25) }
+.wc-badge-pro { background: var(--accent-glow); color: var(--accent-2); border:1px solid rgba(99,102,241,0.25) }
+.wc-badge-free { background: var(--bg-3); color: var(--text-3); border:1px solid var(--border) }
+
+.wc-stats { display:flex; align-items:center; gap:8px; padding:0 16px 14px; flex-wrap:wrap }
+.wc-stat-item { display:flex; align-items:center; gap:4px }
+.wc-stat-icon { font-size:11px }
+.wc-stat-text { font-size:11px; color:var(--text-3) }
+.wc-stat-dot { width:3px; height:3px; border-radius:50%; background:var(--text-3); opacity:0.4 }
+
+.wc-footer { display:flex; align-items:center; justify-content:space-between; padding:10px 16px; border-top:1px solid var(--border); background:var(--bg-2); margin-top:auto }
+
+.wc-open-btn { font-size:12px; font-weight:500; color:var(--accent-2); background:transparent; border:none; cursor:pointer; font-family:'Instrument Sans', sans-serif; padding:0; letter-spacing:-0.01em }
+.wc-open-btn:hover { color:var(--text) }
+
+.wc-delete-btn { font-size:11px; color:var(--text-3); background:transparent; border:none; cursor:pointer; font-family:'Instrument Sans', sans-serif; padding:3px 8px; border-radius:var(--r-sm); border:1px solid transparent }
+.wc-delete-btn:hover { color:var(--red); border-color: rgba(239,68,68,0.25); background: var(--red-bg) }
