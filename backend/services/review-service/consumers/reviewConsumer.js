@@ -37,9 +37,8 @@ export async function startReviewConsumer() {
           payload.userId,
           payload.originalCode,
           payload.updatedCode,
-          payload.persona,
           payload.originalSuggestions,
-          payload.parentReviewId
+          payload.persona
         )
       }
 

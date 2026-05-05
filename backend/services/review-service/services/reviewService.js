@@ -365,7 +365,7 @@ Return ONLY this JSON:
   "summary": "2 issues resolved, 1 new issue found"
 }`;
 
-    const aiResponse = await this.callAIForReReview(systemPrompt, reReviewPrompt);
+    const aiResponse = await this.callReReviewAI(systemPrompt, reReviewPrompt);
 
     let parsed;
     try {
