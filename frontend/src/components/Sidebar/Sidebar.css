@@ -8,6 +8,8 @@
   padding: 10px 6px;
   overflow-y: auto;
   animation: slideIn 0.2s ease-out;
+  position: relative;
+  z-index: 60;
 }
 
 @keyframes slideIn {
