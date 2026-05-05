@@ -168,6 +168,41 @@
   box-shadow: 0 2px 8px rgba(91,91,214,0.15);
 }
 
+.resolved-section {
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.2);
+  border-radius: var(--r);
+  margin: 8px 12px 0;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.resolved-header {
+  padding: 8px 11px;
+  background: rgba(16,185,129,0.12);
+  border-bottom: 1px solid rgba(16,185,129,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.resolved-count {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.resolved-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
 .suggestions {
   flex: 1;
   overflow-y: auto;

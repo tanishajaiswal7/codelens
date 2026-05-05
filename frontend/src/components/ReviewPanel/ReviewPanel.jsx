@@ -83,13 +83,22 @@ export default function ReviewPanel({
     return mapping[verdict] || 'Review Complete';
   };
 
-  let filteredSuggestions = review.suggestions;
+  // Separate resolved from active suggestions for re-review
+  const resolvedSuggestions = reReviewMeta
+    ? previousReview?.suggestions?.filter((s) => resolvedSuggestionIds.includes(s.id)) || []
+    : [];
+  
+  const activeSuggestions = review.suggestions.filter(
+    (s) => s.status !== 'resolved' && s.status !== 'unchanged'
+  );
+
+  let filteredSuggestions = activeSuggestions;
   if (filter === 'high') {
-    filteredSuggestions = review.suggestions.filter(
+    filteredSuggestions = activeSuggestions.filter(
       (s) => s.confidence >= 85
     );
   } else if (filter === 'critical') {
-    filteredSuggestions = review.suggestions.filter(
+    filteredSuggestions = activeSuggestions.filter(
       (s) => s.severity === 'critical'
     );
   }
@@ -113,7 +122,7 @@ export default function ReviewPanel({
       {previousReview && (
         <ScoreStrip
           previousCount={previousReview.suggestions.length}
-          currentCount={review.suggestions.length}
+          currentCount={activeSuggestions.length}
         />
       )}
 
@@ -144,7 +153,7 @@ export default function ReviewPanel({
           className={`chip ${filter === 'all' ? 'active' : ''}`}
           onClick={() => setFilter('all')}
         >
-          All ({review.suggestions.length})
+          All ({activeSuggestions.length})
         </button>
         <button
           className={`chip ${filter === 'high' ? 'active' : ''}`}
@@ -152,7 +161,7 @@ export default function ReviewPanel({
         >
           High Confidence (
           {
-            review.suggestions.filter((s) => s.confidence >= 85).length
+            activeSuggestions.filter((s) => s.confidence >= 85).length
           }
           )
         </button>
@@ -161,28 +170,32 @@ export default function ReviewPanel({
           onClick={() => setFilter('critical')}
         >
           Critical (
-          {review.suggestions.filter((s) => s.severity === 'critical').length}
+          {activeSuggestions.filter((s) => s.severity === 'critical').length}
           )
         </button>
       </div>
 
-      {filteredSuggestions.length > 0 ? (
-        <div className="suggestions">
-          {resolvedSuggestionIds.map((id) => {
-            const original = previousReview?.suggestions?.find((s) => s.id === id);
-            if (!original) {
-              return null;
-            }
-
-            return (
+      {/* Show resolved section first if re-review */}
+      {reReviewMeta && resolvedSuggestions.length > 0 && (
+        <div className="resolved-section">
+          <div className="resolved-header">
+            <span className="resolved-count">✓ {resolvedSuggestions.length} Fixed</span>
+          </div>
+          <div className="resolved-list">
+            {resolvedSuggestions.map((suggestion) => (
               <SuggestionCard
-                key={`resolved-${id}`}
-                suggestion={original}
+                key={`resolved-${suggestion.id}`}
+                suggestion={suggestion}
                 isResolved
                 onLineRefClick={onSuggestionClick}
               />
-            );
-          })}
+            ))}
+          </div>
+        </div>
+      )}
+
+      {filteredSuggestions.length > 0 ? (
+        <div className="suggestions">
           {filteredSuggestions.map((suggestion) => (
             <SuggestionCard
               key={suggestion.id}
@@ -196,7 +209,11 @@ export default function ReviewPanel({
         <div className="suggestions">
           <div className="review-empty">
             <div className="review-empty-text">No suggestions</div>
-            <div className="review-empty-subtext">No suggestions match this filter</div>
+            <div className="review-empty-subtext">
+              {reReviewMeta && resolvedSuggestions.length > 0
+                ? 'All issues have been resolved!'
+                : 'No suggestions match this filter'}
+            </div>
           </div>
         </div>
       )}
