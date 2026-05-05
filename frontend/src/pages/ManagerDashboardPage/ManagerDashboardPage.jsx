@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { dashboardApi } from '../../api/dashboardApi';
 import { workspaceApi } from '../../api/workspaceApi';
+import BackButton from '../../components/BackButton/BackButton.jsx';
 import ReleaseReportModal from '../../components/ReleaseReportModal/ReleaseReportModal';
 import WorkspacePRList from '../../components/WorkspacePRList/WorkspacePRList';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
@@ -283,6 +284,7 @@ const ManagerDashboardPage = () => {
 
   return (
     <div className="manager-dashboard-page">
+      <BackButton fallback={`/workspace/${workspaceId}`} variant="global" />
       <div className="mdb-hero">
         <div className="mdb-hero-copy">
           <p className="mdb-kicker">Manager dashboard</p>
