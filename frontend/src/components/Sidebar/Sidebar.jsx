@@ -11,6 +11,7 @@ export default function Sidebar({
   rateLimitUsed = 0,
   rateLimitTotal = 20,
   refreshKey = 0,
+  sidebarWidth = 220,
 }) {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +59,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className="sidebar">
+    <aside className="sidebar" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
       <div className="sidebar-nav-wrapper">
         <button className="sidebar-nav-item active" onClick={() => navigate('/dashboard')} type="button">
           <span>🆕</span> New Review
@@ -104,4 +105,5 @@ Sidebar.propTypes = {
   rateLimitUsed: PropTypes.number,
   rateLimitTotal: PropTypes.number,
   refreshKey: PropTypes.number,
+  sidebarWidth: PropTypes.number,
 };

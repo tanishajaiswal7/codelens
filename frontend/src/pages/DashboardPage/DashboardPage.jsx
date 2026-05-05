@@ -46,10 +46,13 @@ function DashboardContent({ user }) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [splitRatio, setSplitRatio] = useState(50);
   const [isResizing, setIsResizing] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(340);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [historyView, setHistoryView] = useState(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const splitContainerRef = useRef(null);
+  const dashboardBodyRef = useRef(null);
   const editorRef = useRef(null);
   const dashboardMainRef = useRef(null);
 
@@ -196,6 +199,50 @@ function DashboardContent({ user }) {
     if (event.key === 'ArrowRight') {
       event.preventDefault();
       setSplitRatio((prev) => Math.min(75, prev + 2));
+    }
+  };
+
+  useEffect(() => {
+    if (!isResizingSidebar) return undefined;
+
+    const handleMouseMove = (event) => {
+      if (!dashboardBodyRef.current) return;
+
+      const rect = dashboardBodyRef.current.getBoundingClientRect();
+      if (rect.width === 0) return;
+
+      const nextWidth = event.clientX - rect.left;
+      const maxWidth = Math.max(280, rect.width - 320);
+      const clamped = Math.min(maxWidth, Math.max(220, nextWidth));
+      setSidebarWidth(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizingSidebar]);
+
+  const handleSidebarResizerKeyDown = (event) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      setSidebarWidth((prev) => Math.max(220, prev - 16));
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      setSidebarWidth((prev) => Math.min(480, prev + 16));
     }
   };
 
@@ -567,7 +614,7 @@ function DashboardContent({ user }) {
         onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
       />
       
-      <div className="dashboard-body">
+      <div className="dashboard-body" ref={dashboardBodyRef}>
         {sidebarOpen && (
           <SidebarEnhanced 
             onReviewSelect={handleSelectReview}
@@ -575,6 +622,22 @@ function DashboardContent({ user }) {
             rateLimitUsed={rateLimitUsed}
             rateLimitTotal={20}
             refreshKey={historyRefreshKey}
+            sidebarWidth={sidebarWidth}
+          />
+        )}
+
+        {sidebarOpen && (
+          <div
+            className="sidebar-resizer"
+            role="separator"
+            aria-label="Resize sidebar"
+            aria-orientation="vertical"
+            aria-valuemin={220}
+            aria-valuemax={480}
+            aria-valuenow={Math.round(sidebarWidth)}
+            tabIndex={0}
+            onMouseDown={() => setIsResizingSidebar(true)}
+            onKeyDown={handleSidebarResizerKeyDown}
           />
         )}
 

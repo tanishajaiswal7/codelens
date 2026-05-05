@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../../components/Topbar/Topbar.jsx';
 import Sidebar from '../../components/Sidebar/Sidebar.jsx';
@@ -16,6 +16,9 @@ export default function WorkspacePage() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [deletingWorkspaceId, setDeletingWorkspaceId] = useState(null);
+  const [sidebarWidth, setSidebarWidth] = useState(220);
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const bodyRef = useRef(null);
 
   const fetchWorkspaces = useCallback(async () => {
     try {
@@ -36,6 +39,50 @@ export default function WorkspacePage() {
   }, []);
 
   useEffect(() => { fetchWorkspaces(); }, [fetchWorkspaces]);
+
+  useEffect(() => {
+    if (!isResizingSidebar) return undefined;
+
+    const handleMouseMove = (event) => {
+      if (!bodyRef.current) return;
+
+      const rect = bodyRef.current.getBoundingClientRect();
+      if (rect.width === 0) return;
+
+      const nextWidth = event.clientX - rect.left;
+      const maxWidth = Math.max(220, rect.width - 360);
+      const clamped = Math.min(maxWidth, Math.max(180, nextWidth));
+      setSidebarWidth(clamped);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizingSidebar]);
+
+  const handleSidebarResizerKeyDown = (event) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      setSidebarWidth((prev) => Math.max(180, prev - 16));
+    }
+
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      setSidebarWidth((prev) => Math.min(420, prev + 16));
+    }
+  };
 
   const handleCreate = async (name) => {
     setIsCreating(true);
@@ -115,8 +162,20 @@ export default function WorkspacePage() {
   return (
     <div className="workspace-page">
       <Topbar />
-      <div className="wp-body">
-        <Sidebar activeNav="workspaces" />
+      <div className="wp-body" ref={bodyRef} style={{ '--sidebar-width': `${sidebarWidth}px` }}>
+        <Sidebar activeNav="workspaces" sidebarWidth={sidebarWidth} />
+        <div
+          className="wp-sidebar-resizer"
+          role="separator"
+          aria-label="Resize sidebar"
+          aria-orientation="vertical"
+          aria-valuemin={180}
+          aria-valuemax={420}
+          aria-valuenow={Math.round(sidebarWidth)}
+          tabIndex={0}
+          onMouseDown={() => setIsResizingSidebar(true)}
+          onKeyDown={handleSidebarResizerKeyDown}
+        />
 
         <div className="wp-main">
           <div className="wp-page-header">

@@ -12,6 +12,7 @@ export default function SidebarEnhanced({
   rateLimitUsed = 0,
   rateLimitTotal = 20,
   refreshKey = 0,
+  sidebarWidth = 340,
 }) {
   const [history, setHistory] = useState([]);
   const [filteredHistory, setFilteredHistory] = useState([]);
@@ -102,7 +103,7 @@ export default function SidebarEnhanced({
   const hasActiveFilters = searchQuery || selectedPersonaFilter !== 'all' || sortBy !== 'recent';
 
   return (
-    <aside className="sidebar-enhanced">
+    <aside className="sidebar-enhanced" style={{ '--sidebar-width': `${sidebarWidth}px` }}>
       <div className="sidebar-nav-wrapper">
         <button
           className="sidebar-nav-item active"
@@ -257,6 +258,7 @@ SidebarEnhanced.propTypes = {
   rateLimitUsed: PropTypes.number,
   rateLimitTotal: PropTypes.number,
   refreshKey: PropTypes.number,
+  sidebarWidth: PropTypes.number,
 };
 
 SidebarEnhanced.defaultProps = {
