@@ -695,6 +695,7 @@ function DashboardContent({ user }) {
                     onReReview={handleReReview}
                     socraticCodeChanged={socraticCodeChanged}
                     isLoading={isSocraticLoading || isLoading}
+                    activeIssuesCount={currentReview?.suggestions?.filter((s) => s.status !== 'resolved' && s.status !== 'unchanged').length || 999}
                   />
                 </div>
 

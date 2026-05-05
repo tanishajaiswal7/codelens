@@ -1,8 +1,11 @@
 import PropTypes from 'prop-types';
 import './ReReviewButton.css';
 
-export default function ReReviewButton({ onClick, isLoading, hasChanges }) {
-  if (!hasChanges) {
+export default function ReReviewButton({ onClick, isLoading, hasChanges, activeIssuesCount }) {
+  // Show button only when:
+  // 1. Code has been changed from the original
+  // 2. There are 0 active issues remaining (all fixed!)
+  if (!hasChanges || activeIssuesCount > 0) {
     return null;
   }
 
@@ -11,6 +14,7 @@ export default function ReReviewButton({ onClick, isLoading, hasChanges }) {
       className={`re-review-btn ${isLoading ? 'loading' : ''}`}
       onClick={onClick}
       disabled={isLoading}
+      title="Verify that all issues have been fixed"
     >
       {isLoading ? (
         <>
@@ -31,4 +35,9 @@ ReReviewButton.propTypes = {
   onClick: PropTypes.func.isRequired,
   isLoading: PropTypes.bool.isRequired,
   hasChanges: PropTypes.bool.isRequired,
+  activeIssuesCount: PropTypes.number,
+};
+
+ReReviewButton.defaultProps = {
+  activeIssuesCount: 999, // Default to showing button (conservative)
 };

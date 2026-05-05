@@ -21,6 +21,7 @@ export default function CodeEditor({
   hideSocraticToggle,
   hideLanguageSelector,
   minLinesToSubmit,
+  activeIssuesCount = 999,
 }) {
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
@@ -132,11 +133,12 @@ export default function CodeEditor({
               {isLoading ? 'Reviewing...' : '▶ Review Code'}
             </button>
 
-            {/* Re-review button appears when a review exists and there are edits */}
+            {/* Re-review button appears when all issues are fixed and code has been edited */}
             <ReReviewButton
               onClick={() => onReReview(code)}
               isLoading={isReReviewing}
               hasChanges={reviewExists && hasChanges}
+              activeIssuesCount={activeIssuesCount}
             />
           </>
         ) : (
@@ -163,6 +165,7 @@ CodeEditor.propTypes = {
   hideSocraticToggle: PropTypes.bool,
   hideLanguageSelector: PropTypes.bool,
   minLinesToSubmit: PropTypes.number,
+  activeIssuesCount: PropTypes.number,
 };
 
 CodeEditor.defaultProps = {
@@ -178,4 +181,5 @@ CodeEditor.defaultProps = {
   hideSocraticToggle: false,
   hideLanguageSelector: false,
   minLinesToSubmit: 5,
+  activeIssuesCount: 999,
 };
