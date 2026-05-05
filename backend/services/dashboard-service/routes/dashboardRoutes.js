@@ -28,4 +28,7 @@ router.delete('/:workspaceId/reports/:reportId', dashboardController.deleteRepor
 // POST /api/dashboard/:workspaceId/reviews/:reviewId/decision - Approve or reject review (owner/admin only)
 router.post('/:workspaceId/reviews/:reviewId/decision', dashboardController.makeDecision);
 
+// POST /api/dashboard/:workspaceId/cleanup-duplicates - Keep latest review per PR
+router.post('/:workspaceId/cleanup-duplicates', dashboardController.cleanupDuplicates);
+
 export default router;

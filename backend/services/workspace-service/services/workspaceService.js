@@ -504,6 +504,8 @@ export const workspaceService = {
 
     const invites = await WorkspaceInvite.find({
       workspaceId,
+      usedAt: null,
+      expiresAt: { $gt: new Date() },
     }).sort({ createdAt: -1 });
 
     const now = new Date();

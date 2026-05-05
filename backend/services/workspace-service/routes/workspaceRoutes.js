@@ -61,6 +61,9 @@ router.delete('/:workspaceId/leave', verifyToken, workspaceController.leaveWorks
 // GET /api/workspace/:id/my-reviews — get current user's PR reviews (protected)
 router.get('/:id/my-reviews', verifyToken, workspaceController.getMyReviews);
 
+// GET /api/workspace/:id/reviewed-prs — list reviewed PRs for report generation (owner/admin)
+router.get('/:id/reviewed-prs', verifyToken, workspaceController.getReviewedPRs);
+
 // GET /api/workspace/:id/members — list members (protected)
 router.get('/:id/members', verifyToken, workspaceController.getMembers);
 

@@ -86,6 +86,20 @@ export default function MemberPRReviews({ workspaceId, onCountChange }) {
               </div>
             )}
 
+            {review.reportVerdict && (
+              <div className="mpr-report-info">
+                <span className="mpr-report-label">Sprint report:</span>
+                <span className={`mpr-report-verdict mpr-report-verdict--${review.reportVerdict}`}>
+                  {review.reportVerdict === 'ready'
+                    ? 'Sprint approved to ship'
+                    : 'Sprint not ready to ship'}
+                </span>
+                {review.reportSprintName && (
+                  <span className="mpr-report-sprint">({review.reportSprintName})</span>
+                )}
+              </div>
+            )}
+
             {(verdictKey === 'rejected' || verdictKey === 'needs_revision') && (
               <>
                 {review.managerFeedback && (

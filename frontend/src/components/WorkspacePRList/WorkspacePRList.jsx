@@ -21,20 +21,15 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
   const [completedReviews, setCompletedReviews] = useState({});
   const [activeReviewReport, setActiveReviewReport] = useState(null);
   const [persona, setPersona] = useState('security');
-  const [members, setMembers] = useState([]);
-  const [assignMemberForPR, setAssignMemberForPR] = useState(null);
 
   useEffect(() => {
     setIsLoading(true);
     setError(null);
 
-    Promise.all([
-      workspaceApi.getOpenPRs(workspaceId),
-      workspaceApi.getMembers(workspaceId),
-    ])
-      .then(([prResult, memberResult]) => {
+    workspaceApi
+      .getOpenPRs(workspaceId)
+      .then((prResult) => {
         setData(prResult);
-        setMembers(memberResult.members || []);
         setIsLoading(false);
       })
       .catch((err) => {
@@ -47,8 +42,7 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
   const handleReview = async (prNumber) => {
     setReviewingPR(prNumber);
     try {
-      const assignedMemberId = assignMemberForPR ? assignMemberForPR[prNumber] : null;
-      const { jobId } = await workspaceApi.reviewPR(workspaceId, prNumber, persona, assignedMemberId);
+      const { jobId } = await workspaceApi.reviewPR(workspaceId, prNumber, persona, null);
       pollJob(
         jobId,
         (result) => {
@@ -63,7 +57,22 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
             baseBranch: reviewedPR?.baseBranch || '',
           });
           setReviewingPR(null);
-          setAssignMemberForPR(null);
+          setData((current) => ({
+            ...current,
+            pulls: (current?.pulls || []).map((item) =>
+              item.prNumber === prNumber
+                ? {
+                    ...item,
+                    isReviewed: true,
+                    reviewResult: {
+                      reviewId: result.reviewId,
+                      verdict: result.verdict,
+                      createdAt: new Date().toISOString(),
+                    },
+                  }
+                : item
+            ),
+          }));
           if (onReviewComplete) onReviewComplete();
         },
         (err) => {
@@ -148,49 +157,6 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
 
   return (
     <>
-      {assignMemberForPR && Object.keys(assignMemberForPR).length > 0 && (
-        <div className="wpr-assign-modal-overlay">
-          <div className="wpr-assign-modal">
-            <h3>Assign review to member</h3>
-            <p>Who is the code author for this PR?</p>
-            <select
-              onChange={(e) => {
-                const prNum = Object.keys(assignMemberForPR)[0];
-                setAssignMemberForPR({ ...assignMemberForPR, [prNum]: e.target.value });
-              }}
-              defaultValue={Object.values(assignMemberForPR)[0] || ''}
-              className="wpr-member-select"
-            >
-              <option value="">-- Select member --</option>
-              {members
-                .filter((m) => m.role !== 'owner')
-                .map((m) => (
-                  <option key={m._id} value={m._id}>
-                    {m.name || m.email}
-                  </option>
-                ))}
-            </select>
-            <div className="wpr-assign-actions">
-              <button
-                onClick={() => {
-                  const prNum = Object.keys(assignMemberForPR)[0];
-                  handleReview(prNum);
-                }}
-                className="wpr-assign-confirm"
-                disabled={!Object.values(assignMemberForPR)[0]}
-              >
-                Review as
-              </button>
-              <button
-                onClick={() => setAssignMemberForPR(null)}
-                className="wpr-assign-cancel"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="wpr-container">
       <div className="wpr-repo-header">
         <div>
@@ -216,7 +182,7 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
 
       <div className="wpr-list">
         {data.pulls.map((pr) => {
-          const result = completedReviews[pr.prNumber];
+          const result = completedReviews[pr.prNumber] || pr.reviewResult;
           const isReviewing = reviewingPR === pr.prNumber;
 
           return (
@@ -227,10 +193,15 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
                   <span className="wpr-pr-title">{pr.title}</span>
                 </div>
                 <div className="wpr-pr-meta">
-                  <span className="wpr-pr-author">by {pr.authorLogin}</span>
+                  <span className="wpr-pr-author">by {pr.authorName || pr.authorLogin || 'Unknown'}</span>
                   <span className="wpr-pr-branch">
                     {pr.branch} → {pr.baseBranch}
                   </span>
+                  {pr.isReviewed && pr.reviewResult?.createdAt && (
+                    <span className="wpr-reviewed-at">
+                      Reviewed {new Date(pr.reviewResult.createdAt).toLocaleDateString()}
+                    </span>
+                  )}
                   <span className="wpr-pr-files">
                     {pr.changedFiles} files · +{pr.additions} -{pr.deletions}
                   </span>
@@ -239,7 +210,36 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
 
               <div className="wpr-pr-action">
                 <div className="wpr-action-stack">
-                  {result ? (
+                  {pr.isReviewed ? (
+                    <button
+                      className="wpr-re-review-btn"
+                      type="button"
+                      onClick={() => handleReview(pr.prNumber)}
+                      disabled={!!reviewingPR}
+                      title="Review again to update"
+                    >
+                      {isReviewing ? (
+                        <>
+                          <span className="wpr-spinner" />
+                          Reviewing...
+                        </>
+                      ) : (
+                        'Re-review'
+                      )}
+                    </button>
+                  ) : (
+                    <button className="wpr-review-btn" type="button" onClick={() => handleReview(pr.prNumber)} disabled={!!reviewingPR || deletingPR === pr.prNumber}>
+                      {isReviewing ? (
+                        <>
+                          <span className="wpr-spinner" />
+                          Reviewing...
+                        </>
+                      ) : (
+                        'Review PR'
+                      )}
+                    </button>
+                  )}
+                  {result && (
                     <div className="wpr-result">
                       <span className={`wpr-verdict wpr-verdict--${result.verdict}`}>
                         {result.verdict === 'approved'
@@ -250,17 +250,6 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
                       </span>
                       <span className="wpr-issue-count">{result.suggestions?.length || 0} issues</span>
                     </div>
-                  ) : (
-                    <button className="wpr-review-btn" type="button" onClick={() => setAssignMemberForPR({ [pr.prNumber]: '' })} disabled={isReviewing || !!reviewingPR || deletingPR === pr.prNumber} title="Click to assign review to team member">
-                      {isReviewing ? (
-                        <>
-                          <span className="wpr-spinner" />
-                          Reviewing...
-                        </>
-                      ) : (
-                        'Review PR'
-                      )}
-                    </button>
                   )}
 
                   {canDeletePR && (

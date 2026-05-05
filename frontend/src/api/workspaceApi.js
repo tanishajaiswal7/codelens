@@ -46,6 +46,9 @@ export const workspaceApi = {
   getOpenPRs: (workspaceId) =>
     axiosInstance.get(`/api/workspace/${workspaceId}/pulls`).then((r) => r.data),
 
+  getReviewedPRs: (workspaceId) =>
+    axiosInstance.get(`/api/workspace/${workspaceId}/reviewed-prs`).then((r) => r.data),
+
   reviewPR: (workspaceId, prNumber, persona, assignToMemberId = null) =>
     axiosInstance.post(
       `/api/workspace/${workspaceId}/pulls/${prNumber}/review`,

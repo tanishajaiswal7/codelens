@@ -3,6 +3,7 @@ import { QUEUES, QUEUE_OPTIONS } from '../../../rabbitmq/queues.js'
 import { publishEvent } from '../../../rabbitmq/publisher.js'
 import { jobService } from '../../job-service/services/jobService.js'
 import { reviewService } from '../services/reviewService.js'
+import mongoose from 'mongoose'
 
 export async function startReviewConsumer() {
   const channel = getChannel()
@@ -52,6 +53,17 @@ export async function startReviewConsumer() {
 
       // ── NORMAL REVIEW ──
       else {
+        if (payload.type === 'review' && payload.workspaceId && payload.prNumber) {
+          const { Review } = await import('../models/Review.js')
+          await Review.deleteMany({
+            workspaceId: new mongoose.Types.ObjectId(payload.workspaceId),
+            prNumber: payload.prNumber,
+            source: 'github_pr',
+            reviewContext: 'workspace',
+          })
+          console.log(`[Consumer] Cleared old reviews for PR #${payload.prNumber}`)
+        }
+
         result = await reviewService.runReview(
           payload.userId,
           payload.code,
@@ -64,7 +76,8 @@ export async function startReviewConsumer() {
           payload.reviewContext || 'personal',
           false,
           payload.prTitle || null,
-          payload.requestedByUserId || null
+          payload.requestedByUserId || null,
+          payload.reviewedBy || null
         )
       }
 

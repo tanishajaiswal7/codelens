@@ -2,6 +2,7 @@ import { dashboardService } from '../services/dashboardService.js';
 import { releaseReportService } from '../services/releaseReportService.js';
 import { ReleaseReport } from '../../review-service/models/ReleaseReport.js';
 import { WorkspaceMember } from '../../workspace-service/models/WorkspaceMember.js';
+import mongoose from 'mongoose';
 
 export const dashboardController = {
   async getStats(req, res) {
@@ -56,7 +57,7 @@ export const dashboardController = {
   async generateReport(req, res) {
     try {
       const { workspaceId } = req.params;
-      const { sprintName, selectedReviewIds = [] } = req.body;
+      const { sprintName, selectedReviewId = 'all' } = req.body;
       const requestingUserId = req.userId;
 
       if (!sprintName || typeof sprintName !== 'string') {
@@ -69,7 +70,7 @@ export const dashboardController = {
         workspaceId,
         requestingUserId,
         sprintName,
-        Array.isArray(selectedReviewIds) ? selectedReviewIds : []
+        typeof selectedReviewId === 'string' ? selectedReviewId : 'all'
       );
 
       res.json({
@@ -78,11 +79,60 @@ export const dashboardController = {
       });
     } catch (error) {
       console.error('Generate report error:', error.message);
-      const status = error.message.includes('Forbidden') ? 403 : 500;
+      const status = error.status || (error.message?.includes('Forbidden') ? 403 : 500);
       res.status(status).json({
         message: 'Failed to generate release report',
         error: error.message,
       });
+    }
+  },
+
+  async cleanupDuplicates(req, res, next) {
+    try {
+      const { workspaceId } = req.params;
+      const requestingUserId = req.userId;
+
+      const membership = await WorkspaceMember.findOne({
+        workspaceId,
+        userId: requestingUserId,
+        role: { $in: ['owner', 'admin'] },
+      });
+      if (!membership) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      const { Review } = await import('../../review-service/models/Review.js');
+      const reviews = await Review.find({
+        workspaceId: new mongoose.Types.ObjectId(workspaceId),
+        prNumber: { $exists: true, $ne: null },
+        reviewContext: 'workspace',
+        deleted: { $ne: true },
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      const seen = new Set();
+      const toDelete = [];
+
+      for (const review of reviews) {
+        const key = `${review.prNumber}`;
+        if (seen.has(key)) {
+          toDelete.push(review._id);
+        } else {
+          seen.add(key);
+        }
+      }
+
+      if (toDelete.length > 0) {
+        await Review.deleteMany({ _id: { $in: toDelete } });
+      }
+
+      res.json({
+        deleted: toDelete.length,
+        message: `Removed ${toDelete.length} duplicate reviews`,
+      });
+    } catch (err) {
+      next(err);
     }
   },
 

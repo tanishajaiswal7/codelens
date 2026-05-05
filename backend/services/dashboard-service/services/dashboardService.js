@@ -232,7 +232,7 @@ export const dashboardService = {
     });
   },
 
-  async generateReleaseReport(workspaceId, requestingUserId, sprintName, selectedReviewIds = []) {
+  async generateReleaseReport(workspaceId, requestingUserId, sprintName, selectedReviewId = 'all') {
     // Verify owner or admin
     const member = await WorkspaceMember.findOne({
       workspaceId,
@@ -250,10 +250,8 @@ export const dashboardService = {
       deleted: { $ne: true },
     };
 
-    if (selectedReviewIds.length > 0) {
-      reviewQuery._id = {
-        $in: selectedReviewIds.map((id) => new mongoose.Types.ObjectId(id)),
-      };
+    if (selectedReviewId !== 'all') {
+      reviewQuery._id = new mongoose.Types.ObjectId(selectedReviewId);
     }
 
     const selectedReviews = await Review.find(reviewQuery)
@@ -303,6 +301,16 @@ export const dashboardService = {
       ? 'Proceed with the release, merge approved pull requests, and keep monitoring the next sprint.'
       : 'Resolve all blockers first, then revisit warnings and re-run reviews before merging.';
     const prReviewIds = reviewRows.map((review) => review.reviewId);
+    const memberBreakdown = Object.values(
+      reviewRows.reduce((acc, review) => {
+        const key = review.authorName || 'Unknown';
+        if (!acc[key]) {
+          acc[key] = { name: key, totalReviews: 0 };
+        }
+        acc[key].totalReviews += 1;
+        return acc;
+      }, {})
+    );
 
     const report = {
       sprintName: sprintName || 'Sprint',
@@ -318,26 +326,28 @@ export const dashboardService = {
       blockerCount: blockers.length,
       warningCount: warnings.length,
       blockers: blockers.map(r => ({
+        reviewId: r.reviewId,
         title: r.title,
         file: r.filePath || r.repoFullName || 'Unknown file',
         prNumber: r.prNumber ? `#${r.prNumber}` : 'N/A',
         authorName: r.authorName || null,
         criticalCount: r.criticalCount || 0,
-        issueCount: r.totalIssues || 0,
+        issueCount: r.issueCount || 0,
         severity: 'critical',
         recommendation: 'Fix the blocking issue before merging.',
       })),
       warnings: warnings.map(r => ({
+        reviewId: r.reviewId,
         title: r.title,
         file: r.filePath || r.repoFullName || 'Unknown file',
         prNumber: r.prNumber ? `#${r.prNumber}` : 'N/A',
         authorName: r.authorName || null,
         criticalCount: r.criticalCount || 0,
-        issueCount: r.totalIssues || 0,
+        issueCount: r.issueCount || 0,
         severity: 'high',
         recommendation: 'Address this issue before the release goes out.',
       })),
-      memberBreakdown: stats.memberStats,
+      memberBreakdown,
       recommendations,
       approvedPRCount: approved.length,
       flaggedPRCount: blockers.length + warnings.length,

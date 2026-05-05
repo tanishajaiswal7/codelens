@@ -182,6 +182,41 @@
   border-radius: 0;
 }
 
+.mpr-report-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.mpr-report-label {
+  color: var(--text-3);
+}
+
+.mpr-report-verdict {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.mpr-report-verdict--ready {
+  background: var(--green-bg);
+  color: var(--green);
+  border: 1px solid rgba(5, 150, 105, 0.2);
+}
+
+.mpr-report-verdict--not_ready,
+.mpr-report-verdict--needs_review {
+  background: var(--red-bg);
+  color: var(--red);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+}
+
+.mpr-report-sprint {
+  color: var(--text-3);
+}
+
 .mpr-feedback-label {
   display: block;
   margin-bottom: 4px;

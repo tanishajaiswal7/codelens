@@ -2,6 +2,7 @@ import { workspacePRService } from '../services/workspacePRService.js';
 import { publishToQueue } from '../../../rabbitmq/publisher.js';
 import { QUEUES } from '../../../rabbitmq/queues.js';
 import { jobService } from '../../job-service/services/jobService.js';
+import { decryptToken } from '../../github-auth-service/services/githubAuthService.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export const workspacePRController = {
@@ -25,7 +26,7 @@ export const workspacePRController = {
   async reviewPR(req, res, next) {
     try {
       const { workspaceId, prNumber } = req.params;
-      const { persona = 'security', assignToMemberId = null } = req.body;
+      const { persona = 'security' } = req.body;
 
       // Fetch PR files + metadata
       const { files, prMeta } = await workspacePRService.getPRFilesWithContent(
@@ -41,56 +42,46 @@ export const workspacePRController = {
 
       // Get workspace for repoFullName
       const { Workspace } = await import('../models/Workspace.js');
-      const { WorkspaceMember } = await import('../models/WorkspaceMember.js');
       const { User } = await import('../../auth-service/models/User.js');
       const workspace = await Workspace.findById(workspaceId).lean();
 
-      // Attribute review to assigned member, or fall back to PR author detection
-      let reviewedForUserId = req.userId;
+      const requestingUser = await User.findById(req.userId)
+        .select('githubToken')
+        .lean();
 
-      if (assignToMemberId) {
-        // If owner explicitly assigned this review to a member, use that
-        const assignedMember = await WorkspaceMember.findOne({
-          _id: assignToMemberId,
-          workspaceId,
-          isActive: true,
-        })
-          .select('userId')
-          .lean();
+      let prAuthorLogin = prMeta?.authorLogin || null;
 
-        if (assignedMember) {
-          reviewedForUserId = assignedMember.userId.toString();
-        }
-      } else if (prMeta?.authorLogin) {
-        // Otherwise, try to match PR author to workspace member by GitHub username
-        const prAuthor = await User.findOne({
-          githubUsername: { $regex: `^${prMeta.authorLogin}$`, $options: 'i' },
-        })
-          .select('_id')
-          .lean();
-
-        if (prAuthor?._id) {
-          const authorMembership = await WorkspaceMember.findOne({
-            workspaceId,
-            userId: prAuthor._id,
-            isActive: true,
-          })
-            .select('_id')
-            .lean();
-
-          if (authorMembership) {
-            reviewedForUserId = prAuthor._id.toString();
+      if (requestingUser?.githubToken && workspace?.repoFullName) {
+        const token = decryptToken(requestingUser.githubToken);
+        const prDetailRes = await fetch(
+          `https://api.github.com/repos/${workspace.repoFullName}/pulls/${prNumber}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: 'application/vnd.github.v3+json',
+            },
           }
+        );
+
+        if (prDetailRes.ok) {
+          const prDetail = await prDetailRes.json();
+          prAuthorLogin = prDetail.user?.login || prAuthorLogin;
         }
       }
+
+      const prAuthor = prAuthorLogin
+        ? await User.findOne({ githubUsername: prAuthorLogin }).lean()
+        : null;
+      const reviewUserId = prAuthor?._id?.toString() || req.userId;
 
       // Queue the review job
       const jobId = uuidv4();
       await jobService.createJob(jobId, req.userId, 'review');
       await publishToQueue(QUEUES.REVIEW_JOBS, {
         jobId,
-        userId: reviewedForUserId,
+        userId: reviewUserId,
         requestedByUserId: req.userId,
+        reviewedBy: req.userId,
         type: 'review',
         code: combinedCode,
         persona,

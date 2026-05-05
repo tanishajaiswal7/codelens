@@ -359,6 +359,27 @@
   transform: translateY(-1px);
 }
 
+.wpr-re-review-btn {
+  height: 32px;
+  padding: 0 14px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.wpr-re-review-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-2);
+}
+
+.wpr-reviewed-at {
+  color: var(--text-3);
+  font-size: 11px;
+}
+
 .wpr-review-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

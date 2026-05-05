@@ -13,12 +13,17 @@ export const dashboardApi = {
     return response.data.prs;
   },
 
-  async generateReport(workspaceId, sprintName, selectedReviewIds = []) {
+  async generateReport(workspaceId, sprintName, selectedReviewId = 'all') {
     const response = await axiosInstance.post(`${API_BASE}/${workspaceId}/report`, {
       sprintName,
-      selectedReviewIds,
+      selectedReviewId,
     });
     return response.data.report;
+  },
+
+  async cleanupDuplicates(workspaceId) {
+    const response = await axiosInstance.post(`${API_BASE}/${workspaceId}/cleanup-duplicates`);
+    return response.data;
   },
 
   async getReports(workspaceId) {

@@ -57,7 +57,8 @@ export const reviewService = {
     reviewContext = 'personal',
     isOnboarding = false,
     prTitle = null,
-    requestedByUserId = null
+    requestedByUserId = null,
+    reviewedByUserId = null
   ) {
     try {
       // Build persona-specific prompt
@@ -96,6 +97,7 @@ export const reviewService = {
       const savedReview = await Review.create({
         userId: toObjectId(userId),
         requestedByUserId: toObjectId(requestedByUserId),
+        reviewedBy: toObjectId(reviewedByUserId),
         code,
         persona,
         mode: mode || 'standard',

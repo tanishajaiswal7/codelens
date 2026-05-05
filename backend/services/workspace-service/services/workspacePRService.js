@@ -1,6 +1,7 @@
 import { Workspace } from '../models/Workspace.js';
 import { WorkspaceMember } from '../models/WorkspaceMember.js';
 import { User } from '../../auth-service/models/User.js';
+import { Review } from '../../review-service/models/Review.js';
 import { decryptToken } from '../../github-auth-service/services/githubAuthService.js';
 import mongoose from 'mongoose';
 
@@ -96,10 +97,43 @@ export const workspacePRService = {
       })
     );
 
+    const visiblePrNumbers = detailedPulls.map(({ pr }) => pr.number);
+    const workspaceObjectId = new mongoose.Types.ObjectId(workspaceId);
+    const reviewDocs = visiblePrNumbers.length > 0
+      ? await Review.find({
+          workspaceId: workspaceObjectId,
+          prNumber: { $in: visiblePrNumbers },
+          source: 'github_pr',
+          reviewContext: 'workspace',
+          deleted: { $ne: true },
+        })
+          .sort({ createdAt: -1 })
+          .lean()
+      : [];
+
+    const latestReviewByPr = new Map();
+    for (const review of reviewDocs) {
+      if (!latestReviewByPr.has(review.prNumber)) {
+        latestReviewByPr.set(review.prNumber, review);
+      }
+    }
+
     return {
       repoFullName: workspace.repoFullName,
       repoUrl: workspace.repoUrl,
       pulls: detailedPulls.map(({ pr, changedFiles, additions, deletions }) => ({
+        ...(latestReviewByPr.get(pr.number)
+          ? {
+              isReviewed: true,
+              reviewResult: {
+                reviewId: latestReviewByPr.get(pr.number)._id,
+                verdict: latestReviewByPr.get(pr.number).verdict || null,
+                createdAt: latestReviewByPr.get(pr.number).createdAt || null,
+                managerDecision: latestReviewByPr.get(pr.number).managerDecision || null,
+                managerFeedback: latestReviewByPr.get(pr.number).managerFeedback || null,
+              },
+            }
+          : { isReviewed: false, reviewResult: null }),
         prNumber: pr.number,
         title: pr.title,
         body: pr.body?.slice(0, 200) || null,

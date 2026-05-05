@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { dashboardApi } from '../../api/dashboardApi';
+import { workspaceApi } from '../../api/workspaceApi';
 import ReleaseReportModal from '../../components/ReleaseReportModal/ReleaseReportModal';
 import WorkspacePRList from '../../components/WorkspacePRList/WorkspacePRList';
 import NotificationBell from '../../components/NotificationBell/NotificationBell';
@@ -39,14 +40,40 @@ const verdictLabel = (verdict) => {
 
 const formatIssueCount = (count) => `${count || 0} issue${count === 1 ? '' : 's'}`;
 
+const getQualityBadge = (score, criticalCount) => {
+  if (score === null || score === undefined) {
+    return { label: 'No reviews yet', class: 'neutral' };
+  }
+  if (criticalCount > 0) {
+    return {
+      label: `${criticalCount} critical issue${criticalCount > 1 ? 's' : ''} - needs attention`,
+      class: 'danger',
+    };
+  }
+  if (score === 0) {
+    return { label: 'All PRs need revision', class: 'danger' };
+  }
+  if (score < 50) {
+    return { label: 'Low quality - review needed', class: 'danger' };
+  }
+  if (score < 80) {
+    return { label: 'Some issues found', class: 'warning' };
+  }
+  if (score < 100) {
+    return { label: 'Good quality', class: 'success' };
+  }
+  return { label: 'All PRs approved', class: 'success' };
+};
+
 const ManagerDashboardPage = () => {
   const { id: workspaceId } = useParams();
   const [stats, setStats] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [prs, setPrs] = useState([]);
+  const [reviewedPRs, setReviewedPRs] = useState([]);
   const [selectedPRs, setSelectedPRs] = useState([]);
   const [sprintName, setSprintName] = useState('');
-  const [selectedReportReviewId, setSelectedReportReviewId] = useState('all');
+  const [selectedPRForReport, setSelectedPRForReport] = useState('all');
   const [reports, setReports] = useState([]);
   const [expandedPR, setExpandedPR] = useState(null);
   const [filter, setFilter] = useState('All');
@@ -60,8 +87,11 @@ const ManagerDashboardPage = () => {
   const [prListRefreshSignal, setPrListRefreshSignal] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [decisionFeedbacks, setDecisionFeedbacks] = useState({});
+  const [cleanupDone, setCleanupDone] = useState(false);
+  const [isDeciding, setIsDeciding] = useState(false);
 
   useEffect(() => {
+    setCleanupDone(false);
     loadData();
   }, [workspaceId]);
 
@@ -69,10 +99,11 @@ const ManagerDashboardPage = () => {
     setError(null);
     setIsRefreshing(true);
     try {
-      const [statsResult, prsResult, reportsResult] = await Promise.allSettled([
+      const [statsResult, prsResult, reportsResult, reviewedResult] = await Promise.allSettled([
         dashboardApi.getStats(workspaceId),
         dashboardApi.getAllPRs(workspaceId),
         dashboardApi.getReports(workspaceId),
+        workspaceApi.getReviewedPRs(workspaceId),
       ]);
 
       if (statsResult.status === 'fulfilled') {
@@ -95,6 +126,33 @@ const ManagerDashboardPage = () => {
       } else {
         console.error('Failed to load reports:', reportsResult.reason);
       }
+
+      if (reviewedResult.status === 'fulfilled') {
+        setReviewedPRs(reviewedResult.value);
+      } else {
+        setReviewedPRs([]);
+      }
+
+      if (!cleanupDone) {
+        setCleanupDone(true);
+        dashboardApi
+          .cleanupDuplicates(workspaceId)
+          .then(async (result) => {
+            if (result.deleted > 0) {
+              console.log(`Cleaned ${result.deleted} duplicate reviews`);
+              const [freshStats, freshPRs, freshReviewedPRs] = await Promise.all([
+                dashboardApi.getStats(workspaceId),
+                dashboardApi.getAllPRs(workspaceId),
+                workspaceApi.getReviewedPRs(workspaceId),
+              ]);
+              setStats(freshStats.stats);
+              setUserRole(freshStats.userRole);
+              setPrs(freshPRs);
+              setReviewedPRs(freshReviewedPRs);
+            }
+          })
+          .catch(() => {});
+      }
     } catch (loadError) {
       console.error('Unexpected dashboard load error:', loadError);
       setError('Failed to load dashboard data.');
@@ -110,12 +168,15 @@ const ManagerDashboardPage = () => {
   };
 
   const handleGenerateReport = async () => {
-    if (!sprintName.trim() || (stats?.reviewedPrCount || 0) === 0) return;
+    if (!sprintName.trim() || reviewedPRs.length === 0) return;
 
     setGenerating(true);
     try {
-      const selectedReviewIds = selectedReportReviewId === 'all' ? [] : [selectedReportReviewId];
-      const report = await dashboardApi.generateReport(workspaceId, sprintName.trim(), selectedReviewIds);
+      const report = await dashboardApi.generateReport(
+        workspaceId,
+        sprintName.trim(),
+        selectedPRForReport
+      );
       setGeneratedReport(report);
       setShowReportModal(true);
       const reportsData = await dashboardApi.getReports(workspaceId);
@@ -145,14 +206,33 @@ const ManagerDashboardPage = () => {
     }
   };
 
-  const handleDecision = async (reviewId, decision) => {
+  const handleDecision = async (reviewId, prNumber, decision) => {
+    setIsDeciding(true);
     try {
-      await dashboardApi.makeDecision(workspaceId, reviewId, decision, decisionFeedbacks[reviewId] || '');
-      setDecisionFeedbacks((prev) => ({ ...prev, [reviewId]: '' }));
-      setExpandedPR(null);
-      await loadData();
+      await dashboardApi.makeDecision(workspaceId, reviewId, decision, decisionFeedbacks[prNumber] || '');
+      setDecisionFeedbacks((prev) => ({ ...prev, [prNumber]: '' }));
+      setPrs((prev) =>
+        prev.map((pr) =>
+          pr.id === reviewId
+            ? {
+                ...pr,
+                managerDecision: decision,
+                reviewResult: {
+                  ...(pr.reviewResult || {}),
+                  managerDecision: decision,
+                  managerFeedback: decisionFeedbacks[prNumber] || '',
+                },
+              }
+            : pr
+        )
+      );
+      const updated = await dashboardApi.getStats(workspaceId);
+      setStats(updated.stats);
+      setUserRole(updated.userRole);
     } catch (decisionError) {
-      console.error('Failed to save review decision:', decisionError);
+      alert(decisionError.response?.data?.error || 'Failed to save decision');
+    } finally {
+      setIsDeciding(false);
     }
   };
 
@@ -172,18 +252,12 @@ const ManagerDashboardPage = () => {
   });
 
   const recentNotifications = prs.slice(0, 5);
-  const reviewedPrOptions = prs.filter((pr) => !!pr.id);
-  const hasReviewedPRs = (stats?.reviewedPrCount || 0) > 0;
+  const hasReviewedPRs = reviewedPRs.length > 0;
   const hasLinkedRepo = Boolean(stats?.repoFullName);
   const memberStats = Array.isArray(stats?.memberStats) ? stats.memberStats : [];
   const reportButtonLabel = hasReviewedPRs ? (generating ? 'Generating...' : 'Generate report') : 'Review at least one PR first';
   const selectedCount = selectedPRs.length;
-  const qualityPhrase =
-    stats?.qualityScore >= 90
-      ? 'Excellent review quality'
-      : stats?.qualityScore >= 75
-      ? 'Healthy review flow'
-      : 'Review focus required';
+  const qualityBadge = getQualityBadge(stats?.qualityScore, stats?.criticalCount);
 
   const statCards = [
     { label: 'Open PRs', value: stats?.totalOpenPRs ?? 0, tone: 'neutral' },
@@ -220,7 +294,9 @@ const ManagerDashboardPage = () => {
             ) : (
               <span className="mdb-repo-chip mdb-repo-chip--warning">No repository linked yet</span>
             )}
-            <span className="mdb-status-chip">{qualityPhrase}</span>
+            <span className={`quality-badge quality-badge--${qualityBadge.class}`}>
+              {qualityBadge.label}
+            </span>
           </div>
         </div>
         <div className="mdb-hero-actions">
@@ -290,24 +366,38 @@ const ManagerDashboardPage = () => {
             ) : (
               <div className="mdb-pr-list">
                 {filteredPRs.map((pr) => {
-                  const isExpanded = expandedPR === pr.id;
+                  const isExpanded = expandedPR === pr.prNumber;
                   const issueCount = pr.totalIssues || 0;
                   const criticalCount = pr.criticalCount || 0;
 
                   return (
                     <div key={pr.id} className={`mdb-pr-item ${isExpanded ? 'is-open' : ''}`}>
-                      <button
-                        type="button"
-                        className="mdb-pr-row"
-                        onClick={() => setExpandedPR(isExpanded ? null : pr.id)}
+                      <div
+                        className={`mdb-pr-row ${pr.prNumber ? 'clickable' : ''}`}
+                        onClick={() => {
+                          if (pr.prNumber) {
+                            setExpandedPR((prev) => (prev === pr.prNumber ? null : pr.prNumber));
+                          }
+                        }}
+                        role="button"
+                        tabIndex={pr.prNumber ? 0 : -1}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            if (pr.prNumber) {
+                              setExpandedPR((prev) => (prev === pr.prNumber ? null : pr.prNumber));
+                            }
+                          }
+                        }}
                       >
                         <div className="mdb-pr-main">
                           <span className="mdb-pr-num">#{pr.prNumber}</span>
                           <div className="mdb-pr-copy">
                             <strong>{pr.prTitle}</strong>
                             <span>
-                              {pr.authorName} · {formatIssueCount(issueCount)}
+                              by {pr.authorName || 'Unknown'} · {formatIssueCount(issueCount)}
                               {criticalCount > 0 ? ` · ${criticalCount} critical` : ''}
+                              {pr.createdAt ? ` · Reviewed ${new Date(pr.createdAt).toLocaleDateString()}` : ''}
                             </span>
                           </div>
                         </div>
@@ -318,8 +408,9 @@ const ManagerDashboardPage = () => {
                           <span className={`mdb-verdict-badge mdb-verdict-badge--${verdictTone(pr.verdict)}`}>
                             {verdictLabel(pr.verdict)}
                           </span>
+                          {pr.prNumber && <span className="expand-hint">{isExpanded ? '▲ Hide' : '▼ Review details'}</span>}
                         </div>
-                      </button>
+                      </div>
 
                       {isExpanded && (
                         <div className="mdb-pr-expanded" onClick={(event) => event.stopPropagation()}>
@@ -328,11 +419,11 @@ const ManagerDashboardPage = () => {
                             className="mdb-feedback-input"
                             rows={2}
                             placeholder="Write feedback for the developer (optional)..."
-                            value={decisionFeedbacks[pr.id] || ''}
+                            value={decisionFeedbacks[pr.prNumber] || ''}
                             onChange={(event) =>
                               setDecisionFeedbacks((prev) => ({
                                 ...prev,
-                                [pr.id]: event.target.value,
+                                [pr.prNumber]: event.target.value,
                               }))
                             }
                           />
@@ -340,14 +431,16 @@ const ManagerDashboardPage = () => {
                             <button
                               type="button"
                               className="mdb-decision-btn mdb-decision-btn--approve"
-                              onClick={() => handleDecision(pr.id, 'approved')}
+                              onClick={() => handleDecision(pr.id, pr.prNumber, 'approved')}
+                              disabled={isDeciding}
                             >
                               Approve — ready to merge
                             </button>
                             <button
                               type="button"
                               className="mdb-decision-btn mdb-decision-btn--reject"
-                              onClick={() => handleDecision(pr.id, 'rejected')}
+                              onClick={() => handleDecision(pr.id, pr.prNumber, 'rejected')}
+                              disabled={isDeciding}
                             >
                               Request changes
                             </button>
@@ -458,14 +551,15 @@ const ManagerDashboardPage = () => {
                 <label htmlFor="review-selector" className="mdb-sprint-label mdb-report-select-label">Reviewed PR</label>
                 <select
                   id="review-selector"
-                  value={selectedReportReviewId}
-                  onChange={(event) => setSelectedReportReviewId(event.target.value)}
+                  value={selectedPRForReport}
+                  onChange={(event) => setSelectedPRForReport(event.target.value)}
                   className="mdb-report-select"
                 >
                   <option value="all">All reviewed PRs</option>
-                  {reviewedPrOptions.map((pr) => (
-                    <option key={pr.id} value={pr.id}>
-                      #{pr.prNumber || 'N/A'} · {pr.authorName || 'Unknown'} · {pr.prTitle || 'PR review'}
+                  {reviewedPRs.map((pr) => (
+                    <option key={pr.reviewId} value={pr.reviewId}>
+                      PR #{pr.prNumber} - {pr.prTitle}
+                      {pr.criticalCount > 0 ? ` (${pr.criticalCount} critical)` : ''}
                     </option>
                   ))}
                 </select>
@@ -473,13 +567,22 @@ const ManagerDashboardPage = () => {
               <button
                 type="button"
                 onClick={handleGenerateReport}
-                disabled={!sprintName.trim() || generating || !hasReviewedPRs}
+                disabled={!sprintName.trim() || reviewedPRs.length === 0 || generating}
                 className="mdb-btn mdb-btn--primary"
-                title={!hasReviewedPRs ? 'Review at least one PR first' : 'Generate sprint release report'}
+                title={
+                  reviewedPRs.length === 0
+                    ? 'Review at least one PR before generating a report'
+                    : 'Generate sprint release report'
+                }
               >
                 {reportButtonLabel}
               </button>
             </div>
+            {reviewedPRs.length === 0 && (
+              <p className="report-no-data-hint">
+                Review at least one PR from the Open pull requests section before generating a report.
+              </p>
+            )}
 
             <div className="mdb-past-reports">
               <div className="mdb-past-reports-head">Past reports</div>

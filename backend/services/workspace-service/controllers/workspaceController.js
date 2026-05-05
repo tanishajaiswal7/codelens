@@ -365,44 +365,123 @@ export const workspaceController = {
       const workspaceObjectId = new mongoose.Types.ObjectId(workspaceId);
       const userObjectId = new mongoose.Types.ObjectId(userId);
 
-      const reviews = await Review.find({
+      const rawReviews = await Review.find({
         workspaceId: workspaceObjectId,
         userId: userObjectId,
         source: 'github_pr',
         reviewContext: 'workspace',
         deleted: { $ne: true },
       })
-        .populate('managerDecisionBy', 'name')
         .sort({ createdAt: -1 })
-        .limit(20)
+        .populate('managerDecisionBy', 'name')
         .lean();
 
+      const seen = new Set();
+      const reviews = rawReviews.filter((review) => {
+        const key = review.prNumber ? `pr_${review.prNumber}` : `rev_${review._id}`;
+        if (seen.has(key)) {
+          return false;
+        }
+        seen.add(key);
+        return true;
+      });
+
+      const { ReleaseReport } = await import('../../review-service/models/ReleaseReport.js');
+
       // Return reviews with useful fields
-      const formattedReviews = reviews.map((r) => ({
-        _id: r._id,
-        prNumber: r.prNumber || null,
-        prTitle: r.prTitle || null,
-        repoPath: r.repoPath || 'Code Review',
-        summary: r.summary || null,
-        verdict: r.verdict,
-        managerDecision: r.managerDecision || null,
-        managerFeedback: r.managerFeedback || null,
-        managerDecisionAt: r.managerDecisionAt || null,
-        managerDecisionByName: r.managerDecisionBy?.name || null,
-        criticalCount:
-          r.suggestions?.filter((s) => s.severity === 'critical').length || 0,
-        suggestions:
-          r.suggestions?.map((s) => ({
-            id: s.id,
-            title: s.title,
-            severity: s.severity,
-            description: s.description,
-            lineRef: s.lineRef,
-          })) || [],
-        createdAt: r.createdAt,
+      const formattedReviews = await Promise.all(reviews.map(async (r) => {
+        const report = await ReleaseReport.findOne({
+          workspaceId: workspaceObjectId,
+          $or: [
+            { prReviewIds: r._id },
+            { 'blockers.reviewId': r._id },
+          ],
+        })
+          .select('verdict sprintName')
+          .sort({ createdAt: -1 })
+          .lean();
+
+        return {
+          _id: r._id,
+          prNumber: r.prNumber || null,
+          prTitle: r.prTitle || null,
+          repoPath: r.repoPath || 'Code Review',
+          summary: r.summary || null,
+          verdict: r.verdict,
+          managerDecision: r.managerDecision || null,
+          managerFeedback: r.managerFeedback || null,
+          managerDecisionAt: r.managerDecisionAt || null,
+          managerDecisionByName: r.managerDecisionBy?.name || null,
+          criticalCount:
+            r.suggestions?.filter((s) => s.severity === 'critical').length || 0,
+          suggestions:
+            r.suggestions?.map((s) => ({
+              id: s.id,
+              title: s.title,
+              severity: s.severity,
+              description: s.description,
+              lineRef: s.lineRef,
+            })) || [],
+          reportVerdict: report?.verdict || null,
+          reportSprintName: report?.sprintName || null,
+          createdAt: r.createdAt,
+        };
       }));
 
       res.json(formattedReviews);
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  async getReviewedPRs(req, res, next) {
+    try {
+      const workspaceId = req.params.id || req.params.workspaceId;
+
+      const { WorkspaceMember } = await import('../models/WorkspaceMember.js');
+      const membership = await WorkspaceMember.findOne({
+        workspaceId,
+        userId: req.userId,
+        role: { $in: ['owner', 'admin'] },
+      });
+      if (!membership) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+
+      const { Review } = await import('../../review-service/models/Review.js');
+      const reviews = await Review.find({
+        workspaceId: new mongoose.Types.ObjectId(workspaceId),
+        prNumber: { $exists: true, $ne: null },
+        source: 'github_pr',
+        reviewContext: 'workspace',
+        deleted: { $ne: true },
+      })
+        .sort({ createdAt: -1 })
+        .populate('userId', 'name githubUsername')
+        .lean();
+
+      const seen = new Set();
+      const latestReviewsByPr = reviews.filter((review) => {
+        const key = `pr_${review.prNumber}`;
+        if (seen.has(key)) {
+          return false;
+        }
+        seen.add(key);
+        return true;
+      });
+
+      const reviewedPRs = latestReviewsByPr.map((r) => ({
+        reviewId: r._id,
+        prNumber: r.prNumber,
+        prTitle: r.prTitle || r.repoPath || `PR #${r.prNumber}`,
+        authorName: r.userId?.name || 'Unknown',
+        verdict: r.verdict,
+        issueCount: r.suggestions?.length || 0,
+        criticalCount: r.suggestions?.filter((s) => s.severity === 'critical').length || 0,
+        reviewedAt: r.createdAt,
+      }));
+
+      res.json(reviewedPRs);
     } catch (err) {
       next(err);
     }
