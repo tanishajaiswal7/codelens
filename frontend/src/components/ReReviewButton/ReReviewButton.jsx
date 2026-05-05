@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import './ReReviewButton.css';
 
-export default function ReReViewButton({ onClick, isLoading, hasChanges, activeIssuesCount }) {
+export default function ReReviewButton({ onClick, isLoading, hasChanges, activeIssuesCount }) {
   // Show button only when:
   // 1. Code has been changed from the original
   // 2. There are active issues remaining (> 0) to check
