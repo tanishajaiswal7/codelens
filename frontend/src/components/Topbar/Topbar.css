@@ -327,11 +327,6 @@
 }
 
 
-  background: rgba(99, 102, 241, 0.2);
-  border-color: var(--accent-2);
-  color: var(--accent);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
-}
 
 /* Workspaces dropdown */
 .workspaces-menu-container {
