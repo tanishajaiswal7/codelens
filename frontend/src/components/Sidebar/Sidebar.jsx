@@ -60,7 +60,7 @@ export default function Sidebar({
   return (
     <aside className="sidebar">
       <div className="sidebar-nav-wrapper">
-        <button className="sidebar-nav-item active">
+        <button className="sidebar-nav-item active" onClick={() => navigate('/dashboard')} type="button">
           <span>🆕</span> New Review
         </button>
         <button className="sidebar-nav-item" onClick={handleNavigateToWorkspaces}>
