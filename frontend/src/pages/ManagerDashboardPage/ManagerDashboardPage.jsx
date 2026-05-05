@@ -181,6 +181,10 @@ const ManagerDashboardPage = () => {
       setShowReportModal(true);
       const reportsData = await dashboardApi.getReports(workspaceId);
       setReports(reportsData);
+      
+      // Clear form after successful generation
+      setSprintName('');
+      setSelectedPRForReport('all');
     } catch (reportError) {
       console.error('Failed to generate report:', reportError);
     } finally {
@@ -556,12 +560,17 @@ const ManagerDashboardPage = () => {
                   className="mdb-report-select"
                 >
                   <option value="all">All reviewed PRs</option>
-                  {reviewedPRs.map((pr) => (
-                    <option key={pr.reviewId} value={pr.reviewId}>
-                      PR #{pr.prNumber} - {pr.prTitle}
-                      {pr.criticalCount > 0 ? ` (${pr.criticalCount} critical)` : ''}
-                    </option>
-                  ))}
+                  {reviewedPRs.map((pr) => {
+                    // Check if this PR already has a report generated
+                    const hasReport = reports.some((report) => report.selectedReviewId === pr.reviewId);
+                    if (hasReport) return null;
+                    return (
+                      <option key={pr.reviewId} value={pr.reviewId}>
+                        PR #{pr.prNumber} - {pr.prTitle}
+                        {pr.criticalCount > 0 ? ` (${pr.criticalCount} critical)` : ''}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
               <button
