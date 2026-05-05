@@ -408,7 +408,14 @@ export const socraticService = {
 
     console.log('[Socratic] Analysing code for bugs...')
     const analysis = await analyseCode(code)
-    const bugs = [...analysis.bugs]
+    // Ensure a stable severity ordering and strictly cap to 5 bugs
+    const bugsRaw = Array.isArray(analysis.bugs) ? analysis.bugs : []
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 }
+    const bugs = [...bugsRaw].sort((a, b) => {
+      const sa = severityOrder[a.severity] ?? 2
+      const sb = severityOrder[b.severity] ?? 2
+      return sa - sb
+    }).slice(0, 5)
 
     if (bugs.length === 0) {
       bugs.push({
@@ -534,6 +541,17 @@ export const socraticService = {
     let nextState = evaluation.nextState || 'HINTING'
     let bugCompleted = false
 
+    // If the AI or user demonstrates clear understanding, mark the bug as discovered
+    try {
+      const alreadyDiscovered = session.discoveredBugs && session.discoveredBugs.some((b) => b.id === currentBug.id)
+      if (!alreadyDiscovered && (evaluation.shouldReveal || understanding >= 80)) {
+        session.discoveredBugs.push(currentBug)
+      }
+    } catch (e) {
+      // defensive: if discoveredBugs malformed, ensure array
+      if (!Array.isArray(session.discoveredBugs)) session.discoveredBugs = []
+    }
+
     if (session.currentState === 'FIXING' && fixAttemptCorrect) {
       nextState = 'BUG_COMPLETE'
       bugCompleted = true
@@ -577,7 +595,10 @@ export const socraticService = {
     let nextBugQuestion = response.nextBugQuestion || null
 
     if (bugCompleted) {
-      session.discoveredBugs.push(currentBug)
+      // ensure discoveredBugs contains the completed bug exactly once
+      if (!session.discoveredBugs.some((b) => b.id === currentBug.id)) {
+        session.discoveredBugs.push(currentBug)
+      }
       session.currentBugIndex += 1
       session.dontKnowCountForCurrentBug = 0
 
