@@ -46,8 +46,9 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
       pollJob(
         jobId,
         (result) => {
-          setCompletedReviews((prev) => ({ ...prev, [prNumber]: result }));
           const reviewedPR = data?.pulls?.find((item) => item.prNumber === prNumber);
+          
+          // Show modal first to prevent flickering
           setActiveReviewReport({
             ...result,
             prNumber,
@@ -56,6 +57,9 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
             branch: reviewedPR?.branch || '',
             baseBranch: reviewedPR?.baseBranch || '',
           });
+          
+          // Then update other state
+          setCompletedReviews((prev) => ({ ...prev, [prNumber]: result }));
           setReviewingPR(null);
           setData((current) => ({
             ...current,
@@ -73,7 +77,13 @@ export default function WorkspacePRList({ workspaceId, onReviewComplete, refresh
                 : item
             ),
           }));
-          if (onReviewComplete) onReviewComplete();
+          
+          // Delay parent callback to avoid interference with modal display
+          if (onReviewComplete) {
+            setTimeout(() => {
+              onReviewComplete();
+            }, 100);
+          }
         },
         (err) => {
           setError(err);
