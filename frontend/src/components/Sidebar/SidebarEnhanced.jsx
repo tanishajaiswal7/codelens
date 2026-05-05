@@ -89,6 +89,10 @@ export default function SidebarEnhanced({
     navigate('/settings');
   };
 
+  const handleNavigateToWorkspaces = () => {
+    navigate('/workspace');
+  };
+
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedPersonaFilter('all');
@@ -104,13 +108,23 @@ export default function SidebarEnhanced({
           className="sidebar-nav-item active"
           onClick={onNewReview}
           title="Create new review"
+          type="button"
         >
           <span>🆕</span> New Review
+        </button>
+        <button
+          className="sidebar-nav-item"
+          onClick={handleNavigateToWorkspaces}
+          title="Go to workspaces"
+          type="button"
+        >
+          <span>👥</span> Workspace
         </button>
         <button 
           className="sidebar-nav-item" 
           onClick={handleNavigateToSettings}
           title="Go to settings"
+          type="button"
         >
           <span>⚙️</span> Settings
         </button>
