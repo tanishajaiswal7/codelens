@@ -11,28 +11,49 @@ export const historyService = {
    * @param {number} limit - Maximum number of reviews to return (default: 20)
    * @returns {Promise<Array>} Array of review history items
    */
-  async getReviewHistory(userId, limit = 20) {
+  async getReviewHistory(userId, limit = 20, search = '') {
     try {
-      const reviews = await Review.find({ 
-        userId, 
+      const baseQuery = {
+        userId,
         $or: [
           { source: { $in: ['paste', 'github_file'] } },
           { source: 'github_pr' }
         ],
-        deleted: { $ne: true } 
-      })
+        deleted: { $ne: true },
+      };
+
+      let finalQuery = baseQuery;
+
+      if (search && search.length > 0) {
+        const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+        finalQuery = {
+          ...baseQuery,
+          $and: [
+            {
+              $or: [
+                { code: regex },
+                { summary: regex },
+                { 'suggestions.title': regex },
+                { 'suggestions.description': regex },
+              ],
+            },
+          ],
+        };
+      }
+
+      const reviews = await Review.find(finalQuery)
         .sort({ createdAt: -1 })
         .limit(limit)
         .select('_id code persona mode verdict suggestions createdAt summary');
 
       return reviews.map((review) => ({
         reviewId: review._id,
-        codeSnippet: review.code.substring(0, 60) + (review.code.length > 60 ? '...' : ''),
+        codeSnippet: (review.code || '').substring(0, 60) + ((review.code || '').length > 60 ? '...' : ''),
         persona: review.persona,
         mode: review.mode,
         verdict: review.verdict,
         summary: review.summary || '',
-        // searchable text for client-side filtering
+        // searchable text for client-side filtering (fallback)
         searchText: (
           (review.code || '') + ' ' +
           (review.summary || '') + ' ' +
@@ -43,6 +64,45 @@ export const historyService = {
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('History service error:', error);
+      }
+      throw error;
+    }
+  },
+
+  async getFilteredCount(userId, search = '') {
+    try {
+      const baseQuery = {
+        userId,
+        $or: [
+          { source: { $in: ['paste', 'github_file'] } },
+          { source: 'github_pr' }
+        ],
+        deleted: { $ne: true },
+      };
+
+      if (!search) {
+        return await Review.countDocuments(baseQuery);
+      }
+
+      const regex = new RegExp(search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      const queryWithSearch = {
+        ...baseQuery,
+        $and: [
+          {
+            $or: [
+              { code: regex },
+              { summary: regex },
+              { 'suggestions.title': regex },
+              { 'suggestions.description': regex },
+            ],
+          },
+        ],
+      };
+
+      return await Review.countDocuments(queryWithSearch);
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Get filtered count error:', error);
       }
       throw error;
     }

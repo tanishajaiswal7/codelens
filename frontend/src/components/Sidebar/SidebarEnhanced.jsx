@@ -17,6 +17,7 @@ export default function SidebarEnhanced({
   const [history, setHistory] = useState([]);
   const [filteredHistory, setFilteredHistory] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [serverFilteredCount, setServerFilteredCount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPersonaFilter, setSelectedPersonaFilter] = useState('all');
@@ -24,22 +25,33 @@ export default function SidebarEnhanced({
   const navigate = useNavigate();
 
   // Fetch history on mount
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        setLoading(true);
-        const response = await historyApi.getHistory();
-        setHistory(response.history || []);
-        setTotalCount(response.totalCount || (response.history || []).length);
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.error('Failed to fetch history:', error);
-        }
-      } finally {
-        setLoading(false);
+  // Fetch history (callable) - used by effect and Enter key
+  const fetchHistory = async (overrideQuery) => {
+    try {
+      setLoading(true);
+      const q = typeof overrideQuery === 'string' ? overrideQuery : searchQuery;
+      const params = {};
+      if (q && q.trim()) {
+        params.q = q.trim();
+        params.limit = 50; // when searching, fetch a larger window
+      } else {
+        params.limit = 20;
       }
-    };
 
+      const response = await historyApi.getHistory(params);
+      setHistory(response.history || []);
+      setTotalCount(response.totalCount || (response.history || []).length);
+      setServerFilteredCount(typeof response.filteredCount === 'number' ? response.filteredCount : null);
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Failed to fetch history:', error);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchHistory();
   }, [refreshKey]);
 
@@ -148,6 +160,12 @@ export default function SidebarEnhanced({
             placeholder="Search code..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                // trigger immediate server search on Enter
+                fetchHistory(e.target.value);
+              }
+            }}
             className="search-input"
             aria-label="Search reviews"
           />
@@ -242,9 +260,11 @@ export default function SidebarEnhanced({
                 onDelete={handleDeleteReview}
               />
             ))}
-            {filteredHistory.length < history.length && (
+            {filteredHistory.length > 0 && (
               <p className="results-info">
-                Showing {filteredHistory.length} of {history.length} reviews
+                {serverFilteredCount !== null
+                  ? `Showing ${filteredHistory.length} of ${serverFilteredCount} matching reviews`
+                  : `Showing ${filteredHistory.length} of ${history.length} reviews`}
               </p>
             )}
           </div>

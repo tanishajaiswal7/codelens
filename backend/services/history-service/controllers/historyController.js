@@ -4,14 +4,18 @@ export const historyController = {
   async getHistory(req, res) {
     try {
       const userId = req.userId;
-      const history = await historyService.getReviewHistory(userId, 20);
+      const limit = parseInt(req.query.limit, 10) || 20;
+      const search = (req.query.q || req.query.search || '').trim();
+      const history = await historyService.getReviewHistory(userId, limit, search);
       const countToday = await historyService.getReviewCountToday(userId);
       const totalCount = await historyService.getTotalCount(userId);
+      const filteredCount = await historyService.getFilteredCount(userId, search);
 
       res.json({
         message: 'Review history retrieved',
         history,
         totalCount,
+        filteredCount,
         reviewsUsedToday: countToday,
       });
     } catch (error) {
