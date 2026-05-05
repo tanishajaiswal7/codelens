@@ -6,10 +6,12 @@ export const historyController = {
       const userId = req.userId;
       const history = await historyService.getReviewHistory(userId, 20);
       const countToday = await historyService.getReviewCountToday(userId);
+      const totalCount = await historyService.getTotalCount(userId);
 
       res.json({
         message: 'Review history retrieved',
         history,
+        totalCount,
         reviewsUsedToday: countToday,
       });
     } catch (error) {

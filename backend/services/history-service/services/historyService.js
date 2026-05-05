@@ -23,7 +23,7 @@ export const historyService = {
       })
         .sort({ createdAt: -1 })
         .limit(limit)
-        .select('_id code persona mode verdict suggestions createdAt');
+        .select('_id code persona mode verdict suggestions createdAt summary');
 
       return reviews.map((review) => ({
         reviewId: review._id,
@@ -31,6 +31,13 @@ export const historyService = {
         persona: review.persona,
         mode: review.mode,
         verdict: review.verdict,
+        summary: review.summary || '',
+        // searchable text for client-side filtering
+        searchText: (
+          (review.code || '') + ' ' +
+          (review.summary || '') + ' ' +
+          (Array.isArray(review.suggestions) ? review.suggestions.map(s => s.title || s.description || '').join(' ') : '')
+        ).toLowerCase(),
         createdAt: review.createdAt,
       }));
     } catch (error) {
@@ -123,6 +130,18 @@ export const historyService = {
     } catch (error) {
       if (process.env.NODE_ENV === 'development') {
         console.error('Get review count error:', error);
+      }
+      throw error;
+    }
+  },
+
+  async getTotalCount(userId) {
+    try {
+      const count = await Review.countDocuments({ userId, deleted: { $ne: true } });
+      return count;
+    } catch (error) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error('Get total review count error:', error);
       }
       throw error;
     }

@@ -16,6 +16,7 @@ export default function SidebarEnhanced({
 }) {
   const [history, setHistory] = useState([]);
   const [filteredHistory, setFilteredHistory] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPersonaFilter, setSelectedPersonaFilter] = useState('all');
@@ -29,6 +30,7 @@ export default function SidebarEnhanced({
         setLoading(true);
         const response = await historyApi.getHistory();
         setHistory(response.history || []);
+        setTotalCount(response.totalCount || (response.history || []).length);
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
           console.error('Failed to fetch history:', error);
@@ -48,9 +50,11 @@ export default function SidebarEnhanced({
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(item =>
-        item.codeSnippet.toLowerCase().includes(query)
-      );
+      filtered = filtered.filter(item => {
+        // Use precomputed searchable text, but also fallback to snippet/persona/verdict
+        const text = (item.searchText || (item.codeSnippet + ' ' + (item.summary || '') + ' ' + item.persona + ' ' + (item.verdict || ''))).toLowerCase();
+        return text.includes(query);
+      });
     }
 
     // Persona filter
@@ -134,7 +138,7 @@ export default function SidebarEnhanced({
       <div className="sidebar-section">
         <div className="section-header">
           <h3 className="sidebar-title">Review History</h3>
-          <span className="review-count" title="Total reviews">{history.length}</span>
+          <span className="review-count" title="Total reviews">{totalCount}</span>
         </div>
 
         {/* Search Box */}
