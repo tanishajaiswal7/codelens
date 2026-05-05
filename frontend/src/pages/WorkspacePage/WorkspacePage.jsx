@@ -13,6 +13,7 @@ function WorkspacePage() {
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [deletingWorkspaceId, setDeletingWorkspaceId] = useState(null);
 
   useEffect(() => {
     fetchWorkspaces();
@@ -41,6 +42,21 @@ function WorkspacePage() {
       setError(err.message || 'Failed to create workspace');
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleDeleteWorkspace = async (workspaceId, workspaceName) => {
+    const confirmed = window.confirm(`Delete workspace \"${workspaceName}\"? This cannot be undone.`);
+    if (!confirmed) return;
+
+    try {
+      setDeletingWorkspaceId(workspaceId);
+      await workspaceApi.deleteWorkspace(workspaceId);
+      setWorkspaces((prev) => prev.filter((item) => item.workspace._id !== workspaceId));
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || 'Failed to delete workspace');
+    } finally {
+      setDeletingWorkspaceId(null);
     }
   };
 
@@ -101,6 +117,8 @@ function WorkspacePage() {
               key={item.workspace._id}
               workspace={item.workspace}
               role={item.role}
+              onDelete={item.role === 'owner' ? handleDeleteWorkspace : undefined}
+              isDeleting={deletingWorkspaceId === item.workspace._id}
             />
           ))}
         </div>
