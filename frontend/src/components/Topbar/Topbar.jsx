@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../../api/authApi.js';
-import { workspaceApi } from '../../api/workspaceApi.js';
+
 import ProfileCard from '../ProfileCard/ProfileCard.jsx';
 import {
   GettingStartedModal,
@@ -17,8 +17,6 @@ export default function Topbar({ user, showBackButton = false, onBack, onSidebar
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(user);
   const [docsOpen, setDocsOpen] = useState(false);
-  const [workspacesOpen, setWorkspacesOpen] = useState(false);
-  const [workspaces, setWorkspaces] = useState([]);
   const [gettingStartedOpen, setGettingStartedOpen] = useState(false);
   const [guidesOpen, setGuidesOpen] = useState(false);
   const [apiRefOpen, setApiRefOpen] = useState(false);
@@ -26,7 +24,6 @@ export default function Topbar({ user, showBackButton = false, onBack, onSidebar
   const [supportOpen, setSupportOpen] = useState(false);
   const [profileCardOpen, setProfileCardOpen] = useState(false);
   const docsRef = useRef(null);
-  const workspacesRef = useRef(null);
 
   useEffect(() => {
     setCurrentUser(user);
@@ -48,37 +45,18 @@ export default function Topbar({ user, showBackButton = false, onBack, onSidebar
       if (docsRef.current && !docsRef.current.contains(event.target)) {
         setDocsOpen(false);
       }
-      if (workspacesRef.current && !workspacesRef.current.contains(event.target)) {
-        setWorkspacesOpen(false);
-      }
     };
 
-    if (docsOpen || workspacesOpen) {
+    if (docsOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [docsOpen, workspacesOpen]);
+  }, [docsOpen]);
 
-  const fetchWorkspaces = async () => {
-    try {
-      const data = await workspaceApi.getMyWorkspaces();
-      setWorkspaces(data.workspaces || []);
-    } catch (error) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('Failed to load workspaces:', error);
-      }
-    }
-  };
 
-  const handleWorkspacesClick = () => {
-    if (!workspacesOpen) {
-      fetchWorkspaces();
-    }
-    setWorkspacesOpen(!workspacesOpen);
-  };
 
   const handleBackClick = () => {
     if (onBack) {
@@ -145,48 +123,13 @@ export default function Topbar({ user, showBackButton = false, onBack, onSidebar
       </div>
 
       <div className="topbar-right">
-        <div className="workspaces-menu-container" ref={workspacesRef}>
-          <button 
-            className="topbar-btn"
-            onClick={handleWorkspacesClick}
-          >
-            👥 Workspaces
-          </button>
-          {workspacesOpen && (
-            <div className="workspaces-dropdown">
-              {workspaces.length === 0 ? (
-                <div className="workspaces-empty">No workspaces</div>
-              ) : (
-                <>
-                  {workspaces.map((item) => (
-                    <button
-                      key={item.workspace._id}
-                      className="workspace-item"
-                      onClick={() => {
-                        navigate(`/workspace/${item.workspace._id}`);
-                        setWorkspacesOpen(false);
-                      }}
-                    >
-                      <span className="workspace-name">{item.workspace.name}</span>
-                      <span className={`workspace-role role-${item.role}`}>{item.role}</span>
-                    </button>
-                  ))}
-                  <hr className="workspaces-divider" />
-                </>
-              )}
-              <button
-                className="workspace-item manage-workspaces"
-                onClick={() => {
-                  navigate('/workspace');
-                  setWorkspacesOpen(false);
-                }}
-              >
-                <span>Manage Workspaces</span>
-                <span className="arrow">→</span>
-              </button>
-            </div>
-          )}
-        </div>
+        <button 
+          className="topbar-btn topbar-btn-workspaces"
+          onClick={() => navigate('/workspace')}
+          title="Go to Workspaces"
+        >
+          👥 Workspaces
+        </button>
 
         <div className="docs-menu-container" ref={docsRef}>
           <button 
