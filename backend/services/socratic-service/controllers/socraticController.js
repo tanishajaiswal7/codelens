@@ -1,8 +1,4 @@
-import { v4 as uuidv4 } from 'uuid'
 import { socraticService } from '../services/socraticService.js'
-import { jobService } from '../../job-service/services/jobService.js'
-import { publishToQueue } from '../../../rabbitmq/publisher.js'
-import { QUEUES } from '../../../rabbitmq/queues.js'
 
 export const socraticController = {
 

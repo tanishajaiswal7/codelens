@@ -331,7 +331,7 @@ function DashboardContent({ user }) {
           turnCount: response.turnCount || 0,
           maxTurns: response.maxTurns || 10,
           totalBugs: response.totalBugs || 0,
-          discoveredCount: response.discoveredCount || 0,
+          discoveredCount: response.bugsFound || 0,
           currentState: response.currentState || 'QUESTIONING',
           language: response.language || 'javascript',
         });
@@ -355,7 +355,7 @@ function DashboardContent({ user }) {
             turnCount: result.turnCount || 0,
             maxTurns: result.maxTurns || 10,
             totalBugs: result.totalBugs || 0,
-            discoveredCount: result.discoveredCount || 0,
+            discoveredCount: result.bugsFound || 0,
             currentState: result.currentState || 'QUESTIONING',
             language: result.language || 'javascript',
           });
@@ -433,7 +433,7 @@ function DashboardContent({ user }) {
               ],
               turnCount: result.turnCount,
               totalBugs: result.totalBugs,
-              discoveredCount: result.discoveredCount,
+              discoveredCount: result.bugsFound ?? result.discoveredCount ?? prev.discoveredCount,
               maxTurns: result.maxTurns || prev.maxTurns,
               currentState: result.currentState || prev.currentState,
               isWaiting: false,
