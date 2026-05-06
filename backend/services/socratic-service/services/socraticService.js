@@ -798,23 +798,26 @@ Just the clean, fixed code ready to use.`
     const userMessage = `Here is the original code:\n\n${originalCode}\n\nReturn only the fixed and optimized version.`
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': process.env.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-          model: 'claude-opus-4-20250514',
+      const response = await axios.post(
+        GROQ_URL,
+        {
+          model: MODEL,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userMessage }
+          ],
           max_tokens: 2000,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userMessage }]
-        })
-      })
+          temperature: 0.7,
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
 
-      const data = await response.json()
-      const optimized = data.content?.[0]?.text?.trim()
+      const optimized = response.data.choices?.[0]?.message?.content?.trim()
 
       if (!optimized || optimized === originalCode) {
         return null
