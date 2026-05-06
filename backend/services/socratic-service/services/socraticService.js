@@ -19,8 +19,20 @@ export const socraticService = {
   async analyzeCodeForBugs(code, persona) {
     const systemPrompt = `${PERSONA_INSTRUCTIONS[persona]}
 
-Analyze the provided code and identify ALL real bugs, errors, and 
-vulnerabilities. Focus on ACTUAL problems, not style suggestions.
+TASK: Perform a comprehensive code analysis to identify ALL real bugs, errors, 
+and vulnerabilities. Be thorough and critical.
+
+SEARCH FOR ALL BUG TYPES:
+✓ Logic errors (incorrect conditions, off-by-one, wrong operators)
+✓ Null/undefined dereference and missing checks
+✓ Runtime errors (array access, type mismatches, division by zero)
+✓ Infinite loops and deadlocks
+✓ Missing return statements or unreachable code
+✓ Security vulnerabilities (injection, auth flaws, input validation)
+✓ Race conditions and async issues (missing await, unhandled promises)
+✓ Resource leaks (unclosed connections, memory leaks)
+✓ Error handling gaps (missing try-catch, unhandled errors)
+✓ Data integrity issues (lost updates, inconsistent state)
 
 Return ONLY valid JSON — no markdown, no explanation outside JSON:
 {
@@ -28,24 +40,26 @@ Return ONLY valid JSON — no markdown, no explanation outside JSON:
     {
       "id": "bug_1",
       "title": "Short bug title",
-      "description": "Detailed description of the bug and why it is a problem",
+      "description": "Detailed description of why this is a critical bug and what failure it causes",
       "lineNumber": 11,
       "lineRef": "line 11" or "lines 18-19",
       "severity": "critical|high|medium|low",
       "keywords": ["keyword1", "keyword2", "concept"],
-      "socraticQuestion": "A Socratic question that guides user to discover this bug WITHOUT revealing it"
+      "socraticQuestion": "A Socratic question that guides user to discover this bug WITHOUT revealing the solution"
     }
   ]
 }
 
-Rules:
-- Maximum 5 bugs
-- Only include REAL bugs — actual logic errors, runtime exceptions, security holes, null pointer risks
-- Do NOT include style issues or minor naming conventions
-- lineNumber must be the exact line where the bug occurs
-- keywords are words the user might use when correctly identifying the bug
-- socraticQuestion must NOT name the bug directly — it must guide discovery
-- Order bugs from most critical to least critical`
+CRITICAL RULES:
+- Maximum 5 bugs (return the 5 MOST CRITICAL)
+- ONLY include REAL bugs — actual problems that cause failure, not style issues
+- Do NOT include code style, naming conventions, or minor suggestions
+- severity: Use CRITICAL for bugs that cause crashes/security breaches, HIGH for bugs that cause incorrect behavior, MEDIUM for edge cases
+- lineNumber must be accurate or null if line cannot be determined
+- keywords: Include technical terms user might mention when identifying the bug
+- socraticQuestion: Guide discovery without naming the bug
+- PRIORITIZE: Order by criticality — most dangerous first
+- If code has < 5 bugs, return only what you find (e.g., 1-3 bugs is OK)`
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -83,15 +97,16 @@ Rules:
     return parsedBugs
   },
 
-  // Lightweight static heuristics to catch very common issues when the AI fails
+  // Lightweight static heuristics to catch many bug types when the AI fails
   _fallbackStaticAnalysis(code) {
     const bugs = []
+    let idCounter = 1
+    const maxBugs = 5
 
-    // Off-by-one loop detection: for (...) i <= array.length
+    // 1. Off-by-one loop detection: for (...) i <= array.length
     const offByOneRegex = /for\s*\([^)]*;[^;]*<=\s*([^\)\s;]+)\.length[^;]*;/g
     let m
-    let idCounter = 1
-    while ((m = offByOneRegex.exec(code)) !== null) {
+    while ((m = offByOneRegex.exec(code)) !== null && bugs.length < maxBugs) {
       const varName = m[1] || 'the array'
       bugs.push({
         id: `fallback_bug_${idCounter++}`,
@@ -106,9 +121,9 @@ Rules:
       })
     }
 
-    // Division by zero pattern: / 0 or / (variable that could be zero)
+    // 2. Division by zero pattern: / 0
     const divByZeroRegex = /\/\s*0\b/
-    if (divByZeroRegex.test(code)) {
+    if (divByZeroRegex.test(code) && bugs.length < maxBugs) {
       bugs.push({
         id: `fallback_bug_${idCounter++}`,
         title: 'Possible division by zero',
@@ -116,13 +131,175 @@ Rules:
         lineNumber: null,
         lineRef: 'division expression',
         severity: 'critical',
-        keywords: ['division by zero', 'Infinity', 'NaN'],
-        socraticQuestion: 'What happens when you divide a number by zero in JavaScript? Consider the expression where division occurs.',
+        keywords: ['division by zero', 'Infinity', 'NaN', 'divide'],
+        socraticQuestion: 'What happens when you divide a number by zero in JavaScript? Look at the division expression and what it produces.',
         isSolved: false
       })
     }
 
-    return bugs
+    // 3. Null/undefined dereference: variable.property without null check
+    const nullDerefRegex = /(\w+)\.\w+(?!\s*=)/g
+    const derefMatches = new Set()
+    let derefM
+    while ((derefM = nullDerefRegex.exec(code)) !== null) {
+      const varName = derefM[1]
+      if (!['this', 'console', 'Math', 'Array', 'String', 'Object', 'JSON', 'document', 'window'].includes(varName)) {
+        derefMatches.add(varName)
+      }
+    }
+    if (derefMatches.size > 0 && bugs.length < maxBugs && !code.includes('if (') && !code.includes('?.')) {
+      const firstVar = Array.from(derefMatches)[0]
+      bugs.push({
+        id: `fallback_bug_${idCounter++}`,
+        title: 'Potential null/undefined dereference',
+        description: `Variable \"${firstVar}\" is accessed without null/undefined checks. If \"${firstVar}\" is null or undefined, accessing its properties will throw an error.`,
+        lineNumber: null,
+        lineRef: `${firstVar}.property access`,
+        severity: 'high',
+        keywords: ['null', 'undefined', 'dereference', 'TypeError', 'optional chaining'],
+        socraticQuestion: `What happens if \"${firstVar}\" is null or undefined when you try to access its properties? What checks should you add before accessing it?`,
+        isSolved: false
+      })
+    }
+
+    // 4. Infinite loop detection: while(true) or while(1)
+    const infiniteLoopRegex = /while\s*\(\s*true\s*\)|while\s*\(\s*1\s*\)/g
+    let infiniteM
+    while ((infiniteM = infiniteLoopRegex.exec(code)) !== null && bugs.length < maxBugs) {
+      if (!code.includes('break')) {
+        bugs.push({
+          id: `fallback_bug_${idCounter++}`,
+          title: 'Infinite loop detected',
+          description: 'Loop condition is always true and no clear exit/break statement found. This will cause the program to hang.',
+          lineNumber: null,
+          lineRef: 'while(true) loop',
+          severity: 'critical',
+          keywords: ['infinite loop', 'while true', 'hang', 'break', 'exit'],
+          socraticQuestion: 'This loop runs forever - what condition should stop it? How can you exit this loop safely?',
+          isSolved: false
+        })
+        break
+      }
+    }
+
+    // 5. Missing return statement in function
+    const functionRegex = /function\s+\w+\s*\([^)]*\)\s*\{|(\w+)\s*=\s*\([^)]*\)\s*=>\s*\{/g
+    let funcM
+    let foundMissingReturn = false
+    while ((funcM = functionRegex.exec(code)) !== null && bugs.length < maxBugs && !foundMissingReturn) {
+      const afterFunc = code.substring(funcM.index + funcM[0].length, funcM.index + 200)
+      if (!afterFunc.includes('return ') && (afterFunc.includes('const ') || afterFunc.includes('let ') || afterFunc.includes('=') || afterFunc.includes('}'))) {
+        bugs.push({
+          id: `fallback_bug_${idCounter++}`,
+          title: 'Missing return statement',
+          description: 'Function computes a value but may not return it. Function will implicitly return undefined.',
+          lineNumber: null,
+          lineRef: 'function body',
+          severity: 'medium',
+          keywords: ['missing return', 'undefined', 'return statement'],
+          socraticQuestion: 'This function computes a value but does it actually return it? What will happen if the result is undefined?',
+          isSolved: false
+        })
+        foundMissingReturn = true
+      }
+    }
+
+    // 6. Array access with potential negative/large index
+    const arrayAccessRegex = /(\w+)\[(-?\d+)\]/g
+    let arrM
+    while ((arrM = arrayAccessRegex.exec(code)) !== null && bugs.length < maxBugs) {
+      const arrayName = arrM[1]
+      const index = parseInt(arrM[2])
+      if (index < 0) {
+        bugs.push({
+          id: `fallback_bug_${idCounter++}`,
+          title: 'Array access with negative index',
+          description: `Array \"${arrayName}\" is accessed with index ${index}. Negative indices are allowed in JavaScript but often indicate a logic error.`,
+          lineNumber: null,
+          lineRef: `${arrayName}[${index}]`,
+          severity: 'medium',
+          keywords: ['negative index', 'array', 'out of bounds'],
+          socraticQuestion: `Why is \"${arrayName}\" being accessed with a negative index? Should this be accessing a different element?`,
+          isSolved: false
+        })
+        break
+      }
+    }
+
+    // 7. Missing error handling (async without try-catch)
+    if (code.includes('async ') && code.includes('await ') && !code.includes('try') && bugs.length < maxBugs) {
+      bugs.push({
+        id: `fallback_bug_${idCounter++}`,
+        title: 'Missing error handling for async operations',
+        description: 'Async/await code without try-catch block. If promise rejects, error will crash the application.',
+        lineNumber: null,
+        lineRef: 'async function',
+        severity: 'high',
+        keywords: ['try catch', 'error handling', 'async', 'await', 'reject'],
+        socraticQuestion: 'What happens if the await statement throws an error? How should you handle potential failures?',
+        isSolved: false
+      })
+    }
+
+    // 8. Variable shadowing
+    const varShadowingRegex = /(\b(?:let|const)\s+(\w+)|function\s+(\w+))/g
+    const varNames = new Map()
+    let varM
+    while ((varM = varShadowingRegex.exec(code)) !== null) {
+      const name = varM[2] || varM[3]
+      if (name && varNames.has(name)) {
+        if (bugs.length < maxBugs) {
+          bugs.push({
+            id: `fallback_bug_${idCounter++}`,
+            title: 'Variable shadowing',
+            description: `Variable \"${name}\" is redeclared, shadowing the outer scope variable. This can cause confusion and bugs.`,
+            lineNumber: null,
+            lineRef: `var ${name}`,
+            severity: 'medium',
+            keywords: ['shadowing', 'variable', 'scope', 'redeclare'],
+            socraticQuestion: `Variable \"${name}\" appears to be declared multiple times in different scopes. Which one is being used where?`,
+            isSolved: false
+          })
+          break
+        }
+      } else if (name) {
+        varNames.set(name, true)
+      }
+    }
+
+    // 9. Logic error: using = instead of == or ===
+    const assignmentInCondition = /if\s*\([^)]*=\s*[^=]/g
+    if (assignmentInCondition.test(code) && bugs.length < maxBugs) {
+      bugs.push({
+        id: `fallback_bug_${idCounter++}`,
+        title: 'Assignment in conditional (logic error)',
+        description: 'Assignment operator (=) used in if condition instead of comparison (== or ===). This assigns value instead of comparing.',
+        lineNumber: null,
+        lineRef: 'if condition',
+        severity: 'high',
+        keywords: ['assignment', 'comparison', '=', '==', '===', 'if condition'],
+        socraticQuestion: 'In the if condition, is this comparing values or assigning a value? What should this be?',
+        isSolved: false
+      })
+    }
+
+    // 10. Type mismatch: string concatenation instead of addition
+    const stringConcatRegex = /["\'][\w\s]*["\\']\s*\+\s*\d+|\d+\s*\+\s*["\'][\w\s]*["\']/
+    if (stringConcatRegex.test(code) && bugs.length < maxBugs) {
+      bugs.push({
+        id: `fallback_bug_${idCounter++}`,
+        title: 'String concatenation instead of arithmetic',
+        description: 'String and number are added together. This results in string concatenation, not arithmetic addition.',
+        lineNumber: null,
+        lineRef: 'string + number expression',
+        severity: 'medium',
+        keywords: ['type coercion', 'string concatenation', 'arithmetic', 'addition'],
+        socraticQuestion: 'When you add a string and a number, what happens? Is this the intended behavior?',
+        isSolved: false
+      })
+    }
+
+    return bugs.slice(0, maxBugs)
   },
 
   // ── STEP 2: VALIDATE USER RESPONSE ───────────────────────────
