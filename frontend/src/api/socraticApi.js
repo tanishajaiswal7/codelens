@@ -20,7 +20,7 @@ const socraticApi = {
     axiosInstance.post('/api/socratic/reply', {
       sessionId,
       userMessage,
-      ...(currentCode && { currentCode }),
+      ...(currentCode && { codeSnapshot: currentCode }),
     })
       .then(r => r.data)
       .catch(err => {

@@ -414,48 +414,68 @@ function DashboardContent({ user }) {
     }))
 
     try {
-      const { jobId } = await socraticApi.sendReply(
+      const response = await socraticApi.sendReply(
         socraticSession.sessionId,
         userMessage,
         currentCode || null
       )
 
-      if (!jobId) {
-        throw new Error('No jobId returned from API');
+      if (response?.jobId) {
+        const cancel = pollJob(
+          response.jobId,
+          (result) => {
+            setSocraticSession(prev => ({
+              ...prev,
+              messages: [
+                ...prev.messages,
+                { role: 'ai', content: result.aiMessage },
+                ...(result.nextBugQuestion ? [{ role: 'ai', content: result.nextBugQuestion }] : []),
+              ],
+              turnCount: result.turnCount,
+              totalBugs: result.totalBugs,
+              discoveredCount: result.discoveredCount,
+              maxTurns: result.maxTurns || prev.maxTurns,
+              currentState: result.currentState || prev.currentState,
+              isWaiting: false,
+            }))
+
+            if (result.completed) {
+              setSocraticCompleted(true)
+              if (result.optimizedCode) {
+                setSocraticOptimizedCode(result.optimizedCode)
+              }
+            }
+          },
+          (error) => {
+            console.error('Reply failed:', error)
+            setSocraticSession(prev => ({ ...prev, isWaiting: false }))
+          }
+        )
+
+        return () => cancel()
       }
 
-      const cancel = pollJob(
-        jobId,
-        (result) => {
-          setSocraticSession(prev => ({
-            ...prev,
-            messages: [
-              ...prev.messages,
-              { role: 'ai', content: result.aiMessage },
-              ...(result.nextBugQuestion ? [{ role: 'ai', content: result.nextBugQuestion }] : []),
-            ],
-            turnCount: result.turnCount,
-            totalBugs: result.totalBugs,
-            discoveredCount: result.discoveredCount,
-            maxTurns: result.maxTurns || prev.maxTurns,
-            currentState: result.currentState || prev.currentState,
-            isWaiting: false,
-          }))
+      setSocraticSession(prev => ({
+        ...prev,
+        messages: [
+          ...prev.messages,
+          { role: 'ai', content: response.aiMessage },
+          ...(response.nextBugQuestion ? [{ role: 'ai', content: response.nextBugQuestion }] : []),
+        ],
+        turnCount: response.turnCount,
+        totalBugs: response.totalBugs,
+        discoveredCount: response.bugsFound ?? response.discoveredCount ?? prev.discoveredCount,
+        maxTurns: response.maxTurns || prev.maxTurns,
+        currentState: response.currentState || prev.currentState,
+        isWaiting: false,
+      }))
 
-          if (result.completed) {
-            setSocraticCompleted(true)
-            if (result.optimizedCode) {
-              setSocraticOptimizedCode(result.optimizedCode)
-            }
-          }
-        },
-        (error) => {
-          console.error('Reply failed:', error)
-          setSocraticSession(prev => ({ ...prev, isWaiting: false }))
+      if (response.completed) {
+        setSocraticCompleted(true)
+        if (response.optimizedCode) {
+          setSocraticOptimizedCode(response.optimizedCode)
         }
-      )
-
-      return () => cancel()
+      }
     } catch (err) {
       console.error('Reply error:', err)
       setSocraticSession(prev => ({ ...prev, isWaiting: false }))
