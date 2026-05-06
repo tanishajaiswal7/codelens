@@ -88,3 +88,42 @@ export const getSession = async (req, res, next) => {
     next(error)
   }
 }
+
+export const extendSession = async (req, res, next) => {
+  try {
+    const { sessionId, additionalTurns = 5 } = req.body
+    const userId = req.userId
+
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId is required' })
+    }
+
+    const SocraticSession = (await import(
+      '../models/SocraticSession.js'
+    )).default
+
+    const session = await SocraticSession.findById(sessionId)
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' })
+    }
+    if (session.userId.toString() !== userId) {
+      return res.status(403).json({ error: 'Not your session' })
+    }
+
+    const newMaxTurns = (session.maxTurns || 10) + additionalTurns
+
+    await SocraticSession.findByIdAndUpdate(sessionId, {
+      status: 'active',
+      maxTurns: newMaxTurns
+    })
+
+    res.json({
+      success: true,
+      newMaxTurns,
+      additionalTurns
+    })
+  } catch (error) {
+    next(error)
+  }
+}
+

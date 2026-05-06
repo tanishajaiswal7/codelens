@@ -36,6 +36,7 @@ function DashboardContent({ user }) {
   const [socraticCodeChanged, setSocraticCodeChanged] = useState(false);
   const [socraticSession, setSocraticSession] = useState(null);
   const [socraticCompleted, setSocraticCompleted] = useState(false);
+  const [socraticRetryRequired, setSocraticRetryRequired] = useState(false);
   const [socraticCompletionData, setCompletionData] = useState(null);
   const [socraticKnownBugs, setSocraticKnownBugs] = useState([])
   const [isSocraticLoading, setIsSocraticLoading] = useState(false);
@@ -294,6 +295,7 @@ function DashboardContent({ user }) {
     setSocraticCodeChanged(false)
     setSocraticSession(null)
     setSocraticCompleted(false)
+    setSocraticRetryRequired(false)
     setCompletionData(null)
     await runStandardReview(code)
   };
@@ -303,6 +305,7 @@ function DashboardContent({ user }) {
     setSocraticCodeChanged(false);
     setSocraticSession(null);
     setSocraticCompleted(false);
+    setSocraticRetryRequired(false);
   };
 
   const handleStartSocraticSession = async (code) => {
@@ -313,6 +316,7 @@ function DashboardContent({ user }) {
 
     setIsSocraticLoading(true);
     setError(null);
+    setSocraticRetryRequired(false);
 
     try {
       console.log('[Socratic] Starting session with persona:', selectedPersona);
@@ -341,6 +345,7 @@ function DashboardContent({ user }) {
             currentState: result.currentState || 'QUESTIONING',
             language: result.language || 'javascript',
           });
+          setSocraticRetryRequired(Boolean(result.retryRequired));
           setIsSocraticLoading(false);
         },
         (error) => {
@@ -363,6 +368,7 @@ function DashboardContent({ user }) {
     if (!enabled) {
       setSocraticCodeChanged(false);
       setSocraticCompleted(false);
+      setSocraticRetryRequired(false);
       setSocraticSession(null);
       setSocraticOptimizedCode(null);
       return;
@@ -370,6 +376,7 @@ function DashboardContent({ user }) {
 
     setSocraticCodeChanged(false);
     setSocraticCompleted(false);
+    setSocraticRetryRequired(false);
     setSocraticSession(null);
     setSocraticOptimizedCode(null);
     setError(null);
@@ -722,15 +729,18 @@ function DashboardContent({ user }) {
                       discoveredCount={socraticSession?.discoveredCount || 0}
                       isWaiting={isSocraticLoading || socraticSession?.isWaiting || false}
                       completed={socraticCompleted}
+                      retryRequired={socraticRetryRequired}
                       optimizedCode={socraticOptimizedCode}
                       originalCode={originalCode}
                       error={error}
                       language={socraticSession?.language || 'javascript'}
                       onReply={handleSocraticReply}
                       onStartSession={() => handleStartSocraticSession(currentCode)}
+                      onRetry={() => handleStartSocraticSession(currentCode)}
                       onSwitchToReview={() => {
                         setSocraticMode(false)
                         setSocraticCompleted(false)
+                        setSocraticRetryRequired(false)
                         setSocraticOptimizedCode(null)
                       }}
                     />

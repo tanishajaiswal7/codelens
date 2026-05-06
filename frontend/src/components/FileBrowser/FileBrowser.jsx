@@ -33,6 +33,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
   const [socraticTotalBugs, setSocraticTotalBugs] = useState(0)
   const [socraticDiscoveredCount, setSocraticDiscoveredCount] = useState(0)
   const [socraticCompleted, setSocraticCompleted] = useState(false)
+  const [socraticRetryRequired, setSocraticRetryRequired] = useState(false)
   const [socraticOptimizedCode, setSocraticOptimizedCode] = useState(null)
   const [socraticError, setSocraticError] = useState(null)
   const [isSocraticLoading, setIsSocraticLoading] = useState(false)
@@ -205,6 +206,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
     setSocraticTotalBugs(0)
     setSocraticDiscoveredCount(0)
     setSocraticCompleted(false)
+    setSocraticRetryRequired(false)
     setSocraticOptimizedCode(null)
     try {
       const context = {
@@ -236,6 +238,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
           setSocraticTotalBugs(result.totalBugs || 0)
           setSocraticDiscoveredCount(result.discoveredCount || 0)
           setSocraticCompleted(Boolean(result.completed))
+          setSocraticRetryRequired(Boolean(result.retryRequired))
           setMode('socratic')
           setIsSocraticLoading(false)
         },
@@ -391,6 +394,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
                   setSocraticTotalBugs(0)
                   setSocraticDiscoveredCount(0)
                   setSocraticCompleted(false)
+                  setSocraticRetryRequired(false)
                   setSocraticOptimizedCode(null)
                   setSocraticError(null)
                   setEditedFileContent(null)
@@ -411,13 +415,16 @@ export default function FileBrowser({ owner, repo, onBack }) {
                   totalBugs={socraticTotalBugs}
                   discoveredCount={socraticDiscoveredCount}
                   completed={socraticCompleted}
+                  retryRequired={socraticRetryRequired}
                   optimizedCode={socraticOptimizedCode}
                   error={socraticError}
                   onReply={handleSocraticReply}
+                  onRetry={() => handleStartSocratic(reviewPersona)}
                   isWaiting={isSocraticLoading}
                   onSwitchToReview={() => {
                     setMode('review')
                     setSocraticCompleted(false)
+                    setSocraticRetryRequired(false)
                   }}
                 />
               ) : reviewResult ? (

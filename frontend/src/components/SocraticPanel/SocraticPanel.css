@@ -51,6 +51,13 @@
   white-space: nowrap;
 }
 
+.sc-turns-used {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
 /* ─────────────────────────────────────────────
    Error Banner
    ───────────────────────────────────────────── */
@@ -461,6 +468,125 @@
 
 .sp-review-btn:hover {
   background: var(--accent-2);
+}
+
+/* ─────────────────────────────────────────────
+   Bugs Summary (BUG 1 Fix)
+   ───────────────────────────────────────────── */
+
+.sc-bugs-summary {
+  font-size: 14px;
+  color: var(--text-2);
+  margin: 8px 0;
+  font-family: 'JetBrains Mono', monospace;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sc-bugs-found {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--green);
+}
+
+.sc-bugs-sep, .sc-bugs-total {
+  font-size: 18px;
+  color: var(--text-3);
+}
+
+.sc-bugs-label {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-left: 4px;
+}
+
+/* ─────────────────────────────────────────────
+   Reset/Extend Options (BUG 3 Fix)
+   ───────────────────────────────────────────── */
+
+.sc-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.sc-reset-btn {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: var(--accent-2);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--r-sm, 6px);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sc-reset-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--accent-2);
+}
+
+.sc-reset-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sc-extend-btn {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--border-2, 1px solid rgba(255, 255, 255, 0.1));
+  border-radius: var(--r-sm, 6px);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sc-extend-btn:hover:not(:disabled) {
+  background: var(--bg-2);
+  border-color: var(--accent);
+}
+
+.sc-extend-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─────────────────────────────────────────────
+   Optimized Code Header & Copy Button
+   ───────────────────────────────────────────── */
+
+.sp-optimized-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.sp-copy-btn {
+  font-size: 11px;
+  padding: 3px 10px;
+  background: transparent;
+  color: var(--accent-2);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sp-copy-btn:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: var(--accent-2);
 }
 
 /* ─────────────────────────────────────────────

@@ -35,6 +35,17 @@ const socraticApi = {
         console.error('[socraticApi] getSession error:', err.response?.data || err.message);
         throw err;
       }),
+
+  extendSession: (sessionId, additionalTurns) =>
+    axiosInstance.post('/api/socratic/extend', {
+      sessionId,
+      additionalTurns,
+    })
+      .then(r => r.data)
+      .catch(err => {
+        console.error('[socraticApi] extendSession error:', err.response?.data || err.message);
+        throw err;
+      }),
 }
 
 export default socraticApi

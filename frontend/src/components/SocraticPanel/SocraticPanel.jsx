@@ -9,17 +9,22 @@ export default function SocraticPanel({
   discoveredCount = 0,
   isWaiting = false,
   completed = false,
+  retryRequired = false,
   optimizedCode = null,
   originalCode = null,
   error = null,
   onReply,
   onStartSession,
+  onRetry,
+  onExtend,
   onSwitchToReview,
   language = 'javascript',
 }) {
   const [input, setInput] = useState('')
   const [showOptimized, setShowOptimized] = useState(false)
   const [sessionStarted, setSessionStarted] = useState(false)
+  const [hasExtended, setHasExtended] = useState(false)
+  const [copied, setCopied] = useState(false)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -51,7 +56,7 @@ export default function SocraticPanel({
   const sessionProgress = maxTurns > 0 ? (turnCount / maxTurns) * 100 : 0
   const bugsProgress = totalBugs > 0 ? (discoveredCount / totalBugs) * 100 : 0
   const isFirstMessage = messages.length === 0 && !isWaiting
-  const showInput = !completed && messages.length > 0
+  const showInput = !completed && !retryRequired && messages.length > 0
 
   return (
     <div className="sp-container">
@@ -63,7 +68,11 @@ export default function SocraticPanel({
           <span className="sp-subtitle">Learn by discovering bugs</span>
         </div>
         <div className="sp-turn-badge">
-          Turn {turnCount}/{maxTurns}
+          {completed ? (
+            <span className="sc-turns-used">{Math.min(turnCount, maxTurns)} turns used</span>
+          ) : (
+            <span>Turn {Math.min(turnCount, maxTurns)}/{maxTurns}</span>
+          )}
         </div>
       </div>
 
@@ -170,41 +179,127 @@ export default function SocraticPanel({
             </div>
           )}
 
-          {/* ── Completion card ── */}
-          {completed && (
-            <div className="sp-complete-card">
-              <div className="sp-complete-emoji">🎉</div>
-              <div className="sp-complete-title">Session Complete!</div>
+          {/* ── Retry card ── */}
+          {retryRequired && !completed && (
+            <div className="sp-complete-card sp-retry-card">
+              <div className="sp-complete-emoji">↻</div>
+              <div className="sp-complete-title">Try Again</div>
               <div className="sp-complete-body">
-                Outstanding work! You discovered and understood all 
-                {totalBugs > 1 ? ' ' + totalBugs + ' issues' : ' 1 issue'} in this code
-                through your own reasoning. That's exactly how great engineers think!
+                You found {discoveredCount}/{totalBugs} bugs before the turn budget ran out.
+                Restart the session to begin again from turn 0.
               </div>
-
-              {optimizedCode && (
-                <div className="sp-optimized-section">
-                  <button
-                    className="sp-toggle-code-btn"
-                    onClick={() => setShowOptimized(!showOptimized)}
-                  >
-                    {showOptimized ? '✕ Hide' : '▶ Show'} Optimized Code
-                  </button>
-                  {showOptimized && (
-                    <pre className="sp-code-block">
-                      <code>{optimizedCode}</code>
-                    </pre>
-                  )}
-                </div>
-              )}
 
               <button
                 className="sp-review-btn"
-                onClick={onSwitchToReview}
+                onClick={onRetry || onStartSession}
+                disabled={isWaiting}
               >
-                See Full Review →
+                Restart Session
               </button>
             </div>
           )}
+
+          {/* ── Completion card ── */}
+          {completed && !retryRequired && (() => {
+            const bugsFound = discoveredCount || 0
+            const totalBugsCount = totalBugs || 0
+            const allFound = bugsFound >= totalBugsCount
+            const noneFound = bugsFound === 0
+
+            const completionMessage = allFound
+              ? {
+                  title: 'Outstanding work!',
+                  body: `You discovered all ${totalBugsCount} issue${totalBugsCount !== 1 ? 's' : ''} in this code through your own reasoning. That is exactly how great engineers think!`,
+                  emoji: '🎉'
+                }
+              : bugsFound > 0
+              ? {
+                  title: 'Good effort!',
+                  body: `You found ${bugsFound} out of ${totalBugsCount} issue${totalBugsCount !== 1 ? 's' : ''}. The Socratic session has ended but you made real progress. Switch to Review Mode to see the full analysis.`,
+                  emoji: '📋'
+                }
+              : {
+                  title: 'Session ended.',
+                  body: `You used all your turns. No issues were identified yet. Switch to Review Mode to see the full AI analysis of this code.`,
+                  emoji: '⏰'
+                }
+
+            return (
+              <div className="sp-complete-card">
+                <div className="sp-complete-emoji">{completionMessage.emoji}</div>
+                <div className="sp-complete-title">{completionMessage.title}</div>
+                <div className="sp-complete-body">{completionMessage.body}</div>
+
+                <div className="sc-bugs-summary">
+                  <span className="sc-bugs-found">{bugsFound}</span>
+                  <span className="sc-bugs-sep"> / </span>
+                  <span className="sc-bugs-total">{totalBugsCount}</span>
+                  <span className="sc-bugs-label"> issues discovered</span>
+                </div>
+
+                {optimizedCode && (
+                  <div className="sp-optimized-section">
+                    <button
+                      className="sp-toggle-code-btn"
+                      onClick={() => setShowOptimized(!showOptimized)}
+                    >
+                      {showOptimized ? '✕ Hide' : '▶ Show'} Optimized Code
+                    </button>
+                    {showOptimized && (
+                      <>
+                        <div className="sp-optimized-header">
+                          <span>Fixed and optimized version</span>
+                          <button
+                            className="sp-copy-btn"
+                            onClick={() => {
+                              navigator.clipboard.writeText(optimizedCode)
+                              setCopied(true)
+                              setTimeout(() => setCopied(false), 2000)
+                            }}
+                          >
+                            {copied ? 'Copied!' : 'Copy code'}
+                          </button>
+                        </div>
+                        <pre className="sp-code-block">
+                          <code>{optimizedCode}</code>
+                        </pre>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {!allFound && (
+                  <div className="sc-options">
+                    <button
+                      className="sc-reset-btn"
+                      onClick={() => onRetry?.()}
+                      disabled={isWaiting}
+                    >
+                      Try again — reset session
+                    </button>
+                    <button
+                      className="sc-extend-btn"
+                      onClick={() => {
+                        onExtend?.()
+                        setHasExtended(true)
+                      }}
+                      disabled={hasExtended || isWaiting}
+                    >
+                      {hasExtended ? 'Already extended' : 'Get 5 more turns'}
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  className="sp-review-btn"
+                  onClick={onSwitchToReview}
+                >
+                  See Full Review →
+                </button>
+              </div>
+            )
+          })()
+          }
 
           <div ref={bottomRef} />
         </div>

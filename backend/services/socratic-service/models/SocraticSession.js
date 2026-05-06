@@ -30,13 +30,14 @@ const socraticSessionSchema = new mongoose.Schema({
   dontKnowCountForCurrentBug: { type: Number, default: 0 },
   turnCount: { type: Number, default: 0 },
   maxTurns: { type: Number, default: 10 },
-  status: { type: String, enum: ['active', 'completed'], default: 'active' },
+  status: { type: String, enum: ['active', 'completed', 'needs_retry'], default: 'active' },
   language: { type: String, default: 'code' },
   quality: { type: String, default: 'fair' },
   source: { type: String, default: 'paste' },
   repoFullName: { type: String, default: null },
   filePath: { type: String, default: null },
   repoRef: { type: String, default: null },
+  optimizedCode: { type: String, default: null },
 }, { timestamps: true })
 
 export default mongoose.model('SocraticSession', socraticSessionSchema)

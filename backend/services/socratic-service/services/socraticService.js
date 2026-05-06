@@ -98,10 +98,16 @@ ${code}
   }
 }
 
-function getMaxTurns(bugs) {
-  const budget = { critical: 5, high: 4, medium: 3, low: 2 }
-  const total = bugs.reduce((sum, bug) => sum + (budget[bug.severity] || 3), 0)
-  return Math.min(Math.max(total, 6), 25)
+function getMaxTurns(code, bugs) {
+  const lineCount = (code || '').split('\n').length
+  const severityBudget = { critical: 5, high: 4, medium: 3, low: 2 }
+  const severityTotal = bugs.reduce((sum, bug) => sum + (severityBudget[bug.severity] || 3), 0)
+
+  if (lineCount > 40 || bugs.length >= 4 || severityTotal >= 12) {
+    return 20
+  }
+
+  return 10
 }
 
 function extractCodeChange(oldCode, newCode) {
@@ -431,7 +437,7 @@ export const socraticService = {
       })
     }
 
-    const maxTurns = getMaxTurns(bugs)
+    const maxTurns = getMaxTurns(code, bugs)
     const firstQuestion = await generateFirstQuestion(bugs[0], persona, code, true)
 
     const session = await SocraticSession.create({
@@ -484,6 +490,21 @@ export const socraticService = {
         totalBugs: session.bugs.length,
         discoveredCount: session.discoveredBugs.length,
         completed: true,
+        retryRequired: false,
+      }
+    }
+
+    if (session.status === 'needs_retry') {
+      return {
+        sessionId,
+        aiMessage: 'You reached the turn limit before finding every bug. Try again to restart from turn 0.',
+        turnCount: session.turnCount,
+        maxTurns: session.maxTurns,
+        totalBugs: session.bugs.length,
+        discoveredCount: session.discoveredBugs.length,
+        currentState: 'NEEDS_RETRY',
+        completed: false,
+        retryRequired: true,
       }
     }
 
@@ -611,14 +632,50 @@ export const socraticService = {
       } else {
         session.status = 'completed'
         completed = true
-        optimizedCode = response.optimizedCode || session.currentCode || session.code
+        
+        // Generate optimized code when session completes
+        try {
+          const generatedOptimized = await this.generateOptimizedCode(
+            session.currentCode || session.code,
+            session.bugs || [],
+            session.persona
+          )
+          session.optimizedCode = generatedOptimized
+          optimizedCode = generatedOptimized || (session.currentCode || session.code)
+        } catch (err) {
+          console.error('[Socratic] Failed to generate optimized code:', err.message)
+          session.optimizedCode = null
+          optimizedCode = session.currentCode || session.code
+        }
       }
     }
 
     if (session.turnCount >= session.maxTurns && !completed) {
-      session.status = 'completed'
-      completed = true
-      optimizedCode = response.optimizedCode || session.currentCode || session.code
+      const allBugsFound = session.discoveredBugs.length >= session.bugs.length
+
+      if (allBugsFound) {
+        session.status = 'completed'
+        completed = true
+        
+        // Generate optimized code when session completes
+        try {
+          const generatedOptimized = await this.generateOptimizedCode(
+            session.currentCode || session.code,
+            session.bugs || [],
+            session.persona
+          )
+          session.optimizedCode = generatedOptimized
+          optimizedCode = generatedOptimized || (session.currentCode || session.code)
+        } catch (err) {
+          console.error('[Socratic] Failed to generate optimized code:', err.message)
+          session.optimizedCode = null
+          optimizedCode = session.currentCode || session.code
+        }
+      } else {
+        session.status = 'needs_retry'
+        completed = false
+        optimizedCode = null
+      }
     }
 
     await session.save()
@@ -633,6 +690,7 @@ export const socraticService = {
       discoveredCount: session.discoveredBugs.length,
       currentState: session.currentState,
       completed,
+      retryRequired: session.status === 'needs_retry',
       optimizedCode: optimizedCode || null,
     }
   },
@@ -655,6 +713,7 @@ export const socraticService = {
       totalBugs: session.bugs.length,
       discoveredCount: session.discoveredBugs.length,
       completed: session.status === 'completed',
+      retryRequired: session.status === 'needs_retry',
       currentState: session.currentState,
       currentBugIndex: session.currentBugIndex,
       language: session.language,
@@ -694,8 +753,13 @@ export const socraticService = {
 
     let completed = false
     if (session.turnCount >= session.maxTurns) {
-      session.status = 'completed'
-      completed = true
+      if (session.discoveredBugs.length >= session.bugs.length) {
+        session.status = 'completed'
+        completed = true
+      } else {
+        session.status = 'needs_retry'
+        completed = false
+      }
     }
 
     await session.save()
@@ -706,7 +770,61 @@ export const socraticService = {
       turnCount: session.turnCount,
       maxTurns: session.maxTurns,
       completed,
+      retryRequired: session.status === 'needs_retry',
       codeAware: true,
     }
   },
+
+  async generateOptimizedCode(originalCode, bugs, persona) {
+    const personaInstructions = {
+      faang: 'You are a FAANG senior engineer. Optimize for performance, readability, and SOLID principles.',
+      startup: 'You are a startup CTO. Fix the bugs and keep the code pragmatic and clean.',
+      security: 'You are a security auditor. Fix all vulnerabilities and add proper input validation.'
+    }
+
+    const bugsText = bugs && bugs.length > 0
+      ? `Known issues to fix:\n${bugs.map((b, i) => `${i+1}. ${b.title || b.what || b}`).join('\n')}`
+      : 'Fix any issues found during the Socratic session.'
+
+    const systemPrompt = `${personaInstructions[persona] || personaInstructions.security}
+
+You are given code that was reviewed in a Socratic session.
+${bugsText}
+
+Return ONLY the corrected, optimized code.
+No explanation. No markdown fences. No comments about what you changed.
+Just the clean, fixed code ready to use.`
+
+    const userMessage = `Here is the original code:\n\n${originalCode}\n\nReturn only the fixed and optimized version.`
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-20250514',
+          max_tokens: 2000,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userMessage }]
+        })
+      })
+
+      const data = await response.json()
+      const optimized = data.content?.[0]?.text?.trim()
+
+      if (!optimized || optimized === originalCode) {
+        return null
+      }
+
+      return optimized
+    } catch (err) {
+      console.error('[Socratic] Optimized code generation failed:', err.message)
+      return null
+    }
+  },
 }
+
