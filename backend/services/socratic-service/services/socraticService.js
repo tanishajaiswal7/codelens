@@ -62,17 +62,67 @@ Rules:
       })
     })
 
-    const data = await response.json()
-    const rawText = data.content?.[0]?.text?.trim()
-
+    let parsedBugs = []
     try {
-      const clean = rawText.replace(/```json|```/g, '').trim()
+      const data = await response.json()
+      const rawText = data?.content?.[0]?.text || data?.completion || ''
+      const clean = (rawText || '').toString().replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(clean)
-      return parsed.bugs || []
+      parsedBugs = parsed.bugs || []
     } catch (err) {
-      console.error('[Socratic] Failed to parse bug analysis:', err.message)
-      return []
+      console.error('[Socratic] Failed to parse bug analysis or AI call failed:', err?.message || err)
+      parsedBugs = []
     }
+
+    // If AI didn't return any bugs, fall back to a lightweight static analysis
+    if (!parsedBugs || parsedBugs.length === 0) {
+      const fallback = this._fallbackStaticAnalysis(code)
+      if (fallback && fallback.length > 0) return fallback
+    }
+
+    return parsedBugs
+  },
+
+  // Lightweight static heuristics to catch very common issues when the AI fails
+  _fallbackStaticAnalysis(code) {
+    const bugs = []
+
+    // Off-by-one loop detection: for (...) i <= array.length
+    const offByOneRegex = /for\s*\([^)]*;[^;]*<=\s*([^\)\s;]+)\.length[^;]*;/g
+    let m
+    let idCounter = 1
+    while ((m = offByOneRegex.exec(code)) !== null) {
+      const varName = m[1] || 'the array'
+      bugs.push({
+        id: `fallback_bug_${idCounter++}`,
+        title: 'Off-by-one loop bound causing out-of-range access',
+        description: `Loop uses a \"<=\" boundary against ${varName}.length which can access one element past the end and cause undefined values or runtime errors.`,
+        lineNumber: null,
+        lineRef: 'near for-loop',
+        severity: 'high',
+        keywords: ['off-by-one', 'out-of-range', 'indexing', 'loop'],
+        socraticQuestion: `Look at the for-loop that iterates over ${varName}. What happens when the loop index equals ${varName}.length?`,
+        isSolved: false
+      })
+    }
+
+    // Division by zero pattern: / 0 or / (variable that could be zero)
+    const divByZeroRegex = /\/\s*0\b/
+    if (divByZeroRegex.test(code)) {
+      bugs.push({
+        id: `fallback_bug_${idCounter++}`,
+        title: 'Possible division by zero',
+        description: 'Code contains a division by a literal zero which will throw or produce Infinity.',
+        lineNumber: null,
+        lineRef: 'division expression',
+        severity: 'critical',
+        keywords: ['division by zero', 'Infinity', 'NaN'],
+        socraticQuestion: 'What happens when you divide a number by zero in JavaScript? Consider the expression where division occurs.',
+        isSolved: false
+      })
+    }
+
+    return bugs
   },
 
   // ── STEP 2: VALIDATE USER RESPONSE ───────────────────────────
