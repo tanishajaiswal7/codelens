@@ -88,54 +88,13 @@ CRITICAL RULES:
       parsedBugs = []
     }
 
-    // If AI didn't return any bugs, fall back to a lightweight static analysis
+    // If AI didn't return any bugs, don't use fallback - let the AI error be handled
     if (!parsedBugs || parsedBugs.length === 0) {
-      const fallback = this._fallbackStaticAnalysis(code)
-      if (fallback && fallback.length > 0) return fallback
+      console.warn('[Socratic] AI analysis returned no bugs')
+      parsedBugs = []
     }
 
     return parsedBugs
-  },
-
-  // Minimal fallback - only for when AI completely fails
-  // This is NOT a comprehensive bug detector - that's the AI's job
-  _fallbackStaticAnalysis(code) {
-    const bugs = []
-
-    // Only catch the most OBVIOUS critical patterns when AI fails entirely
-    // This is a last resort, not a replacement for AI analysis
-
-    // 1. Division by zero (literal)
-    if (/\/\s*0\b/.test(code)) {
-      bugs.push({
-        id: 'fallback_bug_1',
-        title: 'Potential division by zero',
-        description: 'Code contains division by literal zero which will throw or produce Infinity.',
-        lineNumber: null,
-        lineRef: 'division expression',
-        severity: 'critical',
-        keywords: ['division by zero', 'Infinity', 'divide by zero'],
-        socraticQuestion: 'What happens when you divide a number by zero?',
-        isSolved: false
-      })
-    }
-
-    // 2. Off-by-one loop (most common pattern)
-    if (/for\s*\([^)]*;\s*[^;]*<=\s*([^\)\s;]+)\.length/.test(code)) {
-      bugs.push({
-        id: 'fallback_bug_2',
-        title: 'Potential off-by-one loop boundary error',
-        description: 'Loop uses "<=" with .length which may access beyond array bounds.',
-        lineNumber: null,
-        lineRef: 'for-loop',
-        severity: 'high',
-        keywords: ['off-by-one', 'loop boundary', 'array bounds'],
-        socraticQuestion: 'When your loop index equals array.length, what happens?',
-        isSolved: false
-      })
-    }
-
-    return bugs
   },
 
   // ── STEP 2: VALIDATE USER RESPONSE ───────────────────────────
