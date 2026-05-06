@@ -4,126 +4,75 @@ import { jobService } from '../../job-service/services/jobService.js'
 import { publishToQueue } from '../../../rabbitmq/publisher.js'
 import { QUEUES } from '../../../rabbitmq/queues.js'
 
-export const startSession = async (req, res, next) => {
-  try {
-    const { code, persona, context } = req.body
+export const socraticController = {
 
-    if (!code || code.trim().length < 10) {
-      return res.status(400).json({
-        error: 'Code is required (minimum 10 characters)'
-      })
+  async startSession(req, res, next) {
+    try {
+      const { code, persona, context } = req.body
+      const userId = req.userId
+
+      if (!code || code.trim().length < 10) {
+        return res.status(400).json({ error: 'Code is required (min 10 chars)' })
+      }
+      if (!['faang', 'startup', 'security'].includes(persona)) {
+        return res.status(400).json({ error: 'Invalid persona' })
+      }
+
+      const result = await socraticService.startSession(
+        userId, code, persona, context || null
+      )
+      
+      res.json(result)
+    } catch (err) {
+      next(err)
     }
+  },
 
-    if (!persona || !['faang', 'startup', 'security'].includes(persona)) {
-      return res.status(400).json({
-        error: 'Invalid persona. Must be faang, startup, or security'
-      })
+  async continueSession(req, res, next) {
+    try {
+      const { sessionId, userMessage, codeSnapshot } = req.body
+      const userId = req.userId
+
+      if (!sessionId || !userMessage) {
+        return res.status(400).json({ error: 'sessionId and userMessage required' })
+      }
+
+      const result = await socraticService.continueSession(
+        sessionId,
+        userMessage,
+        codeSnapshot || null
+      )
+
+      res.json(result)
+    } catch (err) {
+      next(err)
     }
+  },
 
-    const jobId = uuidv4()
-    await jobService.createJob(jobId, req.userId, 'socratic_start')
-
-    await publishToQueue(QUEUES.SOCRATIC_JOBS, {
-      jobId,
-      userId: req.userId,
-      timestamp: new Date().toISOString(),
-      action: 'start',
-      code,
-      persona,
-      context: context || null,
-    })
-
-    res.status(202).json({
-      jobId,
-      status: 'queued',
-      pollUrl: `/api/jobs/${jobId}`,
-    })
-  } catch (error) {
-    next(error)
-  }
-}
-
-export const replyToSession = async (req, res, next) => {
-  try {
-    const { sessionId, userMessage, currentCode, codeSnapshot, originalCode } = req.body
-
-    if (!sessionId) {
-      return res.status(400).json({ error: 'sessionId is required' })
+  async extendSession(req, res, next) {
+    try {
+      const { sessionId, additionalTurns } = req.body
+      const result = await socraticService.extendSession(
+        sessionId,
+        req.userId,
+        additionalTurns || 5
+      )
+      res.json(result)
+    } catch (err) {
+      next(err)
     }
-    if (!userMessage || userMessage.trim().length === 0) {
-      return res.status(400).json({ error: 'userMessage is required' })
+  },
+
+  async getSession(req, res, next) {
+    try {
+      const result = await socraticService.getSession(
+        req.params.sessionId,
+        req.userId
+      )
+      res.json(result)
+    } catch (err) {
+      next(err)
     }
-
-    const jobId = uuidv4()
-    await jobService.createJob(jobId, req.userId, 'socratic_reply')
-
-    await publishToQueue(QUEUES.SOCRATIC_JOBS, {
-      jobId,
-      userId: req.userId,
-      timestamp: new Date().toISOString(),
-      action: 'reply',
-      sessionId,
-      userMessage,
-      // prefer explicit codeSnapshot/originalCode when present
-      codeSnapshot: codeSnapshot || currentCode || null,
-      originalCode: originalCode || null,
-    })
-
-    res.status(202).json({
-      jobId,
-      status: 'queued',
-      pollUrl: `/api/jobs/${jobId}`,
-    })
-  } catch (error) {
-    next(error)
-  }
-}
-
-export const getSession = async (req, res, next) => {
-  try {
-    const { id } = req.params
-    const session = await socraticService.getSession(id, req.userId)
-    res.json(session)
-  } catch (error) {
-    next(error)
-  }
-}
-
-export const extendSession = async (req, res, next) => {
-  try {
-    const { sessionId, additionalTurns = 5 } = req.body
-    const userId = req.userId
-
-    if (!sessionId) {
-      return res.status(400).json({ error: 'sessionId is required' })
-    }
-
-    const SocraticSession = (await import(
-      '../models/SocraticSession.js'
-    )).default
-
-    const session = await SocraticSession.findById(sessionId)
-    if (!session) {
-      return res.status(404).json({ error: 'Session not found' })
-    }
-    if (session.userId.toString() !== userId) {
-      return res.status(403).json({ error: 'Not your session' })
-    }
-
-    const newMaxTurns = (session.maxTurns || 10) + additionalTurns
-
-    await SocraticSession.findByIdAndUpdate(sessionId, {
-      status: 'active',
-      maxTurns: newMaxTurns
-    })
-
-    res.json({
-      success: true,
-      newMaxTurns,
-      additionalTurns
-    })
-  } catch (error) {
-    next(error)
   }
 }
 

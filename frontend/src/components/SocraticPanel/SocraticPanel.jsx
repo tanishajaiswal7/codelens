@@ -25,6 +25,7 @@ export default function SocraticPanel({
   const [sessionStarted, setSessionStarted] = useState(false)
   const [hasExtended, setHasExtended] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [bugSolvedThisTurn, setBugSolvedThisTurn] = useState(false)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -37,6 +38,24 @@ export default function SocraticPanel({
       setSessionStarted(true)
     }
   }, [messages, completed])
+
+  useEffect(() => {
+    if (bugSolvedThisTurn) {
+      const timer = setTimeout(() => {
+        setBugSolvedThisTurn(false)
+      }, 700)
+      return () => clearTimeout(timer)
+    }
+  }, [bugSolvedThisTurn])
+
+  // Track previous discoveredCount to detect when a new bug is solved
+  const prevDiscoveredCountRef = useRef(0)
+  useEffect(() => {
+    if (discoveredCount > prevDiscoveredCountRef.current) {
+      setBugSolvedThisTurn(true)
+    }
+    prevDiscoveredCountRef.current = discoveredCount
+  }, [discoveredCount])
 
   const handleSend = () => {
     const trimmed = input.trim()
@@ -95,8 +114,8 @@ export default function SocraticPanel({
           </div>
         </div>
         <div className="sp-progress-item">
-          <label className="sp-progress-label">
-            Bugs Found ({discoveredCount}/{totalBugs})
+          <label className={`sp-progress-label ${bugSolvedThisTurn ? 'bug-solved-flash' : ''}`}>
+            Bugs Found <span className={`bugs-found-counter ${bugSolvedThisTurn ? 'just-incremented' : ''}`}>({discoveredCount}/{totalBugs})</span>
           </label>
           <div className="sp-progress-bar">
             <div 

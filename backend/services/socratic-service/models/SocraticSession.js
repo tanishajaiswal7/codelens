@@ -1,43 +1,74 @@
 import mongoose from 'mongoose'
 
+const bugSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  lineNumber: { type: Number, default: null },
+  lineRef: { type: String, default: null },
+  severity: { 
+    type: String, 
+    enum: ['critical', 'high', 'medium', 'low'], 
+    default: 'medium' 
+  },
+  keywords: [{ type: String }],
+  isSolved: { type: Boolean, default: false },
+  solvedAtTurn: { type: Number, default: null },
+  userExplanation: { type: String, default: null }
+}, { _id: false })
+
 const messageSchema = new mongoose.Schema({
   role: { type: String, enum: ['ai', 'user'], required: true },
   content: { type: String, required: true },
-}, { _id: false })
-
-const bugSchema = new mongoose.Schema({
-  id: { type: String },
-  title: { type: String },
-  what: { type: String },
-  why: { type: String },
-  where: { type: String },
-  severity: { type: String },
-  concept: { type: String },
-  giveaway: { type: String },
-  fix: { type: String },
+  turn: { type: Number, default: 0 },
+  relatedBugId: { type: String, default: null },
+  isValidation: { type: Boolean, default: false }
 }, { _id: false })
 
 const socraticSessionSchema = new mongoose.Schema({
-  userId: { type: String, required: true, index: true },
+  userId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true 
+  },
   code: { type: String, required: true },
-  currentCode: { type: String, required: true },
-  persona: { type: String, enum: ['faang', 'startup', 'security'], required: true },
-  bugs: { type: [bugSchema], default: [] },
+  persona: { 
+    type: String, 
+    enum: ['faang', 'startup', 'security'], 
+    required: true 
+  },
+  context: { type: mongoose.Schema.Types.Mixed, default: null },
+
+  // Detected bugs — filled in during analysis phase
+  detectedBugs: [bugSchema],
+  totalBugs: { type: Number, default: 0 },
+
+  // Progress tracking
   currentBugIndex: { type: Number, default: 0 },
-  discoveredBugs: { type: [bugSchema], default: [] },
-  messages: { type: [messageSchema], default: [] },
-  currentState: { type: String, default: 'QUESTIONING' },
-  dontKnowCountForCurrentBug: { type: Number, default: 0 },
+  bugsFound: { type: Number, default: 0 },
   turnCount: { type: Number, default: 0 },
   maxTurns: { type: Number, default: 10 },
-  status: { type: String, enum: ['active', 'completed', 'needs_retry'], default: 'active' },
-  language: { type: String, default: 'code' },
-  quality: { type: String, default: 'fair' },
-  source: { type: String, default: 'paste' },
-  repoFullName: { type: String, default: null },
-  filePath: { type: String, default: null },
-  repoRef: { type: String, default: null },
-  optimizedCode: { type: String, default: null },
-}, { timestamps: true })
 
-export default mongoose.model('SocraticSession', socraticSessionSchema)
+  // Conversation
+  messages: [messageSchema],
+
+  // State
+  status: { 
+    type: String, 
+    enum: ['active', 'completed', 'extended'], 
+    default: 'active' 
+  },
+  analysisComplete: { type: Boolean, default: false },
+
+  // Result
+  optimizedCode: { type: String, default: null },
+  originalCode: { type: String, required: true },
+
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+})
+
+export const SocraticSession = mongoose.model(
+  'SocraticSession', 
+  socraticSessionSchema
+)
