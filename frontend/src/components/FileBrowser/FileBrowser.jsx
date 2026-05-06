@@ -230,7 +230,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
         setSocraticTurnCount(response.turnCount || 0)
         setSocraticMaxTurns(response.maxTurns || 10)
         setSocraticTotalBugs(response.totalBugs || 0)
-        setSocraticDiscoveredCount(response.discoveredCount || 0)
+        setSocraticDiscoveredCount(response.bugsFound ?? response.discoveredCount ?? 0)
         setSocraticCompleted(Boolean(response.completed))
         setSocraticRetryRequired(Boolean(response.retryRequired))
         setMode('socratic')
@@ -246,7 +246,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
           setSocraticTurnCount(result.turnCount || 0)
           setSocraticMaxTurns(result.maxTurns || 10)
           setSocraticTotalBugs(result.totalBugs || 0)
-          setSocraticDiscoveredCount(result.discoveredCount || 0)
+          setSocraticDiscoveredCount(result.bugsFound ?? result.discoveredCount ?? 0)
           setSocraticCompleted(Boolean(result.completed))
           setSocraticRetryRequired(Boolean(result.retryRequired))
           setMode('socratic')
@@ -293,7 +293,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
         setSocraticTurnCount(response.turnCount || socraticTurnCount)
         setSocraticMaxTurns(response.maxTurns || socraticMaxTurns)
         setSocraticTotalBugs(response.totalBugs || socraticTotalBugs)
-        setSocraticDiscoveredCount(response.discoveredCount || socraticDiscoveredCount)
+        setSocraticDiscoveredCount(response.bugsFound ?? response.discoveredCount ?? socraticDiscoveredCount)
         if (response.completed) {
           setSocraticCompleted(true)
           setSocraticOptimizedCode(response.optimizedCode || null)
@@ -310,7 +310,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
           setSocraticTurnCount(result.turnCount || 0)
           setSocraticMaxTurns(result.maxTurns || socraticMaxTurns)
           setSocraticTotalBugs(result.totalBugs || 0)
-          setSocraticDiscoveredCount(result.discoveredCount || 0)
+          setSocraticDiscoveredCount(result.bugsFound ?? result.discoveredCount ?? 0)
 
           if (result.completed) {
             setSocraticCompleted(true)
