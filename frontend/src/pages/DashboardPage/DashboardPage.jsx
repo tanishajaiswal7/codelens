@@ -324,8 +324,22 @@ function DashboardContent({ user }) {
       const response = await socraticApi.startSession(code, selectedPersona);
       console.log('[Socratic] API Response:', response);
 
-      if (!response.jobId) {
-        throw new Error('No jobId returned from API');
+      if (!response?.jobId) {
+        setSocraticSession({
+          sessionId: response.sessionId,
+          messages: response.messages || [],
+          turnCount: response.turnCount || 0,
+          maxTurns: response.maxTurns || 10,
+          totalBugs: response.totalBugs || 0,
+          discoveredCount: response.discoveredCount || 0,
+          currentState: response.currentState || 'QUESTIONING',
+          language: response.language || 'javascript',
+        });
+        setSocraticRetryRequired(Boolean(response.retryRequired));
+        setSocraticCompleted(Boolean(response.completed));
+        setSocraticOptimizedCode(response.optimizedCode || null);
+        setIsSocraticLoading(false);
+        return;
       }
 
       const { jobId } = response;
@@ -405,6 +419,10 @@ function DashboardContent({ user }) {
         userMessage,
         currentCode || null
       )
+
+      if (!jobId) {
+        throw new Error('No jobId returned from API');
+      }
 
       const cancel = pollJob(
         jobId,

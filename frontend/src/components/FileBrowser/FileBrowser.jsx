@@ -225,7 +225,17 @@ export default function FileBrowser({ owner, repo, onBack }) {
       }
       
       if (!response?.jobId) {
-        throw new Error('Unable to queue Socratic session start.')
+        setSocraticSessionId(response.sessionId || null)
+        setSocraticMessages(response.messages || [])
+        setSocraticTurnCount(response.turnCount || 0)
+        setSocraticMaxTurns(response.maxTurns || 10)
+        setSocraticTotalBugs(response.totalBugs || 0)
+        setSocraticDiscoveredCount(response.discoveredCount || 0)
+        setSocraticCompleted(Boolean(response.completed))
+        setSocraticRetryRequired(Boolean(response.retryRequired))
+        setMode('socratic')
+        setIsSocraticLoading(false)
+        return
       }
 
       const cancel = pollJob(
@@ -279,7 +289,18 @@ export default function FileBrowser({ owner, repo, onBack }) {
       }
       
       if (!response?.jobId) {
-        throw new Error('Unable to queue Socratic reply.')
+        setSocraticMessages((prev) => [...prev, { role: 'ai', content: response.aiMessage || 'Let us continue.' }])
+        setSocraticTurnCount(response.turnCount || socraticTurnCount)
+        setSocraticMaxTurns(response.maxTurns || socraticMaxTurns)
+        setSocraticTotalBugs(response.totalBugs || socraticTotalBugs)
+        setSocraticDiscoveredCount(response.discoveredCount || socraticDiscoveredCount)
+        if (response.completed) {
+          setSocraticCompleted(true)
+          setSocraticOptimizedCode(response.optimizedCode || null)
+          await handleReviewFile(reviewPersona)
+        }
+        setIsSocraticLoading(false)
+        return
       }
 
       const cancel = pollJob(
