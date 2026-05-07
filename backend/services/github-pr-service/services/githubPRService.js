@@ -141,9 +141,9 @@ export const generatePRReview = async (
         const diffPrompt = `You are reviewing a GitHub Pull Request diff. The patch shows lines starting with + (added) and - (removed). Focus your review on the changed lines. Reference specific line numbers where possible.\n\nFile: ${file.filename}\nStatus: ${file.status}\n\n\`\`\`diff\n${file.patch}\n\`\`\``;
 
         // Get AI suggestions
-        const systemPrompt = promptService.buildSystemPrompt(persona);
-        const aiResponse = await reviewService.callAI(
-          `${systemPrompt}\n\n${diffPrompt}`,
+        const { systemPrompt: personaPrompt } = promptService.buildPersonaPrompt(persona, diffPrompt);
+        const aiResponse = await reviewService.callGroqAPI(
+          `${personaPrompt}\n\n${diffPrompt}`,
           diffPrompt
         );
 
