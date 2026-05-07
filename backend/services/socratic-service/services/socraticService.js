@@ -237,6 +237,9 @@ STRICT RULES:
   return parsed.bugs.slice(0, 5)
 }
 
+// Export internal analyzer for smoke tests
+export { analyzeCodeForBugs }
+
 // ── PHASE 2: VALIDATE USER RESPONSE ─────────────────────────
 async function validateUserResponse(userMessage, currentBug, recentHistory, code, persona) {
   const historyText = recentHistory
