@@ -177,30 +177,39 @@ const PERSONA_STYLE = {
 async function analyzeCodeForBugs(code, persona) {
   const system = `${PERSONA_STYLE[persona]}
 
-Analyze the code and find the most critical bugs.
-Return ONLY a valid JSON object. No explanation. No markdown.
+Analyze the code and find ONLY bugs that would cause:
+- Runtime crashes or exceptions
+- Incorrect output or wrong calculations  
+- Security vulnerabilities that can be exploited
+- Data loss or corruption
+
+Return ONLY valid JSON. No text before or after. No markdown.
 
 {
   "bugs": [
     {
       "id": "bug_1",
-      "title": "Brief title",
-      "description": "What is wrong and why",
-      "lineNumber": 3,
-      "lineRef": "line 3",
+      "title": "Short title",
+      "description": "What goes wrong and why",
+      "lineNumber": 4,
+      "lineRef": "line 4",
       "severity": "critical",
-      "keywords": ["null", "crash"],
-      "socraticQuestion": "A targeted question that guides discovery without naming the bug. Reference specific lines."
+      "keywords": ["bounds", "undefined", "NaN"],
+      "socraticQuestion": "Targeted question guiding discovery without naming the bug"
     }
   ]
 }
 
-Rules:
-- Maximum 5 bugs
-- ONLY real bugs — logic errors, crashes, security holes
-- Do NOT include style or naming conventions
-- socraticQuestion must NOT name the bug
-- Order by severity`
+STRICT RULES:
+- Only include bugs that ACTUALLY exist in the code as written
+- Do NOT include theoretical or hypothetical issues
+- Do NOT include style, naming, or best practice suggestions
+- Do NOT pad to reach a higher count — if there are 2 real bugs, return 2
+- Maximum 5 bugs, but return FEWER if fewer actually exist
+- A bug must cause OBSERVABLE wrong behavior, not just be suboptimal
+- lineNumber must be the exact line where the problem occurs
+- keywords: words a user would say when correctly identifying this bug
+- socraticQuestion: must reference the specific line number, must NOT name the bug`
 
   let raw = ''
 
