@@ -137,15 +137,12 @@ export const generatePRReview = async (
 
     for (const file of filesToReview) {
       try {
-        // Build diff-aware prompt
-        const diffPrompt = `You are reviewing a GitHub Pull Request diff. The patch shows lines starting with + (added) and - (removed). Focus your review on the changed lines. Reference specific line numbers where possible.\n\nFile: ${file.filename}\nStatus: ${file.status}\n\n\`\`\`diff\n${file.patch}\n\`\`\``;
+        // Build PR diff content with line numbers for AI review
+        const prDiffContent = `GitHub PR Diff Review\nFile: ${file.filename}\nStatus: ${file.status}\n\n${file.patch}`;
 
-        // Get AI suggestions
-        const { systemPrompt: personaPrompt } = promptService.buildPersonaPrompt(persona, diffPrompt);
-        const aiResponse = await reviewService.callGroqAPI(
-          `${personaPrompt}\n\n${diffPrompt}`,
-          diffPrompt
-        );
+        // Get persona-specific system prompt and properly formatted user message
+        const { systemPrompt, userMessage } = promptService.buildPersonaPrompt(persona, prDiffContent);
+        const aiResponse = await reviewService.callGroqAPI(systemPrompt, userMessage);
 
         // Parse suggestions
         const suggestions = parseAIResponse(aiResponse);
