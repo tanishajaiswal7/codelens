@@ -2,10 +2,10 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  height: 100%;
+  height: auto;
   min-height: 0;
-  overflow: auto;
-  padding: 16px;
+  overflow: visible;
+  padding: 16px 16px 48px;
 }
 
 .back-button {
@@ -44,7 +44,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  overflow-y: auto;
+  overflow: visible;
 }
 
 .pr-item {
