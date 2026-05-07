@@ -851,6 +851,13 @@ function DashboardContent({ user }) {
                   onReviewStart={handleReviewStart}
                 />
               )}
+              {gitHubStep === 'review' && prReview && (
+                <PRReviewPanel
+                  review={prReview}
+                  onBack={handleBackToFiles}
+                  hideBackButton={false}
+                />
+              )}
               {gitHubStep === 'filebrowser' && selectedRepo && (
                 <FileBrowser 
                   owner={selectedRepo.split('/')[0]}
