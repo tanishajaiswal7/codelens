@@ -27,6 +27,20 @@ export default function CodeEditor({
   const [language, setLanguage] = useState('javascript');
   const localEditorRef = useRef(null);
 
+  const resetEditorViewport = () => {
+    const editor = localEditorRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    editor.setScrollTop(0);
+    editor.setScrollLeft(0);
+    editor.setPosition({ lineNumber: 1, column: 1 });
+    editor.revealPositionInCenter({ lineNumber: 1, column: 1 });
+    editor.revealLine(1);
+  };
+
   // Load preferred language from localStorage on mount
   useEffect(() => {
     const savedLanguage = initialLanguage || localStorage.getItem('codelens-preferred-language') || 'javascript';
@@ -35,6 +49,7 @@ export default function CodeEditor({
 
   useEffect(() => {
     setCode(initialCode || '');
+    resetEditorViewport();
   }, [initialCode]);
 
   const lineCount = code.split('\n').length;
@@ -98,6 +113,7 @@ export default function CodeEditor({
             if (editorRef) {
               editorRef.current = editor;
             }
+            resetEditorViewport();
           }}
           theme="vs-dark"
           options={{

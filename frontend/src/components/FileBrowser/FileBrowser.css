@@ -53,6 +53,19 @@
   grid-template-columns: 220px 1fr 360px;
 }
 
+.fb-workspace.editor-expanded {
+  grid-template-columns: 1fr;
+}
+
+.fb-workspace.editor-expanded .fb-col-tree,
+.fb-workspace.editor-expanded .fb-col-review {
+  display: none;
+}
+
+.fb-workspace.editor-expanded .fb-col-editor {
+  border-right: none;
+}
+
 .fb-workspace > * {
   min-width: 0;
   min-height: 0;

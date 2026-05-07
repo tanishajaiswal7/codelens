@@ -14,6 +14,8 @@ export default function FilePreview({
   onStartSocratic = null,
   isSocraticLoading = false,
   onCodeChange = null,
+  isExpanded = false,
+  onToggleExpand = null,
 }) {
   const [selectedPersona, setSelectedPersona] = useState('faang');
   const [editedCode, setEditedCode] = useState(null);
@@ -42,6 +44,13 @@ export default function FilePreview({
         <span className="fp-filename">{file.filename || file.path?.split('/').pop()}</span>
         <span className="fp-lang-badge">{file.language?.toUpperCase()}</span>
         <span className="fp-line-count">{file.lineCount} lines</span>
+        <button
+          className="fp-expand-btn"
+          onClick={() => onToggleExpand?.()}
+          type="button"
+        >
+          {isExpanded ? 'Exit Full View' : 'Expand Editor'}
+        </button>
         {file.truncated && (
           <span className="fp-truncation-warning">
             ⚠ Showing first 300 lines
