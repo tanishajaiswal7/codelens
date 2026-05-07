@@ -75,6 +75,8 @@ const PRFileSelector = ({
 
     setReviewing(true);
     try {
+      const selectedFilesData = files.filter((file) => selectedFiles.has(file.filename));
+
       const result = await githubApi.reviewPR(
         resolvedOwner,
         resolvedRepo,
@@ -82,7 +84,8 @@ const PRFileSelector = ({
         prTitle,
         prUrl,
         Array.from(selectedFiles),
-        persona
+        persona,
+        selectedFilesData
       );
       onReviewStart(result);
     } catch (err) {
@@ -123,10 +126,10 @@ const PRFileSelector = ({
       ) : (
         <>
           <div className="file-actions">
-            <button className="action-button" onClick={selectAll}>
+            <button className="action-button" onClick={selectAll} type="button">
               Select all
             </button>
-            <button className="action-button" onClick={deselectAll}>
+            <button className="action-button" onClick={deselectAll} type="button">
               Deselect all
             </button>
           </div>
@@ -178,6 +181,7 @@ const PRFileSelector = ({
             className="review-button"
             disabled={selectedFiles.size === 0 || reviewing}
             onClick={handleReview}
+            type="button"
           >
             {reviewing
               ? 'Generating review...'

@@ -154,7 +154,7 @@ export const getPullFiles = async (req, res) => {
 export const reviewPR = async (req, res) => {
   try {
     const userId = req.userId;
-    const { owner, repo, prNumber, prTitle, prUrl, selectedFiles, persona } =
+    const { owner, repo, prNumber, prTitle, prUrl, selectedFiles, selectedFilesData, persona } =
       req.body;
 
     if (!owner || !repo || !prNumber || !selectedFiles || !persona) {
@@ -175,7 +175,8 @@ export const reviewPR = async (req, res) => {
       prTitle,
       prUrl,
       selectedFiles,
-      persona
+      persona,
+      selectedFilesData
     );
 
     res.json(result);

@@ -63,7 +63,8 @@ export const reviewPR = async (
   prTitle,
   prUrl,
   selectedFiles,
-  persona
+  persona,
+  selectedFilesData = null
 ) => {
   const response = await axiosInstance.post('/api/github/pr/review', {
     owner,
@@ -73,6 +74,7 @@ export const reviewPR = async (
     prUrl,
     selectedFiles,
     persona,
+    selectedFilesData,
   });
   return response.data;
 };

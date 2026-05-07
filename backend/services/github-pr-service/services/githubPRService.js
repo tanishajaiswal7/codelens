@@ -115,14 +115,17 @@ export const generatePRReview = async (
   prTitle,
   prUrl,
   selectedFiles,
-  persona
+  persona,
+  preloadedFiles = null
 ) => {
   try {
     const token = await resolveToken(userId);
     const client = new GitHubApiClient(token);
 
-    // Fetch all files for the PR
-    const allFiles = await client.getPullFiles(owner, repo, prNumber);
+    // Use preloaded file data when the frontend already has it, otherwise fetch.
+    const allFiles = Array.isArray(preloadedFiles) && preloadedFiles.length > 0
+      ? preloadedFiles
+      : await client.getPullFiles(owner, repo, prNumber);
 
     // Filter to selected files only
     const filesToReview = allFiles.filter((f) =>
