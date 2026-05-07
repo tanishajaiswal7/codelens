@@ -22,7 +22,7 @@ const PRFileSelector = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedFiles, setSelectedFiles] = useState(new Set());
-  const [persona, setPersona] = useState('expert');
+  const [persona, setPersona] = useState('faang');
   const [reviewing, setReviewing] = useState(false);
   const [resolvedOwner, resolvedRepo] = (owner && repo)
     ? [owner, repo]
@@ -168,9 +168,9 @@ const PRFileSelector = ({
           <div className="reviewer-section">
             <h3>Review style</h3>
             <PersonaPicker
-              value={persona}
-              onChange={setPersona}
-              showLabel={false}
+              selectedPersona={persona}
+              onPersonaChange={setPersona}
+              compact={true}
             />
           </div>
 
