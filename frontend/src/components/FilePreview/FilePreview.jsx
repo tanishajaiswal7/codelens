@@ -140,8 +140,8 @@ export default function FilePreview({
           options={{
             readOnly: mode !== 'socratic',
             minimap: { enabled: false },
-            fontSize: 12,
-            lineHeight: 21,
+            fontSize: isExpanded ? 11 : 12,
+            lineHeight: isExpanded ? 18 : 21,
             scrollBeyondLastLine: false,
             wordWrap: 'on',
             automaticLayout: true,

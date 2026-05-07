@@ -10,7 +10,7 @@ import { socraticApi } from '../../api/socraticApi.js'
 import { pollJob } from '../../utils/jobPoller'
 import './FileBrowser.css'
 
-export default function FileBrowser({ owner, repo, onBack }) {
+export default function FileBrowser({ owner, repo, onBack, isExpanded = false, onToggleExpand = null }) {
   const [branches, setBranches] = useState([])
   const [currentRef, setCurrentRef] = useState('main')
   const [currentPath, setCurrentPath] = useState('')
@@ -38,7 +38,6 @@ export default function FileBrowser({ owner, repo, onBack }) {
   const [socraticError, setSocraticError] = useState(null)
   const [isSocraticLoading, setIsSocraticLoading] = useState(false)
   const [editedFileContent, setEditedFileContent] = useState(null)
-  const [isEditorExpanded, setIsEditorExpanded] = useState(false)
 
   useEffect(() => {
     loadBranches()
@@ -82,7 +81,6 @@ export default function FileBrowser({ owner, repo, onBack }) {
     setCurrentRef(ref)
     setSelectedFile(null)
     setReviewResult(null)
-    setIsEditorExpanded(false)
     loadTree('', ref)
   }
 
@@ -94,7 +92,6 @@ export default function FileBrowser({ owner, repo, onBack }) {
     setOriginalCode(null)
     setReReviewMeta(null)
     setEditedFileContent(null)
-    setIsEditorExpanded(false)
     try {
       const content = await fileBrowserApi.getFileContent(
         owner, repo, file.path, currentRef
@@ -360,7 +357,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
       </div>
 
       {/* ── Three column workspace ── */}
-      <div className={`fb-workspace${(reviewResult || socraticSessionId) ? ' has-review' : ''}${isEditorExpanded ? ' editor-expanded' : ''}`}>
+      <div className={`fb-workspace${(reviewResult || socraticSessionId) ? ' has-review' : ''}${isExpanded ? ' editor-expanded' : ''}`}>
 
         {/* Column 1: File Tree */}
         <div className="fb-col-tree">
@@ -389,8 +386,8 @@ export default function FileBrowser({ owner, repo, onBack }) {
               onStartSocratic={handleStartSocratic}
               isSocraticLoading={isSocraticLoading}
               onCodeChange={handleFileCodeChange}
-              isExpanded={isEditorExpanded}
-              onToggleExpand={() => setIsEditorExpanded(prev => !prev)}
+              isExpanded={isExpanded}
+              onToggleExpand={() => onToggleExpand?.()}
             />
           ) : (
             <div className="fb-empty-editor">
@@ -403,7 +400,7 @@ export default function FileBrowser({ owner, repo, onBack }) {
         </div>
 
         {/* Column 3: Review or Socratic Panel */}
-        {!isEditorExpanded && (reviewResult || socraticSessionId || (mode === 'socratic' && isSocraticLoading)) && (
+        {!isExpanded && (reviewResult || socraticSessionId || (mode === 'socratic' && isSocraticLoading)) && (
           <div className="fb-col-review">
             <div className="fb-review-topbar">
               <span className="fb-review-label">

@@ -52,10 +52,12 @@ function DashboardContent({ user }) {
   const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
   const [historyView, setHistoryView] = useState(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isFileBrowserExpanded, setIsFileBrowserExpanded] = useState(false);
   const splitContainerRef = useRef(null);
   const dashboardBodyRef = useRef(null);
   const editorRef = useRef(null);
   const dashboardMainRef = useRef(null);
+  const sidebarOpenBeforeFileBrowserExpand = useRef(true);
 
   useEffect(() => {
     const syncMobileSidebar = () => {
@@ -581,6 +583,7 @@ function DashboardContent({ user }) {
     setSelectedRepo(null);
     setSelectedPR(null);
     setPrReview(null);
+    setIsFileBrowserExpanded(false);
 
     if (window.innerWidth <= 900) {
       setSidebarOpen(false);
@@ -600,6 +603,7 @@ function DashboardContent({ user }) {
   const handleBrowseFiles = (owner, repo) => {
     setSelectedRepo(`${owner}/${repo}`);
     setGitHubStep('filebrowser');
+    setIsFileBrowserExpanded(false);
   };
 
   const handlePRSelect = (prNumber, prTitle, prUrl) => {
@@ -630,6 +634,22 @@ function DashboardContent({ user }) {
   const handleBackFromFileBrowser = () => {
     setGitHubStep('repos');
     setSelectedRepo(null);
+    setIsFileBrowserExpanded(false);
+  };
+
+  const handleToggleFileBrowserExpand = () => {
+    setIsFileBrowserExpanded((previous) => {
+      const nextValue = !previous;
+
+      if (nextValue) {
+        sidebarOpenBeforeFileBrowserExpand.current = sidebarOpen;
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(sidebarOpenBeforeFileBrowserExpand.current);
+      }
+
+      return nextValue;
+    });
   };
 
   const getBackHandler = () => {
@@ -651,7 +671,7 @@ function DashboardContent({ user }) {
   };
 
   return (
-    <div className="dashboard">
+    <div className={`dashboard${isFileBrowserExpanded ? ' dashboard--filebrowser-expanded' : ''}`}>
       <Topbar 
         user={user} 
         showBackButton={mode === 'github' && gitHubStep !== 'repos'}
@@ -660,7 +680,7 @@ function DashboardContent({ user }) {
       />
       
       <div className="dashboard-body" ref={dashboardBodyRef}>
-        {sidebarOpen && (
+        {sidebarOpen && !isFileBrowserExpanded && (
           <SidebarEnhanced 
             onReviewSelect={handleSelectReview}
             onNewReview={handleNewReview}
@@ -671,7 +691,7 @@ function DashboardContent({ user }) {
           />
         )}
 
-        {sidebarOpen && (
+        {sidebarOpen && !isFileBrowserExpanded && (
           <div
             className="sidebar-resizer"
             role="separator"
@@ -700,20 +720,22 @@ function DashboardContent({ user }) {
           {!historyView && (
             <>
               {/* Mode Tabs */}
-              <div className="mode-tabs">
-                <button
-                  className={`mode-tab ${mode === 'code' ? 'active' : ''}`}
-                  onClick={() => setMode('code')}
-                >
-                  Paste Code
-                </button>
-            <button
-              className={`mode-tab ${mode === 'github' ? 'active' : ''}`}
-              onClick={() => setMode('github')}
-            >
-              Import from GitHub
-            </button>
-          </div>
+              {!isFileBrowserExpanded && (
+                <div className="mode-tabs">
+                  <button
+                    className={`mode-tab ${mode === 'code' ? 'active' : ''}`}
+                    onClick={() => setMode('code')}
+                  >
+                    Paste Code
+                  </button>
+                  <button
+                    className={`mode-tab ${mode === 'github' ? 'active' : ''}`}
+                    onClick={() => setMode('github')}
+                  >
+                    Import from GitHub
+                  </button>
+                </div>
+              )}
 
           {/* Paste Code Tab */}
           {mode === 'code' && (
@@ -832,6 +854,8 @@ function DashboardContent({ user }) {
                   owner={selectedRepo.split('/')[0]}
                   repo={selectedRepo.split('/')[1]}
                   onBack={handleBackFromFileBrowser}
+                  isExpanded={isFileBrowserExpanded}
+                  onToggleExpand={handleToggleFileBrowserExpand}
                 />
               )}
             </div>
