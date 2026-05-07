@@ -11,6 +11,7 @@ import './PRFileSelector.css';
 const PRFileSelector = ({
   owner,
   repo,
+  repoFullName,
   prNumber,
   prTitle,
   prUrl,
@@ -23,17 +24,26 @@ const PRFileSelector = ({
   const [selectedFiles, setSelectedFiles] = useState(new Set());
   const [persona, setPersona] = useState('expert');
   const [reviewing, setReviewing] = useState(false);
+  const [resolvedOwner, resolvedRepo] = (owner && repo)
+    ? [owner, repo]
+    : (repoFullName || '').split('/');
 
   useEffect(() => {
     fetchFiles();
-  }, [owner, repo, prNumber]);
+  }, [resolvedOwner, resolvedRepo, prNumber]);
 
   const fetchFiles = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const data = await githubApi.getPullFiles(owner, repo, prNumber);
+      if (!resolvedOwner || !resolvedRepo || !prNumber) {
+        setError('Repository or PR information is missing. Please go back and open the PR again.');
+        setFiles([]);
+        return;
+      }
+
+      const data = await githubApi.getPullFiles(resolvedOwner, resolvedRepo, prNumber);
       setFiles(data);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch pull request files');
@@ -66,8 +76,8 @@ const PRFileSelector = ({
     setReviewing(true);
     try {
       const result = await githubApi.reviewPR(
-        owner,
-        repo,
+        resolvedOwner,
+        resolvedRepo,
         prNumber,
         prTitle,
         prUrl,
@@ -184,6 +194,7 @@ const PRFileSelector = ({
 PRFileSelector.propTypes = {
   owner: PropTypes.string.isRequired,
   repo: PropTypes.string.isRequired,
+  repoFullName: PropTypes.string,
   prNumber: PropTypes.number.isRequired,
   prTitle: PropTypes.string.isRequired,
   prUrl: PropTypes.string.isRequired,

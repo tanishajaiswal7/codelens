@@ -841,6 +841,8 @@ function DashboardContent({ user }) {
               )}
               {gitHubStep === 'files' && selectedRepo && selectedPR && (
                 <PRFileSelector 
+                  owner={selectedRepo.split('/')[0]}
+                  repo={selectedRepo.split('/')[1]}
                   repoFullName={selectedRepo}
                   prNumber={selectedPR.number}
                   prTitle={selectedPR.title}
