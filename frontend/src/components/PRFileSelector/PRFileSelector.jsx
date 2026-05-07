@@ -108,7 +108,7 @@ const PRFileSelector = ({
 
       {error && <div className="error-message">{error}</div>}
 
-      {files.length === 0 ? (
+      {files.length === 0 && !error ? (
         <div className="empty-state">No files changed in this PR</div>
       ) : (
         <>

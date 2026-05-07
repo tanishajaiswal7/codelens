@@ -112,6 +112,20 @@ export const getPullFiles = async (req, res) => {
       console.error('Get files error:', error.message);
     }
 
+    if (error.code === 'GITHUB_API_ERROR') {
+      return res.status(502).json({
+        error: error.error || 'Failed to fetch pull request files',
+        code: 'GITHUB_API_ERROR',
+      });
+    }
+
+    if (error.code === 'NETWORK_ERROR') {
+      return res.status(503).json({
+        error: 'GitHub is temporarily unavailable. Please try again.',
+        code: 'NETWORK_ERROR',
+      });
+    }
+
     if (error.code === 'GITHUB_NOT_CONNECTED') {
       return res.status(403).json({
         error: 'GitHub not connected',
