@@ -1,34 +1,156 @@
 import { SocraticSession } from '../models/SocraticSession.js'
 
+const GROQ_MODEL = 'llama-3.3-70b-versatile'
+
+function normalizeAIHistory(history = []) {
+  return history
+    .filter(message => message && typeof message.content === 'string' && message.content.trim())
+    .map(message => ({
+      role: message.role === 'ai' ? 'assistant' : message.role,
+      content: message.content
+    }))
+}
+
+function buildBug({ id, title, description, lineNumber, keywords, socraticQuestion }) {
+  return {
+    id,
+    title,
+    description,
+    lineNumber,
+    lineRef: lineNumber ? `line ${lineNumber}` : null,
+    severity: 'critical',
+    keywords,
+    socraticQuestion,
+  }
+}
+
+function detectHeuristicBugs(code) {
+  const lines = code.split(/\r?\n/)
+  const bugs = []
+
+  const offByOneLoopIndex = lines.findIndex(line =>
+    /for\s*\(\s*(?:let|var|const)\s+\w+\s*=\s*0\s*;\s*\w+\s*<=\s*[^;]+\.length\s*;/.test(line)
+  )
+
+  if (offByOneLoopIndex !== -1) {
+    const lineNumber = offByOneLoopIndex + 1
+    bugs.push(buildBug({
+      id: 'bug_1',
+      title: 'Off-by-one loop boundary',
+      description: 'The loop uses <= against array length, so it reads one element past the end and pulls in undefined on the final iteration.',
+      lineNumber,
+      keywords: ['<=', 'length', 'undefined'],
+      socraticQuestion: `What value does the index reach on the last iteration, and is that index valid for the array on line ${lineNumber}?`,
+    }))
+  }
+
+  const unsafeAverageLineIndex = lines.findIndex(line =>
+    /return\s+[^;]*\/\s*\w+\.length\s*;?/.test(line)
+  )
+
+  if (unsafeAverageLineIndex !== -1) {
+    const hasEmptyGuard = /if\s*\(\s*!?\w+\.length\s*\)|if\s*\(\s*\w+\.length\s*===\s*0\s*\)/.test(code)
+
+    if (!hasEmptyGuard) {
+      const lineNumber = unsafeAverageLineIndex + 1
+      bugs.push(buildBug({
+        id: bugs.length === 0 ? 'bug_1' : 'bug_2',
+        title: 'Division by zero on empty input',
+        description: 'The code divides by the array length without guarding against an empty array, which can produce NaN or an invalid average.',
+        lineNumber,
+        keywords: ['division', 'empty array', 'NaN'],
+        socraticQuestion: `What happens to the denominator on line ${lineNumber} when the input array has no elements?`,
+      }))
+    }
+  }
+
+  if (bugs.length === 0) {
+    const nullAccessLineIndex = lines.findIndex(line =>
+      /\b\w+\.\w+\b/.test(line) && /return|=|\./.test(line)
+    )
+
+    if (nullAccessLineIndex !== -1) {
+      const lineNumber = nullAccessLineIndex + 1
+      bugs.push(buildBug({
+        id: 'bug_1',
+        title: 'Possible unsafe property access',
+        description: 'This line may access a property without checking that the value exists first, which can crash if the input is null or undefined.',
+        lineNumber,
+        keywords: ['null', 'undefined', 'crash'],
+        socraticQuestion: `What value must exist before line ${lineNumber} can safely run?`,
+      }))
+    }
+  }
+
+  return bugs.slice(0, 5)
+}
+
 // ── HELPER: Call AI API ──────────────────────────────────────
 async function callAI(systemPrompt, userMessage, history = [], maxTokens = 1500) {
   const messages = [
-    ...history,
+    ...normalizeAIHistory(history),
     { role: 'user', content: userMessage }
   ]
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': process.env.ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify({
-      model: 'claude-opus-4-6',
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages
-    })
-  })
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-6',
+          max_tokens: maxTokens,
+          system: systemPrompt,
+          messages
+        })
+      })
 
-  if (!response.ok) {
-    const err = await response.json()
-    throw new Error(`AI API error: ${err.error?.message || 'Unknown error'}`)
+      if (response.ok) {
+        const data = await response.json()
+        return data.content?.[0]?.text?.trim() || ''
+      }
+
+      const err = await response.json().catch(() => null)
+      throw new Error(`AI API error: ${err?.error?.message || response.statusText || 'Unknown error'}`)
+    } catch (anthropicError) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[Socratic] Anthropic request failed, trying Groq fallback:', anthropicError.message)
+      }
+    }
   }
 
-  const data = await response.json()
-  return data.content?.[0]?.text?.trim() || ''
+  if (process.env.GROQ_API_KEY) {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        temperature: 0.1,
+        max_tokens: maxTokens,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages
+        ]
+      })
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => null)
+      throw new Error(`AI API error: ${err?.error?.message || response.statusText || 'Unknown error'}`)
+    }
+
+    const data = await response.json()
+    return data.choices?.[0]?.message?.content?.trim() || ''
+  }
+
+  throw new Error('No AI provider configured')
 }
 
 // ── HELPER: Parse JSON safely ────────────────────────────────
@@ -80,10 +202,25 @@ Rules:
 - socraticQuestion must NOT name the bug
 - Order by severity`
 
-  const raw = await callAI(system, `Analyze this code:\n\n${code}`)
+  let raw = ''
+
+  try {
+    raw = await callAI(system, `Analyze this code:\n\n${code}`)
+  } catch (error) {
+    console.warn('[Socratic] AI bug analysis unavailable, using heuristic fallback:', error.message)
+    return detectHeuristicBugs(code)
+  }
+
   const parsed = parseJSON(raw)
 
   if (!parsed || !Array.isArray(parsed.bugs) || parsed.bugs.length === 0) {
+    const heuristicBugs = detectHeuristicBugs(code)
+
+    if (heuristicBugs.length > 0) {
+      console.warn('[Socratic] Falling back to heuristic bug detection')
+      return heuristicBugs
+    }
+
     console.error('[Socratic] No bugs detected')
     return []
   }
@@ -136,7 +273,19 @@ responseToStudent:
 - If incorrect: Ask MORE SPECIFIC question about SAME bug. Reference lines. Do NOT repeat exactly.
 - NEVER be generic`
 
-  const raw = await callAI(system, `Student said: "${userMessage}"`)
+  let raw = ''
+
+  try {
+    raw = await callAI(system, `Student said: "${userMessage}"`, recentHistory)
+  } catch (error) {
+    console.warn('[Socratic] AI response validation unavailable, using fallback:', error.message)
+    return {
+      isCorrect: false,
+      confidence: 0,
+      responseToStudent: `Look at line ${currentBug.lineNumber}. What changes there, and what happens if the input is empty or missing?`
+    }
+  }
+
   const parsed = parseJSON(raw)
 
   if (!parsed) {
@@ -164,7 +313,14 @@ No explanation. No markdown. No comments. Just clean code.
 Bugs to fix:
 ${bugList}`
 
-  const fixed = await callAI(system, originalCode, [], 2000)
+  let fixed = ''
+
+  try {
+    fixed = await callAI(system, originalCode, [], 2000)
+  } catch (error) {
+    console.warn('[Socratic] Optimized code generation unavailable:', error.message)
+    return null
+  }
 
   if (fixed === originalCode || fixed.trim() === originalCode.trim()) {
     return null
