@@ -7,14 +7,16 @@
   overflow: hidden;
   min-width: 0;
   background: #080810;
+  max-height: calc(100vh - 200px);
 }
 
 .editor-surface {
   flex: 1;
   min-height: 0;
-  max-height: calc(100% - 76px);
+  max-height: calc(100% - 90px);
   overflow: hidden;
   position: relative;
+  height: 400px;
 }
 
 .pane-header {
