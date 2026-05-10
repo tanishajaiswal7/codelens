@@ -126,6 +126,7 @@
 }
 
 .paste-column {
+    width: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -144,6 +145,7 @@
   min-width: 320px;
   position: relative;
   z-index: 1;
+  pointer-events: auto;
 }
 
 .split-resizer {
@@ -156,6 +158,7 @@
   position: relative;
   flex-shrink: 0;
   z-index: 10;
+  pointer-events: auto;
 }
 
 .split-resizer::after {

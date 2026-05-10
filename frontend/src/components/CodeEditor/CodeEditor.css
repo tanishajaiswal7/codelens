@@ -8,12 +8,14 @@
   background: #080810;
   position: relative;
   z-index: 2;
+  box-sizing: border-box;
   pointer-events: auto;
 }
 
 .editor-surface {
   flex: 1;
   min-height: 0;
+    width: 100%;
   overflow: hidden;
   position: relative;
   pointer-events: auto;
