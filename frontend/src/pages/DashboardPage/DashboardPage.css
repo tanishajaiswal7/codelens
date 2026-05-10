@@ -1,18 +1,16 @@
 .dashboard {
   display: block;
-  min-height: 100dvh;
-  height: auto;
-  overflow-x: hidden;
-  overflow-y: auto;
+  /* fill viewport and prevent outer page scrolling */
+  height: 100vh;
+  overflow: hidden;
   background: var(--bg);
 }
 
 .dashboard-body {
   display: flex;
   width: 100%;
-  min-height: calc(100dvh - 48px);
-  overflow-x: hidden;
-  overflow-y: visible;
+  height: calc(100vh - 48px);
+  overflow: hidden; /* contain scrolling to sidebar only */
   gap: 0;
   align-items: stretch;
 }
@@ -57,8 +55,7 @@
   flex-direction: column;
   flex: 1 1 auto;
   min-width: 0;
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow: hidden; /* keep editor/review fixed; internal editor scroll handles file */
 }
 
 .mode-tabs {

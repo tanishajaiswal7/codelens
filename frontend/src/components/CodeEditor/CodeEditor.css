@@ -19,6 +19,11 @@
   width: 100%;
 }
 
+/* Ensure the Monaco editor's internal viewport shows all lines and scrolls internally */
+.monaco-scrollable-element > .scrollable-viewport {
+  height: 100% !important;
+}
+
 /* Ensure Monaco editor containers fill the surface */
 .monaco-editor, .monaco-editor .monaco-editor-background, .monaco-editor .monaco-editor-scrollable {
   height: 100% !important;
