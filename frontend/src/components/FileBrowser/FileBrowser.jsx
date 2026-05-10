@@ -43,6 +43,36 @@ export default function FileBrowser({ owner, repo, onBack, isExpanded = false, o
     loadBranches()
   }, [owner, repo])
 
+  // Restore selected file and review state from sessionStorage on mount
+  useEffect(() => {
+    const storageKey = `filebrowser_state_${owner}_${repo}_${currentRef}`
+    const saved = sessionStorage.getItem(storageKey)
+    if (saved) {
+      try {
+        const { selectedFile: savedFile, reviewResult: savedReview } = JSON.parse(saved)
+        if (savedFile) {
+          setSelectedFile(savedFile)
+        }
+        if (savedReview) {
+          setReviewResult(savedReview)
+        }
+      } catch (err) {
+        console.error('Failed to restore state from sessionStorage:', err)
+      }
+    }
+  }, [owner, repo, currentRef])
+
+  // Save selected file and review state to sessionStorage
+  useEffect(() => {
+    const storageKey = `filebrowser_state_${owner}_${repo}_${currentRef}`
+    if (selectedFile) {
+      sessionStorage.setItem(
+        storageKey,
+        JSON.stringify({ selectedFile, reviewResult })
+      )
+    }
+  }, [selectedFile, reviewResult, owner, repo, currentRef])
+
   const loadBranches = async () => {
     try {
       const data = await fileBrowserApi.getBranches(owner, repo)
@@ -78,6 +108,10 @@ export default function FileBrowser({ owner, repo, onBack, isExpanded = false, o
   }
 
   const handleRefChange = (ref) => {
+    // Clear sessionStorage for previous ref
+    const oldStorageKey = `filebrowser_state_${owner}_${repo}_${currentRef}`
+    sessionStorage.removeItem(oldStorageKey)
+    
     setCurrentRef(ref)
     setSelectedFile(null)
     setReviewResult(null)
