@@ -22,6 +22,15 @@
 }
 
 .pane-header {
+
+  .monaco-editor,
+  .monaco-editor-container,
+  .monaco-editor-background {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .pane-header {
   height: 34px;
   display: flex;
   align-items: center;
