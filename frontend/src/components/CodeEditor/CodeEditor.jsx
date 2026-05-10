@@ -115,7 +115,19 @@ export default function CodeEditor({
         )}
       </div>
 
-      <div className="editor-surface">
+      <div className="editor-surface" ref={(el) => {
+        // Watch container for size changes and force Monaco layout
+        if (el && !el.__resizeObserver) {
+          const resizeObserver = new ResizeObserver(() => {
+            const editor = localEditorRef.current;
+            if (editor) {
+              try { editor.layout(); } catch (e) {}
+            }
+          });
+          resizeObserver.observe(el);
+          el.__resizeObserver = resizeObserver;
+        }
+      }}>
         <Editor
           height="100%"
           language={language}
@@ -130,20 +142,21 @@ export default function CodeEditor({
             if (editorRef) {
               editorRef.current = editor;
             }
-            // Force layout on mount and then reset viewport so Monaco renders full scroll area
-            try { editor.layout(); } catch (e) {}
-            // small delay allows container CSS to apply before layout
+            // Force layout immediately and multiple times to ensure Monaco renders all lines
+            const doLayout = () => { try { editor.layout(); } catch (e) {} };
+            doLayout();
+            setTimeout(doLayout, 25);
+            setTimeout(doLayout, 75);
             setTimeout(() => {
-              try { editor.layout(); } catch (e) {}
+              doLayout();
               resetEditorViewport();
-            }, 50);
-            // Re-layout on window resize to stay responsive
-            const onResize = () => { try { editor.layout(); } catch (e) {} };
+            }, 150);
+            setTimeout(doLayout, 250);
+            
+            // Re-layout on window resize
+            const onResize = () => doLayout();
             window.addEventListener('resize', onResize);
-            // cleanup when component unmounts
-            const removeResize = () => window.removeEventListener('resize', onResize);
-            // attach to editor instance for cleanup by parent if needed
-            editor.__removeResize = removeResize;
+            editor.__removeResize = () => window.removeEventListener('resize', onResize);
           }}
           theme="vs-dark"
           options={{
