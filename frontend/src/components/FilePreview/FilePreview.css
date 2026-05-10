@@ -183,19 +183,19 @@
   to { transform: rotate(360deg); }
 }
 
-/* Monaco fills all remaining space */
+/* Monaco editor with sensible max-height */
 .file-editor-container {
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
+  max-height: 400px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  border-bottom: 1px solid var(--border);
 }
 
 .fp-editor {
   flex: 1;
-  min-height: 0;
-  overflow: hidden;
+  overflow: auto;
   position: relative;
 }
 
