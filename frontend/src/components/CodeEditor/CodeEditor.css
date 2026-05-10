@@ -14,7 +14,7 @@
 .editor-surface {
   /* flex to fill remaining space after header/footer; monaco scrolls content */
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 200px;
   overflow: hidden;
   position: relative;
   width: 100%;

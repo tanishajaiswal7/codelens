@@ -39,9 +39,11 @@ export default function CodeEditor({
     editor.setPosition({ lineNumber: 1, column: 1 });
     editor.revealPositionInCenter({ lineNumber: 1, column: 1 });
     editor.revealLine(1);
-    // Ensure Monaco recalculates its layout so the scrollable viewport matches container
     try { editor.layout(); } catch (e) { /* ignore if layout not available */ }
   };
+
+  // Track if we're in the middle of loading code to prevent ResizeObserver feedback loops
+  const isLoadingRef = useRef(false);
 
   // Load preferred language from localStorage on mount
   useEffect(() => {
@@ -54,6 +56,8 @@ export default function CodeEditor({
     // Reset viewport and force multiple layouts after loading new code
     // so Monaco fully renders all lines and updates scrollbar
     console.log('[CodeChange] Loading', (initialCode || '').split('\n').length, 'lines');
+    isLoadingRef.current = true; // Prevent ResizeObserver from firing during load
+    
     const timer1 = setTimeout(() => {
       const editor = localEditorRef.current;
       try { 
@@ -84,8 +88,14 @@ export default function CodeEditor({
           console.log('[CodeChange @300ms] Container:', container.clientHeight, 'Content height:', editor.getContentHeight(), 'Lines:', editor.getModel()?.getLineCount());
         }
       } catch (e) {}
+      isLoadingRef.current = false; // Allow ResizeObserver to fire again after load
     }, 300);
-    return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
+    return () => { 
+      clearTimeout(timer1); 
+      clearTimeout(timer2); 
+      clearTimeout(timer3);
+      isLoadingRef.current = false;
+    };
   }, [initialCode]);
 
   const lineCount = code.split('\n').length;
@@ -140,7 +150,7 @@ export default function CodeEditor({
           let resizeTimeout = null;
           const resizeObserver = new ResizeObserver(() => {
             const editor = localEditorRef.current;
-            if (!editor) return;
+            if (!editor || isLoadingRef.current) return; // Don't trigger during code load
             
             // Debounce resize handling to prevent feedback loops
             if (resizeTimeout) clearTimeout(resizeTimeout);
