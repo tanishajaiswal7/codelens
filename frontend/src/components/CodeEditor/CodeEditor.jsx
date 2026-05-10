@@ -53,18 +53,37 @@ export default function CodeEditor({
     setCode(initialCode || '');
     // Reset viewport and force multiple layouts after loading new code
     // so Monaco fully renders all lines and updates scrollbar
+    console.log('[CodeChange] Loading', (initialCode || '').split('\n').length, 'lines');
     const timer1 = setTimeout(() => {
       const editor = localEditorRef.current;
-      try { editor && editor.layout(); } catch (e) {}
+      try { 
+        editor && editor.layout();
+        if (editor) {
+          const container = editor.getContainerDomNode();
+          console.log('[CodeChange @50ms] Container:', container.clientHeight, 'Content height:', editor.getContentHeight(), 'Lines:', editor.getModel()?.getLineCount());
+        }
+      } catch (e) {}
     }, 50);
     const timer2 = setTimeout(() => {
       resetEditorViewport();
       const editor = localEditorRef.current;
-      try { editor && editor.layout(); } catch (e) {}
+      try { 
+        editor && editor.layout(); 
+        if (editor) {
+          const container = editor.getContainerDomNode();
+          console.log('[CodeChange @150ms] Container:', container.clientHeight, 'Content height:', editor.getContentHeight(), 'Lines:', editor.getModel()?.getLineCount());
+        }
+      } catch (e) {}
     }, 150);
     const timer3 = setTimeout(() => {
       const editor = localEditorRef.current;
-      try { editor && editor.layout(); } catch (e) {}
+      try { 
+        editor && editor.layout(); 
+        if (editor) {
+          const container = editor.getContainerDomNode();
+          console.log('[CodeChange @300ms] Container:', container.clientHeight, 'Content height:', editor.getContentHeight(), 'Lines:', editor.getModel()?.getLineCount());
+        }
+      } catch (e) {}
     }, 300);
     return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
   }, [initialCode]);
@@ -121,11 +140,25 @@ export default function CodeEditor({
           const resizeObserver = new ResizeObserver(() => {
             const editor = localEditorRef.current;
             if (editor) {
-              try { editor.layout(); } catch (e) {}
+              try { 
+                console.log('[ResizeObserver] Triggering layout due to container resize');
+                editor.layout(); 
+              } catch (e) {}
             }
           });
           resizeObserver.observe(el);
           el.__resizeObserver = resizeObserver;
+          
+          // Force initial layout with container dimensions
+          const forceLayout = () => {
+            if (el && localEditorRef.current) {
+              console.log('[Force Layout] Container:', el.clientWidth, 'x', el.clientHeight);
+              try { localEditorRef.current.layout(); } catch (e) {}
+            }
+          };
+          forceLayout();
+          setTimeout(forceLayout, 100);
+          setTimeout(forceLayout, 200);
         }
       }}>
         <Editor
@@ -143,7 +176,16 @@ export default function CodeEditor({
               editorRef.current = editor;
             }
             // Force layout immediately and multiple times to ensure Monaco renders all lines
-            const doLayout = () => { try { editor.layout(); } catch (e) {} };
+            const doLayout = () => { 
+              try { 
+                editor.layout(); 
+                // Debug: log container and viewport info
+                const container = editor.getContainerDomNode();
+                if (container) {
+                  console.log('[Monaco] Container height:', container.clientHeight, 'Content height:', editor.getContentHeight());
+                }
+              } catch (e) {} 
+            };
             doLayout();
             setTimeout(doLayout, 25);
             setTimeout(doLayout, 75);
@@ -166,12 +208,23 @@ export default function CodeEditor({
             fontFamily: 'JetBrains Mono',
             lineNumbers: 'on',
             scrollBeyondLastLine: false,
-            automaticLayout: true,
+            automaticLayout: false, /* TURN OFF - we handle layout with ResizeObserver */
             wordWrap: 'on',
-            /* Disable virtualization to render all lines so scrollbar is accurate */
             fixedOverflowWidgets: true,
-            /* Ensure scrollbar shows full file length */
-            scrollbar: { vertical: 'visible', horizontal: 'hidden', useShadows: true },
+            scrollbar: { 
+              vertical: 'visible', 
+              horizontal: 'hidden', 
+              useShadows: true,
+              verticalSliderSize: 12,
+              verticalHasArrows: false,
+            },
+            /* Aggressive rendering: render lines way beyond viewport */
+            lineDecorationsWidth: 10,
+            rulers: [],
+            /* Hide unnecessary UI */
+            glyphMargin: false,
+            folding: true,
+            hideCursorInOverviewRuler: false,
           }}
         />
       </div>
