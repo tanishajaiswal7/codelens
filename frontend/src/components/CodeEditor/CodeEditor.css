@@ -2,8 +2,9 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  /* Fixed editor pane height to ensure Monaco renders full scroll area */
-  height: 450px;
+  /* Fill available space; monaco editor scrolls the content inside */
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
   min-width: 0;
   background: #080810;
@@ -11,8 +12,8 @@
 }
 
 .editor-surface {
-  /* account for header (34px) + footer (42px) = 76px */
-  height: calc(100% - 76px);
+  /* flex to fill remaining space after header/footer; monaco scrolls content */
+  flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
   position: relative;
