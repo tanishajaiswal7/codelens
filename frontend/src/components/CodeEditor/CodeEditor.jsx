@@ -39,6 +39,8 @@ export default function CodeEditor({
     editor.setPosition({ lineNumber: 1, column: 1 });
     editor.revealPositionInCenter({ lineNumber: 1, column: 1 });
     editor.revealLine(1);
+    // Ensure Monaco recalculates its layout so the scrollable viewport matches container
+    try { editor.layout(); } catch (e) { /* ignore if layout not available */ }
   };
 
   // Load preferred language from localStorage on mount
@@ -49,7 +51,12 @@ export default function CodeEditor({
 
   useEffect(() => {
     setCode(initialCode || '');
-    resetEditorViewport();
+    // Reset viewport and force layout after loading new code so Monaco updates scrollbar
+    setTimeout(() => {
+      resetEditorViewport();
+      const editor = localEditorRef.current;
+      try { editor && editor.layout(); } catch (e) {}
+    }, 50);
   }, [initialCode]);
 
   const lineCount = code.split('\n').length;
@@ -113,7 +120,20 @@ export default function CodeEditor({
             if (editorRef) {
               editorRef.current = editor;
             }
-            resetEditorViewport();
+            // Force layout on mount and then reset viewport so Monaco renders full scroll area
+            try { editor.layout(); } catch (e) {}
+            // small delay allows container CSS to apply before layout
+            setTimeout(() => {
+              try { editor.layout(); } catch (e) {}
+              resetEditorViewport();
+            }, 50);
+            // Re-layout on window resize to stay responsive
+            const onResize = () => { try { editor.layout(); } catch (e) {} };
+            window.addEventListener('resize', onResize);
+            // cleanup when component unmounts
+            const removeResize = () => window.removeEventListener('resize', onResize);
+            // attach to editor instance for cleanup by parent if needed
+            editor.__removeResize = removeResize;
           }}
           theme="vs-dark"
           options={{
