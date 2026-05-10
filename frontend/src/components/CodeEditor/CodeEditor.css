@@ -89,28 +89,31 @@
   gap: 8px;
 }
 
-.editor-min-lines {
-  font-size: 10px;
-  color: var(--red);
-}
-
-/* Socratic toggle */
-.socratic-toggle-wrap {
+.editor-pane {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--text-4);
-  cursor: pointer;
-  user-select: none;
-  transition: color 0.12s ease;
+  flex-direction: column;
+  width: 100%;
+  /* Fill available workspace height */
+  height: 100%;
+  overflow: hidden;
+  min-width: 0;
+  background: #080810;
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  pointer-events: auto;
 }
 
-.socratic-toggle-wrap:hover { color: var(--text-2); }
-
-.toggle-track {
-  width: 32px;
-  height: 17px;
+.editor-surface {
+  /* Editor surface takes remaining space inside editor-pane
+     header + footer heights are 34px + 42px = 76px */
+  height: calc(100% - 76px);
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  pointer-events: auto;
+}
   border-radius: 20px;
   background: var(--bg-4);
   border: 1px solid var(--border-2);

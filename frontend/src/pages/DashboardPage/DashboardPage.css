@@ -112,8 +112,9 @@
 .paste-workspace {
   display: flex;
   flex-direction: column;
-  height: 530px;
-  min-height: 0;
+  /* Make workspace responsive to viewport so editor can use available space */
+  height: calc(100vh - 120px);
+  min-height: 320px;
   overflow: hidden;
 }
 
