@@ -1,149 +1,369 @@
 # CodeLens AI
 
-CodeLens AI is a code review platform for individual developers and teams. It combines AI-powered feedback, Socratic coaching, GitHub pull request review, team workspaces, and manager dashboards so code can be reviewed faster and shipped with more confidence.
+> AI-powered code review platform with intelligent feedback, Socratic debugging, GitHub integration, and team collaboration workflows.
 
-## What The Website Does
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-CodeLensAI-6366f1?style=for-the-badge)](https://codelens-flame.vercel.app)
+[![Frontend](https://img.shields.io/badge/Frontend-Vercel-black?style=for-the-badge)](https://vercel.com)
+[![Backend](https://img.shields.io/badge/Backend-Railway-0B0D0E?style=for-the-badge)](https://railway.app)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-CodeLens AI lets users:
+---
 
-- Paste code and get an AI review with suggestions, severity, and confidence scoring.
-- Switch between review personas such as FAANG Engineer, Startup CTO, and Security Auditor.
-- Use Socratic mode to be guided toward the fix through questions instead of just receiving an answer.
-- Re-review code after changes to see which findings were resolved, which are new, and which remain.
-- Connect GitHub and review pull requests directly from a repository.
-- Browse repository files and review code in context.
-- Create shared workspaces for teams and invite members with links or email invites.
-- View workspace dashboards that summarize PR activity, reviewed PRs, release readiness, and quality signals.
-- Generate release readiness reports for a sprint or selected PR set.
-- Make approve / reject decisions on reviewed work and leave manager feedback.
-- Receive and manage notifications for workspace activity.
-- View review history and reopen past reviews.
-- Customize the app through settings for theme, default persona, preferred language, and email notifications.
-- Recover accounts with forgot-password and reset-password flows.
+# Overview
 
-## Main User Flows
+CodeLens AI is a full-stack AI code review platform designed for developers and engineering teams.  
+The platform analyzes code using multiple AI reviewer personas, provides intelligent feedback with confidence scores, and helps developers learn through an interactive Socratic debugging experience.
 
-### 1. Landing And Sign In
+Beyond individual reviews, CodeLens AI also supports team workspaces, GitHub pull request analysis, release readiness reporting, and collaborative review workflows.
 
-New visitors land on the marketing page, where the app explains its review personas, team workflow, and AI coaching approach. Users can register, log in, or read the privacy and terms pages before starting.
+---
 
-### 2. Onboarding
+# Key Features
 
-The onboarding flow walks a new user through the product:
+## AI Code Review Engine
 
-- A short introduction to the product.
-- A first sample code review.
-- A demonstration of Socratic mode.
-- Optional GitHub connection to unlock repository and PR workflows.
+- Multi-persona AI reviews:
+  - FAANG Engineer
+  - Startup CTO
+  - Security Auditor
+- AI-generated confidence scores for every suggestion
+- Review verdict system:
+  - Approved
+  - Minor Issues
+  - Needs Revision
+- Live re-review after fixing issues
+- Review history with filtering and tracking
+- Real-time asynchronous review processing using RabbitMQ
 
-### 3. Individual Code Review
+---
 
-Inside the dashboard, users can paste code into the editor, pick a persona, and submit it for review. The app returns:
+## Socratic Debugging Mode
 
-- A verdict such as approved, needs revision, or minor issues.
-- A summary of the main problem.
-- Suggestion cards with severity and confidence.
-- Re-review support after changes are made.
+An interactive learning mode where the AI helps developers identify bugs themselves instead of directly revealing solutions.
 
-### 4. GitHub Pull Request Review
+### Capabilities
 
-Users can connect GitHub, choose a repository, pick a pull request, and review the PR in context. The PR review flow includes repository selection, PR selection, file selection, and a file-organized review panel that can be copied into a GitHub comment.
+- Detects real bugs in submitted code
+- Guides users using targeted debugging questions
+- Tracks solved and unsolved bugs
+- Maintains conversational debugging sessions
+- Generates optimized corrected code after completion
+- Persistent session state using MongoDB
 
-### 5. Team Workspaces
+---
 
-Workspaces are the team layer of the product. Members can:
+## Team Collaboration & Workspace Management
 
-- Create or join workspaces.
-- Invite teammates by email or invite link.
-- Link a repository to the workspace.
-- View team members and pending invites.
-- See reviewed PRs and workspace-specific review activity.
+- Workspace creation and management
+- Role-based access control:
+  - Owner
+  - Admin
+  - Member
+- GitHub repository linking
+- Pull request review workflows
+- Release readiness reporting
+- Review approval and rejection system
+- Developer notification system
 
-### 6. Manager Dashboard
+---
 
-Workspace managers get a release-focused dashboard that summarizes team PRs, review quality, and status. From there they can:
+## GitHub Integration
 
-- Filter PRs by review state or risk.
-- Review findings across the team.
-- Approve or request changes with feedback.
-- Generate release reports for a sprint.
-- Track readiness signals and blockers.
+- GitHub OAuth authentication
+- Pull request import and review
+- Repository file browsing
+- Private repository support using Personal Access Tokens
+- Automated PR review workflow support
 
-### 7. Settings And Account Management
+---
 
-Users can customize their account and review preferences from Settings. The app supports:
+# Tech Stack
 
-- Theme selection.
-- Default review persona.
-- Preferred language.
-- Email notification preferences.
-- GitHub connection status and disconnecting GitHub.
-- Email updates for non-GitHub-managed accounts.
+| Category | Technologies |
+|---|---|
+| Frontend | React.js, Vite, Monaco Editor |
+| Backend | Node.js, Express.js |
+| Database | MongoDB, Mongoose |
+| Messaging Queue | RabbitMQ |
+| AI Integration | Anthropic Claude API |
+| Authentication | JWT, GitHub OAuth |
+| Email Service | Nodemailer |
+| Deployment | Vercel, Railway |
+| Containerization | Docker, Docker Compose |
 
-## Product Architecture
+---
 
-The repository is organized as a full-stack monorepo:
+# System Architecture
 
-- `frontend/` contains the React + Vite client.
-- `backend/` contains the Express API and service modules.
-- `gateway/` contains the reverse proxy / gateway configuration.
-- `uploads/` stores avatar and other uploaded files.
+CodeLens AI follows a modular microservice-inspired architecture where services are separated by responsibility and communicate asynchronously using RabbitMQ queues.
 
-The backend is split into service-focused modules for authentication, reviews, workspaces, dashboards, history, settings, notifications, GitHub integration, file browsing, jobs, and Socratic sessions. The app uses MongoDB for persistence and RabbitMQ for background and event-driven workflows.
-
-## Tech Stack
-
-- Frontend: React, Vite, React Router, Axios, Monaco editor
-- Backend: Node.js, Express, MongoDB, Mongoose
-- Messaging: RabbitMQ
-- Auth: JWT, cookies, GitHub OAuth / GitHub connection flows
-- Uploads and static assets: Express static hosting
-
-## Local Development
-
-The quickest way to run the full stack locally is with Docker:
-
-```bash
-npm run docker:dev
+```text
+Frontend (React + Vite)
+        │
+        ▼
+REST APIs (Express.js Backend)
+        │
+ ┌──────────────────────────────┐
+ │         Service Layer         │
+ │                               │
+ │  Auth Service                 │
+ │  Review Service               │
+ │  Workspace Service            │
+ │  Dashboard Service            │
+ │  GitHub Integration Service   │
+ │  Notification Service         │
+ │  Socratic Service             │
+ └──────────────────────────────┘
+        │
+        ▼
+RabbitMQ Message Queues
+        │
+        ▼
+MongoDB Database
 ```
 
-Useful companion commands:
+---
 
-```bash
-npm run docker:stop
-npm run docker:logs
-npm run docker:ps
+# Why RabbitMQ?
+
+AI review requests may take several seconds to complete.  
+RabbitMQ enables asynchronous processing so the application remains responsive and scalable.
+
+### Workflow
+
+1. User submits code
+2. Backend creates a review job
+3. Job is pushed into RabbitMQ
+4. Worker processes the review asynchronously
+5. Frontend polls job status
+6. Results are displayed once completed
+
+This architecture prevents request timeout issues and improves overall user experience.
+
+---
+
+# Project Structure
+
+```text
+codelens-ai/
+│
+├── backend/
+│   ├── services/
+│   ├── middleware/
+│   ├── rabbitmq/
+│   ├── routes/
+│   ├── controllers/
+│   └── models/
+│
+├── frontend/
+│   ├── components/
+│   ├── pages/
+│   ├── hooks/
+│   ├── context/
+│   └── api/
+│
+├── docker-compose.yml
+└── README.md
 ```
 
-If you want to run the frontend or backend separately:
+---
+
+# Local Setup
+
+## Prerequisites
+
+- Node.js
+- MongoDB
+- RabbitMQ
+- Docker (optional)
+- Anthropic API Key
+- GitHub OAuth Credentials
+
+---
+
+## Installation
+
+### Clone Repository
 
 ```bash
+git clone https://github.com/your-username/codelens-ai.git
+cd codelens-ai
+```
+
+---
+
+### Install Dependencies
+
+```bash
+cd backend
+npm install
+
+cd ../frontend
+npm install
+```
+
+---
+
+### Configure Environment Variables
+
+Create a `.env` file inside the backend directory.
+
+```env
+PORT=5000
+
+MONGODB_URI=your_mongodb_uri
+
+JWT_SECRET=your_jwt_secret
+
+ANTHROPIC_API_KEY=your_anthropic_key
+
+RABBITMQ_URL=your_rabbitmq_url
+
+GITHUB_CLIENT_ID=your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
+
+FRONTEND_URL=http://localhost:5173
+```
+
+---
+
+### Start Application
+
+```bash
+# Backend
+cd backend
+npm run dev
+
+# Frontend
 cd frontend
 npm run dev
 ```
 
+---
+
+# Docker Setup
+
 ```bash
-cd backend
-npm run dev
+docker-compose up --build
 ```
 
-## Production Notes
+This starts:
 
-The deployment docs in this repository describe the production setup in more detail. In particular, the frontend expects a `VITE_API_URL` value in production, and the backend uses `FRONTEND_URL` for CORS allow-listing.
+- Frontend
+- Backend
+- MongoDB
+- RabbitMQ
 
-## Key Routes
+---
 
-- `/` and `/landing` - marketing / entry experience
-- `/login` and `/register` - authentication
-- `/onboarding` - guided first-run setup
-- `/dashboard` - main review workspace
-- `/workspace` - team workspace list
-- `/workspace/:id` - workspace details
-- `/workspace/:id/dashboard` - manager dashboard
-- `/join/:token` - workspace invite acceptance
-- `/settings` - personal preferences and integrations
-- `/forgot-password` and `/reset-password/:token` - account recovery
+# API Modules
 
-## In One Sentence
+| Module | Description |
+|---|---|
+| Auth | Authentication & authorization |
+| Review | AI code review workflows |
+| Socratic | Interactive debugging sessions |
+| Workspace | Team collaboration |
+| Dashboard | Analytics and release reporting |
+| GitHub | Repository & PR integration |
 
-CodeLens AI is an AI code review platform that helps developers review code, helps teams manage pull requests and workspaces, and helps managers decide when software is ready to ship.
+---
+
+# Review Workflow
+
+```text
+User submits code
+        │
+        ▼
+Review job created
+        │
+        ▼
+RabbitMQ queue
+        │
+        ▼
+AI processing worker
+        │
+        ▼
+MongoDB stores results
+        │
+        ▼
+Frontend displays review
+```
+
+---
+
+# Unique Highlights
+
+### Multi-Persona AI Review
+Analyze code from multiple engineering perspectives simultaneously.
+
+### Socratic Learning Experience
+Encourages developers to reason through bugs instead of relying only on direct fixes.
+
+### Asynchronous AI Processing
+Scalable architecture using RabbitMQ queues.
+
+### Team-Centric Workflow
+Built for both individual developers and engineering teams.
+
+### GitHub PR Analysis
+Review pull requests directly from connected repositories.
+
+---
+
+# Deployment
+
+## Frontend
+
+Deploy using:
+
+- Vercel
+
+---
+
+## Backend
+
+Deploy using:
+
+- Railway
+- Docker
+
+---
+
+# Future Improvements
+
+- Real-time collaborative review sessions
+- AI-generated unit tests
+- CI/CD integration
+- Multi-language code review support
+- Advanced analytics dashboard
+
+---
+
+# Contributing
+
+Contributions are welcome.
+
+1. Fork the repository
+2. Create a new feature branch
+3. Commit changes
+4. Open a pull request
+
+---
+
+# License
+
+This project is licensed under the MIT License.
+
+---
+
+# Author
+
+### Tanisha Jaiswal
+
+- GitHub: https://github.com/tanishajaiswal7
+- LinkedIn: https://linkedin.com/in/tanishaa7
+
+---
+
+> “CodeLens AI is designed not only to review code, but to improve how developers think, debug, and collaborate.”
