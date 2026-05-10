@@ -183,10 +183,10 @@
   to { transform: rotate(360deg); }
 }
 
-/* Monaco editor with sensible max-height */
+/* Monaco editor with fixed professional height */
 .file-editor-container {
   flex: 0 0 auto;
-  max-height: 400px;
+  height: 350px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
