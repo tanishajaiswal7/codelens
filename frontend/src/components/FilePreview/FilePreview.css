@@ -183,10 +183,10 @@
   to { transform: rotate(360deg); }
 }
 
-/* Monaco editor with fixed professional height */
+/* Monaco editor fills remaining space */
 .file-editor-container {
-  flex: 0 0 auto;
-  height: 350px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -197,6 +197,7 @@
   flex: 1;
   overflow: auto;
   position: relative;
+  min-height: 0;
 }
 
 /* Force Monaco to fill the container */
@@ -205,8 +206,7 @@
 .fp-editor .overflow-guard {
   height: 100% !important;
   width: 100% !important;
-  max-height: 350px !important;
-  overflow: hidden !important;
+  overflow: auto !important;
 }
 
 /* Loading state */
