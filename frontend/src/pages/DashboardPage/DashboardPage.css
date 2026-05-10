@@ -111,8 +111,9 @@
 .paste-workspace {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  /* Fixed workspace height so editor can render full scrollable area */
+  height: 520px;
+  min-height: 320px;
   overflow: hidden;
 }
 
