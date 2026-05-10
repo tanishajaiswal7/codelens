@@ -33,6 +33,12 @@
   width: 100% !important;
 }
 
+/* Enable scrolling for Monaco's internal scrollable container */
+.monaco-editor .monaco-editor-scrollable {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
 .pane-header {
   height: 34px;
   display: flex;
