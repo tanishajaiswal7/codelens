@@ -33,11 +33,6 @@
   width: 100% !important;
 }
 
-/* Force editor wrapper to fill container completely */
-.monaco-editor .monaco-editor-scrollable {
-  overflow: hidden !important;
-}
-
 .pane-header {
   height: 34px;
   display: flex;
