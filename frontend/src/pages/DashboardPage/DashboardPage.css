@@ -10,9 +10,9 @@
 .dashboard-body {
   display: flex;
   width: 100%;
-  height: calc(100dvh - 48px);
+  min-height: calc(100dvh - 48px);
   overflow-x: hidden;
-  overflow-y: hidden;
+  overflow-y: visible;
   gap: 0;
   align-items: stretch;
 }
@@ -57,9 +57,8 @@
   flex-direction: column;
   flex: 1 1 auto;
   min-width: 0;
-  max-height: 100%;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: visible;
 }
 
 .mode-tabs {
@@ -112,9 +111,8 @@
 .paste-workspace {
   display: flex;
   flex-direction: column;
-  /* Make workspace responsive to viewport so editor can use available space */
-  height: calc(100vh - 120px);
-  min-height: 320px;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -123,11 +121,9 @@
   flex: 1;
   min-height: 0;
   overflow: hidden;
-  position: relative;
 }
 
 .paste-column {
-    width: 100%;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -137,16 +133,11 @@
 .editor-column {
   flex: 0 0 var(--split-left, 50%);
   min-width: 320px;
-  position: relative;
-  z-index: 2;
 }
 
 .panel-column {
   flex: 1 1 auto;
   min-width: 320px;
-  position: relative;
-  z-index: 1;
-  pointer-events: auto;
 }
 
 .split-resizer {
@@ -158,8 +149,6 @@
   transition: background-color 0.12s ease, border-color 0.12s ease;
   position: relative;
   flex-shrink: 0;
-  z-index: 10;
-  pointer-events: auto;
 }
 
 .split-resizer::after {
