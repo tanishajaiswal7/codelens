@@ -399,6 +399,7 @@ function DashboardContent({ user }) {
   };
 
   const handleCodeChange = (nextCode) => {
+    console.log('[DashboardPage.handleCodeChange] Received', nextCode.split('\n').length, 'lines, length:', nextCode.length);
     setCurrentCode(nextCode);
     if (socraticMode && nextCode !== originalCode) {
       setSocraticCodeChanged(true);

@@ -161,6 +161,10 @@ export default function CodeEditor({
           value={code}
           onChange={(value) => {
             const nextCode = value || '';
+            console.log('[Editor.onChange] Received', nextCode.split('\n').length, 'lines, length:', nextCode.length, 'chars');
+            if (nextCode.split('\n').length > 1) {
+              console.log('[Editor.onChange] First 100 chars:', nextCode.substring(0, 100));
+            }
             setCode(nextCode);
             onCodeChange(nextCode);
           }}
