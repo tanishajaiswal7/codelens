@@ -5,6 +5,146 @@ import * as promptService from '../../review-service/services/promptService.js';
 import { parseAIResponse } from '../../review-service/services/confidenceParser.js';
 import { PRReview } from '../models/PRReview.js';
 
+const SKIP_EXTENSIONS = [
+  '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp',
+  '.pdf', '.zip', '.tar', '.gz', '.exe', '.dll', '.so',
+  '.lock', '.map'
+];
+
+const SKIP_FILENAMES = [
+  'package-lock.json',
+  'yarn.lock',
+  'pnpm-lock.yaml',
+  'composer.lock'
+];
+
+const isReviewableFile = (filename) => {
+  const baseName = filename.split('/').pop();
+  if (SKIP_FILENAMES.includes(baseName)) return false;
+
+  const parts = baseName.split('.');
+  const extension = parts.length > 1 ? `.${parts.pop().toLowerCase()}` : '';
+  return !SKIP_EXTENSIONS.includes(extension);
+};
+
+const fetchPRFileContents = async (repoFullName, prNumber, token, selectedFiles = []) => {
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github.v3+json',
+    'User-Agent': 'CodeLens-AI',
+  };
+
+  const filesRes = await fetch(
+    `https://api.github.com/repos/${repoFullName}/pulls/${prNumber}/files`,
+    { headers }
+  );
+
+  if (!filesRes.ok) {
+    const err = await filesRes.json().catch(() => ({}));
+    throw new Error(`GitHub files fetch failed: ${err.message || 'Unknown error'}`);
+  }
+
+  const files = await filesRes.json();
+
+  const codeFiles = files
+    .filter((file) => file.status !== 'removed')
+    .filter((file) => isReviewableFile(file.filename))
+    .filter((file) => {
+      if (!Array.isArray(selectedFiles) || selectedFiles.length === 0) return true;
+      return selectedFiles.includes(file.filename);
+    })
+    .sort((a, b) => (b.additions + b.deletions) - (a.additions + a.deletions))
+    .slice(0, 5);
+
+  if (codeFiles.length === 0) {
+    return null;
+  }
+
+  const prDetailRes = await fetch(
+    `https://api.github.com/repos/${repoFullName}/pulls/${prNumber}`,
+    { headers }
+  );
+
+  if (!prDetailRes.ok) {
+    const err = await prDetailRes.json().catch(() => ({}));
+    throw new Error(`GitHub PR fetch failed: ${err.message || 'Unknown error'}`);
+  }
+
+  const prDetail = await prDetailRes.json();
+  const ref = prDetail.head?.sha || prDetail.head?.ref || prDetail.base?.ref || 'main';
+
+  const filesWithContent = await Promise.all(
+    codeFiles.map(async (file) => {
+      try {
+        if (typeof file.content === 'string' && file.content.trim()) {
+          return {
+            path: file.filename,
+            content: file.content.slice(0, 8000),
+            additions: file.additions,
+            deletions: file.deletions,
+          };
+        }
+
+        const contentsUrl = file.contents_url
+          || `https://api.github.com/repos/${repoFullName}/contents/${encodeURI(file.filename)}`;
+
+        const contentRes = await fetch(
+          `${contentsUrl}${contentsUrl.includes('?') ? '&' : '?'}ref=${encodeURIComponent(ref)}`,
+          { headers }
+        );
+
+        if (!contentRes.ok) {
+          console.warn(`[PR Review] Could not fetch ${file.filename}`);
+          return null;
+        }
+
+        const contentData = await contentRes.json();
+
+        if (Array.isArray(contentData) || !contentData.content) {
+          return null;
+        }
+
+        const decoded = Buffer.from(
+          (contentData.content || '').replace(/\n/g, ''),
+          'base64'
+        ).toString('utf-8');
+
+        if (!decoded || decoded.trim().length === 0) {
+          return null;
+        }
+
+        return {
+          path: file.filename,
+          content: decoded.slice(0, 8000),
+          additions: file.additions,
+          deletions: file.deletions,
+        };
+      } catch (error) {
+        console.error(`[PR Review] Failed to fetch ${file.filename}:`, error.message);
+        return null;
+      }
+    })
+  );
+
+  const validFiles = filesWithContent.filter(Boolean);
+
+  if (validFiles.length === 0) {
+    return null;
+  }
+
+  const combinedCode = validFiles
+    .map((file) => `// ===== FILE: ${file.path} =====\n${file.content}`)
+    .join('\n\n');
+
+  return {
+    combinedCode,
+    fileCount: validFiles.length,
+    files: validFiles.map((file) => file.path),
+    filesWithContent: validFiles,
+    codeLength: combinedCode.length,
+  };
+};
+
 /**
  * GitHub PR Service
  * Orchestrates PR fetching and AI review generation
@@ -120,44 +260,53 @@ export const generatePRReview = async (
 ) => {
   try {
     const token = await resolveToken(userId);
-    const client = new GitHubApiClient(token);
 
-    // Use preloaded file data when the frontend already has it, otherwise fetch.
-    const allFiles = Array.isArray(preloadedFiles) && preloadedFiles.length > 0
-      ? preloadedFiles
-      : await client.getPullFiles(owner, repo, prNumber);
-
-    // Filter to selected files only
-    const filesToReview = allFiles.filter((f) =>
-      selectedFiles.includes(f.filename)
+    const codeResult = await fetchPRFileContents(
+      `${owner}/${repo}`,
+      prNumber,
+      token,
+      Array.isArray(selectedFiles) ? selectedFiles : []
     );
+
+    if (!codeResult || !codeResult.combinedCode) {
+      throw {
+        status: 400,
+        message: 'No reviewable code found in this PR',
+        detail: 'The PR may only contain binary files, lock files, or removed files.',
+        files: [],
+      };
+    }
+
+    console.log(`[PR Review] Reviewing ${codeResult.fileCount} files, total chars: ${codeResult.combinedCode.length}`);
+
+    const filesToReview = codeResult.filesWithContent;
 
     // Generate AI review for each file
     const fileReviews = [];
 
     for (const file of filesToReview) {
       try {
-        // Build PR diff content with line numbers for AI review
-        const prDiffContent = `GitHub PR Diff Review\nFile: ${file.filename}\nStatus: ${file.status}\n\n${file.patch}`;
+        // Build PR review content from the decoded source file.
+        const prFileContent = `GitHub PR File Review\nFile: ${file.path}\n\n${file.content}`;
 
         // Get persona-specific system prompt and properly formatted user message
-        const { systemPrompt, userMessage } = promptService.buildPersonaPrompt(persona, prDiffContent);
+        const { systemPrompt, userMessage } = promptService.buildPersonaPrompt(persona, prFileContent);
         const aiResponse = await reviewService.callGroqAPI(systemPrompt, userMessage);
 
         // Parse suggestions
         const suggestions = parseAIResponse(aiResponse);
 
         fileReviews.push({
-          filename: file.filename,
+          filename: file.path,
           suggestions: suggestions,
         });
       } catch (fileError) {
         if (process.env.NODE_ENV === 'development') {
-          console.error(`Error reviewing file ${file.filename}:`, fileError.message);
+          console.error(`Error reviewing file ${file.path}:`, fileError.message);
         }
         // Continue with next file on error
         fileReviews.push({
-          filename: file.filename,
+          filename: file.path,
           suggestions: [],
           error: 'Failed to generate suggestions for this file',
         });
@@ -182,6 +331,8 @@ export const generatePRReview = async (
       prReviewId: prReview._id,
       files: fileReviews,
       summary: `Reviewed ${fileReviews.length} files in PR #${prNumber}`,
+      filesReviewed: codeResult.files,
+      codeLength: codeResult.codeLength,
     };
   } catch (error) {
     if (error.code === 'GITHUB_NOT_CONNECTED') {

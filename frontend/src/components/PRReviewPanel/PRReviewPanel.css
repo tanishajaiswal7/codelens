@@ -51,6 +51,39 @@
   background: #6366f1;
 }
 
+.review-status-banner {
+  margin: 0 16px 8px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.review-status-banner--clean {
+  color: #d6fbe2;
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.review-status-banner--warning {
+  color: #ffe8b5;
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.debug-info {
+  margin: 0 16px 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  color: #9b99b5;
+  font-size: 12px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
 .files-review {
   display: flex;
   flex-direction: column;

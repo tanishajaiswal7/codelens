@@ -11,6 +11,13 @@ import './PRReviewPanel.css';
 export default function PRReviewPanel({ review, onBack, hideBackButton = true }) {
   const [expandedFiles, setExpandedFiles] = useState(new Set());
   const [copied, setCopied] = useState(false);
+  const files = review.files || [];
+  const totalSuggestions = files.reduce(
+    (count, file) => count + (file.suggestions?.length || 0),
+    0
+  );
+  const hasCode = (review.codeLength || 0) > 0;
+  const showCleanState = totalSuggestions === 0;
 
   const toggleFile = (filename) => {
     const newExpanded = new Set(expandedFiles);
@@ -25,7 +32,7 @@ export default function PRReviewPanel({ review, onBack, hideBackButton = true })
   const generateGitHubComment = () => {
     let comment = '## CodeLens AI Review\n\n';
 
-    review.files.forEach((file) => {
+    files.forEach((file) => {
       if (file.suggestions && file.suggestions.length > 0) {
         const highConfidence = file.suggestions.filter(
           (s) => s.confidence === 'high'
@@ -66,8 +73,23 @@ export default function PRReviewPanel({ review, onBack, hideBackButton = true })
         </button>
       </div>
 
+      {showCleanState && (
+        <div className={`review-status-banner ${hasCode ? 'review-status-banner--clean' : 'review-status-banner--warning'}`}>
+          {hasCode
+            ? 'No issues found — code looks clean!'
+            : 'No reviewable code was fetched for this PR.'}
+        </div>
+      )}
+
+      {process.env.NODE_ENV === 'development' && (
+        <div className="debug-info">
+          <div>Files reviewed: {review.filesReviewed?.join(', ') || files.map((file) => file.filename).join(', ') || 'n/a'}</div>
+          <div>Code length: {review.codeLength || 0}</div>
+        </div>
+      )}
+
       <div className="files-review">
-        {review.files.map((file) => (
+        {files.map((file) => (
           <div key={file.filename} className="file-review-section">
             <button
               className="file-review-header"
@@ -102,7 +124,7 @@ export default function PRReviewPanel({ review, onBack, hideBackButton = true })
                   </div>
                 ) : (
                   <div className="no-suggestions">
-                    No suggestions for this file
+                    {hasCode ? 'No suggestions for this file' : 'No reviewable code was fetched for this file'}
                   </div>
                 )}
               </div>
@@ -131,6 +153,8 @@ PRReviewPanel.propTypes = {
         suggestions: PropTypes.array,
       })
     ),
+    filesReviewed: PropTypes.arrayOf(PropTypes.string),
+    codeLength: PropTypes.number,
   }).isRequired,
   onBack: PropTypes.func.isRequired,
   hideBackButton: PropTypes.bool,

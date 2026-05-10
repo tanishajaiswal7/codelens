@@ -185,6 +185,14 @@ export const reviewPR = async (req, res) => {
       console.error('Review PR error:', error.message);
     }
 
+    if (error.status) {
+      return res.status(error.status).json({
+        error: error.message,
+        detail: error.detail || null,
+        files: error.files || [],
+      });
+    }
+
     if (error.code === 'GITHUB_NOT_CONNECTED') {
       return res.status(403).json({
         error: 'GitHub not connected',
