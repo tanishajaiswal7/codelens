@@ -3,7 +3,7 @@
   flex-direction: column;
   flex: 1;
   height: 100%;
-  min-height: 100%;
+  max-height: 100%;
   overflow: hidden;
   min-width: 0;
   background: #080810;
@@ -12,6 +12,7 @@
 .editor-surface {
   flex: 1;
   min-height: 0;
+  max-height: calc(100% - 76px);
   overflow: hidden;
   position: relative;
 }

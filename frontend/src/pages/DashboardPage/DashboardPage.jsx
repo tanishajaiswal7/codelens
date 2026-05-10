@@ -45,7 +45,7 @@ function DashboardContent({ user }) {
   const [rateLimitUsed, setRateLimitUsed] = useState(0);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [splitRatio, setSplitRatio] = useState(50);
+  const [splitRatio, setSplitRatio] = useState(35);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(340);
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
