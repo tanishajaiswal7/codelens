@@ -112,7 +112,7 @@
 .paste-workspace {
   display: flex;
   flex-direction: column;
-  height: auto;
+  height: 530px;
   min-height: 0;
   overflow: hidden;
 }
