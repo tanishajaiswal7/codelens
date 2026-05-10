@@ -51,12 +51,22 @@ export default function CodeEditor({
 
   useEffect(() => {
     setCode(initialCode || '');
-    // Reset viewport and force layout after loading new code so Monaco updates scrollbar
-    setTimeout(() => {
-      resetEditorViewport();
+    // Reset viewport and force multiple layouts after loading new code
+    // so Monaco fully renders all lines and updates scrollbar
+    const timer1 = setTimeout(() => {
       const editor = localEditorRef.current;
       try { editor && editor.layout(); } catch (e) {}
     }, 50);
+    const timer2 = setTimeout(() => {
+      resetEditorViewport();
+      const editor = localEditorRef.current;
+      try { editor && editor.layout(); } catch (e) {}
+    }, 150);
+    const timer3 = setTimeout(() => {
+      const editor = localEditorRef.current;
+      try { editor && editor.layout(); } catch (e) {}
+    }, 300);
+    return () => { clearTimeout(timer1); clearTimeout(timer2); clearTimeout(timer3); };
   }, [initialCode]);
 
   const lineCount = code.split('\n').length;
@@ -145,6 +155,10 @@ export default function CodeEditor({
             scrollBeyondLastLine: false,
             automaticLayout: true,
             wordWrap: 'on',
+            /* Disable virtualization to render all lines so scrollbar is accurate */
+            fixedOverflowWidgets: true,
+            /* Ensure scrollbar shows full file length */
+            scrollbar: { vertical: 'visible', horizontal: 'hidden', useShadows: true },
           }}
         />
       </div>
