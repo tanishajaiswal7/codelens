@@ -146,6 +146,14 @@ export default function FilePreview({
             scrollBeyondLastLine: false,
             wordWrap: 'on',
             automaticLayout: true,
+            scrollbar: {
+              vertical: 'auto',
+              horizontal: 'auto',
+              verticalSliderSize: 12,
+              horizontalSliderSize: 12,
+            },
+            lineNumbers: 'on',
+            glyphMargin: false,
           }}
         />
         </div>

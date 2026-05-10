@@ -205,6 +205,8 @@
 .fp-editor .overflow-guard {
   height: 100% !important;
   width: 100% !important;
+  max-height: 350px !important;
+  overflow: hidden !important;
 }
 
 /* Loading state */
