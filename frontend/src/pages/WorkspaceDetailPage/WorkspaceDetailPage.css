@@ -4,8 +4,8 @@
   padding: 2rem;
   color: var(--text);
   min-height: 100vh;
-  overflow-x: auto;
-  overflow-y: visible;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .workspace-detail-page {
@@ -16,13 +16,16 @@
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
-  overflow-y: visible;
+  overflow-y: auto;
 }
 
 .wsd-page {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  max-height: 100%;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .wsd-header {

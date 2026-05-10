@@ -1,8 +1,9 @@
 .settings-page {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: var(--bg);
 }
 
@@ -12,6 +13,7 @@
   flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
+  min-height: 0;
 }
 
 .settings-container::-webkit-scrollbar {

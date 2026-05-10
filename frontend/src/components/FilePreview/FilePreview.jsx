@@ -118,13 +118,14 @@ export default function FilePreview({
       </div>
 
       {/* Monaco Editor — takes remaining height */}
-      <div className="fp-editor">
+      <div className="file-editor-container">
+        <div className="fp-editor">
         <Editor
           key={file.path || file.filename || file.content}
           value={editedCode !== null ? editedCode : file.content}
           language={file.language || 'plaintext'}
           theme="vs-dark"
-          height="100%"
+          height="calc(100vh - 200px)"
           onChange={(value) => {
             const nextCode = value || '';
             setEditedCode(nextCode);
@@ -147,6 +148,7 @@ export default function FilePreview({
             automaticLayout: true,
           }}
         />
+        </div>
       </div>
 
       {mode === 'socratic' && editedCode !== null && editedCode !== file.content && (

@@ -97,11 +97,16 @@
   --modal-bg: rgba(255,255,255,0.98);
 }
 
-html, body {
+html {
+  height: 100%;
+}
+
+body {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: var(--bg);
 }
 

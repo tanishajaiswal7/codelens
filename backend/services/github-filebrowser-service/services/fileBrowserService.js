@@ -224,22 +224,12 @@ export const fileBrowserService = {
       const lines = content.split('\n');
       const lineCount = lines.length;
 
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[FileBrowser] Fetched ${path}: ${lineCount} lines`);
+      }
+
       const filename = path.substring(path.lastIndexOf('/') + 1);
       const language = getLanguageFromExtension(filename);
-
-      // Check if file is too large (>300 lines)
-      if (lineCount > 300) {
-        const truncatedContent = lines.slice(0, 300).join('\n');
-        return {
-          filename,
-          path,
-          content: truncatedContent,
-          language,
-          lineCount,
-          truncated: true,
-          warning: 'Large file — review limited to first 300 lines',
-        };
-      }
 
       return {
         filename,
