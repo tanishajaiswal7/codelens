@@ -18,6 +18,8 @@
   overflow: hidden;
   position: relative;
   width: 100%;
+  /* Prevent container from shrinking below a reasonable minimum */
+  max-height: none !important;
 }
 
 /* Ensure the Monaco editor's internal viewport shows all lines and scrolls internally */
@@ -29,6 +31,11 @@
 .monaco-editor, .monaco-editor .monaco-editor-background, .monaco-editor .monaco-editor-scrollable {
   height: 100% !important;
   width: 100% !important;
+}
+
+/* Force editor wrapper to fill container completely */
+.monaco-editor .monaco-editor-scrollable {
+  overflow: hidden !important;
 }
 
 .pane-header {

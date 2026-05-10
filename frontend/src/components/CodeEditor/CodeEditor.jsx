@@ -137,28 +137,22 @@ export default function CodeEditor({
       <div className="editor-surface" ref={(el) => {
         // Watch container for size changes and force Monaco layout
         if (el && !el.__resizeObserver) {
+          let resizeTimeout = null;
           const resizeObserver = new ResizeObserver(() => {
             const editor = localEditorRef.current;
-            if (editor) {
+            if (!editor) return;
+            
+            // Debounce resize handling to prevent feedback loops
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
               try { 
                 console.log('[ResizeObserver] Triggering layout due to container resize');
                 editor.layout(); 
               } catch (e) {}
-            }
+            }, 50);
           });
           resizeObserver.observe(el);
           el.__resizeObserver = resizeObserver;
-          
-          // Force initial layout with container dimensions
-          const forceLayout = () => {
-            if (el && localEditorRef.current) {
-              console.log('[Force Layout] Container:', el.clientWidth, 'x', el.clientHeight);
-              try { localEditorRef.current.layout(); } catch (e) {}
-            }
-          };
-          forceLayout();
-          setTimeout(forceLayout, 100);
-          setTimeout(forceLayout, 200);
         }
       }}>
         <Editor
@@ -175,17 +169,24 @@ export default function CodeEditor({
             if (editorRef) {
               editorRef.current = editor;
             }
+            
             // Force layout immediately and multiple times to ensure Monaco renders all lines
             const doLayout = () => { 
               try { 
                 editor.layout(); 
                 // Debug: log container and viewport info
                 const container = editor.getContainerDomNode();
-                if (container) {
-                  console.log('[Monaco] Container height:', container.clientHeight, 'Content height:', editor.getContentHeight());
-                }
-              } catch (e) {} 
+                const scrollHeight = editor.getScrollHeight();
+                const contentHeight = editor.getContentHeight();
+                const viewHeight = container?.clientHeight;
+                const model = editor.getModel();
+                const lineCount = model?.getLineCount();
+                console.log(`[Monaco @mount] Container: ${viewHeight}px, ScrollHeight: ${scrollHeight}px, ContentHeight: ${contentHeight}px, Lines: ${lineCount}`);
+              } catch (e) { 
+                console.error('[Monaco @mount] Error:', e);
+              } 
             };
+            
             doLayout();
             setTimeout(doLayout, 25);
             setTimeout(doLayout, 75);
@@ -208,23 +209,25 @@ export default function CodeEditor({
             fontFamily: 'JetBrains Mono',
             lineNumbers: 'on',
             scrollBeyondLastLine: false,
-            automaticLayout: false, /* TURN OFF - we handle layout with ResizeObserver */
+            automaticLayout: false, 
             wordWrap: 'on',
             fixedOverflowWidgets: true,
             scrollbar: { 
               vertical: 'visible', 
               horizontal: 'hidden', 
               useShadows: true,
-              verticalSliderSize: 12,
+              verticalSliderSize: 14,
               verticalHasArrows: false,
             },
-            /* Aggressive rendering: render lines way beyond viewport */
-            lineDecorationsWidth: 10,
-            rulers: [],
-            /* Hide unnecessary UI */
+            /* Force rendering of lines beyond viewport to prevent virtualization gaps */
+            renderWhitespace: 'none',
             glyphMargin: false,
             folding: true,
-            hideCursorInOverviewRuler: false,
+            /* Increase rendering buffer to cache more lines */
+            codeActionsOnSave: {},
+            /* Ensure viewport includes enough lines for smooth scrolling */
+            lineDecorationsWidth: 10,
+            scrollPredominantAxis: true,
           }}
         />
       </div>
