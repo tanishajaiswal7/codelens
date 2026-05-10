@@ -125,7 +125,7 @@ export default function FilePreview({
           value={editedCode !== null ? editedCode : file.content}
           language={file.language || 'plaintext'}
           theme="vs-dark"
-          height="auto"
+          height="350px"
           onChange={(value) => {
             const nextCode = value || '';
             setEditedCode(nextCode);
