@@ -61,9 +61,19 @@ export default function PRReviewPanel({ review, onBack, hideBackButton = true })
   return (
     <div className="pr-review-panel">
       <div className="review-header">
-        <div>
-          <h2>Review Results</h2>
-          <p className="review-summary">{review.summary}</p>
+        <div className="review-header-left">
+          {!hideBackButton && (
+            <button
+              className="back-button-header"
+              onClick={onBack}
+            >
+              ← Back
+            </button>
+          )}
+          <div>
+            <h2>Review Results</h2>
+            <p className="review-summary">{review.summary}</p>
+          </div>
         </div>
         <button
           className="copy-comment-button"
@@ -131,14 +141,6 @@ export default function PRReviewPanel({ review, onBack, hideBackButton = true })
             )}
           </div>
         ))}
-      </div>
-
-      <div className="review-actions">
-        {!hideBackButton && (
-          <button className="back-button" onClick={onBack}>
-            ← Back to PR list
-          </button>
-        )}
       </div>
     </div>
   );

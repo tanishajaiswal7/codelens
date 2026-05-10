@@ -20,6 +20,38 @@
   flex-shrink: 0;
 }
 
+.review-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
+.back-button-header {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #b8b5d0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  font-family: 'Instrument Sans', sans-serif;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.back-button-header:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f0eff8;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
 .review-header h2 {
   font-size: 18px;
   font-weight: 700;
