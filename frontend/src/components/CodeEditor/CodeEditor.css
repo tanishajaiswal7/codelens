@@ -22,15 +22,15 @@
   flex-direction: column;
 }
 
-/* Ensure the Monaco editor's internal viewport shows all lines and scrolls internally */
-.monaco-scrollable-element > .scrollable-viewport {
+/* Monaco sizing fix */
+.monaco-editor {
+  width: 100% !important;
   height: 100% !important;
 }
 
-/* Ensure Monaco editor containers fill the surface */
-.monaco-editor, .monaco-editor .monaco-editor-background, .monaco-editor .monaco-editor-scrollable {
-  height: 100% !important;
+.monaco-editor .overflow-guard {
   width: 100% !important;
+  height: 100% !important;
 }
 
 /* Enable scrolling for Monaco's internal scrollable container */

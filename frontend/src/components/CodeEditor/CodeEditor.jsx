@@ -216,6 +216,7 @@ export default function CodeEditor({
             }}
             options={{
               fontSize: 13,
+              lineHeight: 22,
               fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
               lineNumbers: 'on',
               lineNumbersMinChars: 3,
