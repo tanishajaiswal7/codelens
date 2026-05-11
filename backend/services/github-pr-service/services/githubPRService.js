@@ -46,15 +46,21 @@ const fetchPRFileContents = async (repoFullName, prNumber, token, selectedFiles 
 
   const files = await filesRes.json();
 
-  const codeFiles = files
+  // Filter for reviewable files
+  let codeFiles = files
     .filter((file) => file.status !== 'removed')
-    .filter((file) => isReviewableFile(file.filename))
-    .filter((file) => {
-      if (!Array.isArray(selectedFiles) || selectedFiles.length === 0) return true;
-      return selectedFiles.includes(file.filename);
-    })
-    .sort((a, b) => (b.additions + b.deletions) - (a.additions + a.deletions))
-    .slice(0, 5);
+    .filter((file) => isReviewableFile(file.filename));
+
+  // If specific files are selected, filter to only those files
+  const hasSelectedFiles = Array.isArray(selectedFiles) && selectedFiles.length > 0;
+  if (hasSelectedFiles) {
+    codeFiles = codeFiles.filter((file) => selectedFiles.includes(file.filename));
+  } else {
+    // Only apply sorting and slicing limit when no specific files are selected
+    codeFiles = codeFiles
+      .sort((a, b) => (b.additions + b.deletions) - (a.additions + a.deletions))
+      .slice(0, 5);
+  }
 
   if (codeFiles.length === 0) {
     return null;
