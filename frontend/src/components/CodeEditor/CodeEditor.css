@@ -35,8 +35,7 @@
 
 /* Enable scrolling for Monaco's internal scrollable container */
 .monaco-editor .monaco-editor-scrollable {
-  overflow-y: auto !important;
-  overflow-x: visible !important;
+  overflow: visible !important;
 }
 
 .pane-header {
@@ -237,4 +236,18 @@
   .socratic-toggle-wrap {
     margin-left: auto;
   }
+}
+
+/* Fix Monaco viewport clipping */
+.editor-surface > div {
+  flex: 1;
+  min-height: 0;
+}
+
+.monaco-editor {
+  min-height: 0 !important;
+}
+
+.monaco-editor .overflow-guard {
+  height: 100% !important;
 }

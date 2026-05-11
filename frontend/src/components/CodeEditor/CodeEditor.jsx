@@ -194,15 +194,15 @@ export default function CodeEditor({
           el.__resizeObserver = resizeObserver;
         }
       }}>
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            minHeight: '400px',
-            position: 'relative',
-            overflow: 'hidden'
-          }}
-        >
+<div
+  style={{
+    width: '100%',
+    flex: 1,
+    minHeight: 0,
+    position: 'relative',
+    display: 'flex'
+  }}
+>
           <Editor
             height="100%"
             width="100%"
