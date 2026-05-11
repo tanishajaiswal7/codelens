@@ -46,6 +46,13 @@ export default function HistoryReviewViewer({
   const timeAgo = formatTimeAgo(review.createdAt)
   const language = detectLanguage(review.code || '')
 
+  // Cleanup editor resize handlers on unmount
+  useEffect(() => {
+    return () => {
+      try { editorRef.current && editorRef.current._resizeCleanup && editorRef.current._resizeCleanup(); } catch (e) {}
+    };
+  }, []);
+
   return (
     <div className="hrv">
 
@@ -166,15 +173,7 @@ export default function HistoryReviewViewer({
 
       </div>
     </div>
-  
-  // Cleanup editor resize handlers on unmount
-  useEffect(() => {
-    return () => {
-      try { editorRef.current && editorRef.current._resizeCleanup && editorRef.current._resizeCleanup(); } catch (e) {}
-    };
-  }, []);
-  
-  )
+  );
 }
 
 // Detect language from code content

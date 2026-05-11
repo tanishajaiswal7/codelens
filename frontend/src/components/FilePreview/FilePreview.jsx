@@ -26,6 +26,13 @@ export default function FilePreview({
     setEditedCode(null);
   }, [file?.path, file?.content]);
 
+  // Cleanup resize listeners when unmounting
+  useEffect(() => {
+    return () => {
+      try { editorRef.current && editorRef.current._resizeCleanup && editorRef.current._resizeCleanup(); } catch (e) {}
+    };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="file-preview-loading">
@@ -118,13 +125,6 @@ export default function FilePreview({
           )}
         </div>
       </div>
-
-    // Cleanup resize listeners when unmounting
-    useEffect(() => {
-      return () => {
-        try { editorRef.current && editorRef.current._resizeCleanup && editorRef.current._resizeCleanup(); } catch (e) {}
-      };
-    }, []);
 
       {/* Monaco Editor — takes remaining height */}
       <div className="file-editor-container">
