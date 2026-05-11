@@ -26,6 +26,7 @@ export default function CodeEditor({
   const [code, setCode] = useState('');
   const [language, setLanguage] = useState('javascript');
   const localEditorRef = useRef(null);
+  const isDark = true;
 
   const resetEditorViewport = () => {
     const editor = localEditorRef.current;
@@ -98,6 +99,34 @@ export default function CodeEditor({
     };
   }, [initialCode]);
 
+  // Ensure Monaco re-layouts after new code is loaded
+  useEffect(() => {
+    const ref = editorRef?.current || localEditorRef.current;
+    if (code && ref) {
+      setTimeout(() => {
+        try {
+          ref.layout();
+          ref.setScrollPosition?.({ scrollTop: 0, scrollLeft: 0 });
+          ref.revealLine?.(1);
+        } catch (e) {}
+      }, 50);
+    }
+  }, [code]);
+
+  // Cleanup any editor resize handlers when unmounting
+  useEffect(() => {
+    return () => {
+      try {
+        if (localEditorRef.current && localEditorRef.current._resizeCleanup) {
+          localEditorRef.current._resizeCleanup();
+        }
+        if (editorRef && editorRef.current && editorRef.current._resizeCleanup) {
+          editorRef.current._resizeCleanup();
+        }
+      } catch (e) {}
+    };
+  }, []);
+
   const lineCount = code.split('\n').length;
   const canSubmit = code.trim().length > 0 && lineCount >= minLinesToSubmit;
 
@@ -165,85 +194,78 @@ export default function CodeEditor({
           el.__resizeObserver = resizeObserver;
         }
       }}>
-        <Editor
-          height="100%"
-          language={language}
-          value={code}
-          onChange={(value) => {
-            const nextCode = value || '';
-            console.log('[Editor.onChange] Received', nextCode.split('\n').length, 'lines, length:', nextCode.length, 'chars');
-            if (nextCode.split('\n').length > 1) {
-              console.log('[Editor.onChange] First 100 chars:', nextCode.substring(0, 100));
-            }
-            setCode(nextCode);
-            onCodeChange(nextCode);
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            minHeight: '400px',
+            position: 'relative',
+            overflow: 'hidden'
           }}
-          onMount={(editor) => {
-            localEditorRef.current = editor;
-            if (editorRef) {
-              editorRef.current = editor;
-            }
-            
-            // Force layout immediately and multiple times to ensure Monaco renders all lines
-            const doLayout = () => { 
-              try { 
-                editor.layout(); 
-                // Debug: log container and viewport info
-                const container = editor.getContainerDomNode();
-                const scrollHeight = editor.getScrollHeight();
-                const contentHeight = editor.getContentHeight();
-                const viewHeight = container?.clientHeight;
-                const model = editor.getModel();
-                const lineCount = model?.getLineCount();
-                console.log(`[Monaco @mount] Container: ${viewHeight}px, ScrollHeight: ${scrollHeight}px, ContentHeight: ${contentHeight}px, Lines: ${lineCount}`);
-              } catch (e) { 
-                console.error('[Monaco @mount] Error:', e);
-              } 
-            };
-            
-            doLayout();
-            setTimeout(doLayout, 25);
-            setTimeout(doLayout, 75);
-            setTimeout(() => {
-              doLayout();
-              resetEditorViewport();
-            }, 150);
-            setTimeout(doLayout, 250);
-            
-            // Re-layout on window resize
-            const onResize = () => doLayout();
-            window.addEventListener('resize', onResize);
-            editor.__removeResize = () => window.removeEventListener('resize', onResize);
-          }}
-          theme="vs-dark"
-          options={{
-            readOnly: false,
-            minimap: { enabled: false },
-            fontSize: 13,
-            fontFamily: 'JetBrains Mono',
-            lineNumbers: 'on',
-            scrollBeyondLastLine: false,
-            automaticLayout: false, 
-            wordWrap: 'on',
-            fixedOverflowWidgets: true,
-            scrollbar: { 
-              vertical: 'visible', 
-              horizontal: 'hidden', 
-              useShadows: true,
-              verticalSliderSize: 14,
-              verticalHasArrows: false,
-            },
-            /* Force rendering of lines beyond viewport to prevent virtualization gaps */
-            renderWhitespace: 'none',
-            glyphMargin: false,
-            folding: true,
-            /* Increase rendering buffer to cache more lines */
-            codeActionsOnSave: {},
-            /* Ensure viewport includes enough lines for smooth scrolling */
-            lineDecorationsWidth: 10,
-            scrollPredominantAxis: true,
-          }}
-        />
+        >
+          <Editor
+            height="100%"
+            width="100%"
+            language={language || 'javascript'}
+            value={code}
+            theme={isDark ? 'vs-dark' : 'light'}
+            onChange={(value) => {
+              const next = value || '';
+              setCode(next);
+              onCodeChange && onCodeChange(next);
+            }}
+            options={{
+              fontSize: 13,
+              fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+              lineNumbers: 'on',
+              lineNumbersMinChars: 3,
+              glyphMargin: false,
+              folding: false,
+              lineDecorationsWidth: 0,
+              renderLineHighlight: 'line',
+              scrollBeyondLastLine: false,
+              wordWrap: 'off',
+              automaticLayout: true,
+              minimap: { enabled: false },
+              scrollbar: {
+                vertical: 'visible',
+                horizontal: 'visible',
+                verticalScrollbarSize: 10,
+                horizontalScrollbarSize: 10,
+                useShadows: false,
+                alwaysConsumeMouseWheel: false
+              },
+              padding: { top: 12, bottom: 12 },
+              contextmenu: true,
+              selectOnLineNumbers: true,
+              roundedSelection: false,
+              readOnly: false,
+              cursorStyle: 'line',
+              mouseWheelZoom: false,
+              fixedOverflowWidgets: true,
+              overviewRulerLanes: 0,
+              hideCursorInOverviewRuler: true,
+              overviewRulerBorder: false
+            }}
+            onMount={(editor, monaco) => {
+              // Force layout recalculation after mount
+              setTimeout(() => {
+                try { editor.layout(); } catch (e) {}
+                try { editor.revealLine(1); } catch (e) {}
+              }, 100);
+              // Also recalculate on window resize
+              const handleResize = () => editor.layout();
+              window.addEventListener('resize', handleResize);
+              // Store cleanup function
+              editor._resizeCleanup = () => {
+                window.removeEventListener('resize', handleResize);
+              };
+              // Store ref
+              localEditorRef.current = editor;
+              if (editorRef) editorRef.current = editor;
+            }}
+          />
+        </div>
       </div>
 
       {socraticMode && socraticCodeChanged && (

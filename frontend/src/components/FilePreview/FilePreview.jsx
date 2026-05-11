@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import PersonaPicker from '../PersonaPicker/PersonaPicker.jsx';
 import { socraticApi } from '../../api/socraticApi.js';
@@ -19,6 +19,8 @@ export default function FilePreview({
 }) {
   const [selectedPersona, setSelectedPersona] = useState('faang');
   const [editedCode, setEditedCode] = useState(null);
+  const editorRef = useRef(null);
+  const isDark = true;
 
   useEffect(() => {
     setEditedCode(null);
@@ -117,45 +119,74 @@ export default function FilePreview({
         </div>
       </div>
 
+    // Cleanup resize listeners when unmounting
+    useEffect(() => {
+      return () => {
+        try { editorRef.current && editorRef.current._resizeCleanup && editorRef.current._resizeCleanup(); } catch (e) {}
+      };
+    }, []);
+
       {/* Monaco Editor — takes remaining height */}
       <div className="file-editor-container">
         <div className="fp-editor">
-        <Editor
-          key={file.path || file.filename || file.content}
-          value={editedCode !== null ? editedCode : file.content}
-          language={file.language || 'plaintext'}
-          theme="vs-dark"
-          height="100%"
-          onChange={(value) => {
-            const nextCode = value || '';
-            setEditedCode(nextCode);
-            onCodeChange?.(nextCode);
-          }}
-          onMount={(editor) => {
-            editor.setScrollTop(0);
-            editor.setScrollLeft(0);
-            editor.setPosition({ lineNumber: 1, column: 1 });
-            editor.revealPositionInCenter({ lineNumber: 1, column: 1 });
-            editor.revealLine(1);
-          }}
-          options={{
-            readOnly: mode !== 'socratic',
-            minimap: { enabled: false },
-            fontSize: isExpanded ? 11 : 12,
-            lineHeight: isExpanded ? 18 : 21,
-            scrollBeyondLastLine: false,
-            wordWrap: 'on',
-            automaticLayout: true,
-            scrollbar: {
-              vertical: 'auto',
-              horizontal: 'auto',
-              verticalSliderSize: 12,
-              horizontalSliderSize: 12,
-            },
-            lineNumbers: 'on',
-            glyphMargin: false,
-          }}
-        />
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              minHeight: '400px',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+          >
+            <Editor
+              key={file.path || file.filename || file.content}
+              height="100%"
+              width="100%"
+              language={file.language || 'plaintext'}
+              value={editedCode !== null ? editedCode : file.content}
+              theme={isDark ? 'vs-dark' : 'light'}
+              onChange={(value) => {
+                const next = value || '';
+                setEditedCode(next);
+                onCodeChange?.(next);
+              }}
+              options={{
+                fontSize: isExpanded ? 11 : 12,
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Courier New', monospace",
+                lineNumbers: 'on',
+                lineNumbersMinChars: 3,
+                glyphMargin: false,
+                folding: false,
+                lineDecorationsWidth: 0,
+                renderLineHighlight: 'line',
+                scrollBeyondLastLine: false,
+                wordWrap: 'off',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                scrollbar: {
+                  vertical: 'visible',
+                  horizontal: 'visible',
+                  verticalScrollbarSize: 12,
+                  horizontalScrollbarSize: 12,
+                  useShadows: false,
+                  alwaysConsumeMouseWheel: false
+                },
+                padding: { top: 12, bottom: 12 },
+                readOnly: mode !== 'socratic',
+                fixedOverflowWidgets: true,
+              }}
+              onMount={(editor) => {
+                editorRef.current = editor;
+                setTimeout(() => {
+                  try { editor.layout(); } catch (e) {}
+                  try { editor.revealLine(1); } catch (e) {}
+                }, 100);
+                const handleResize = () => { try { editor.layout(); } catch (e) {} };
+                window.addEventListener('resize', handleResize);
+                editor._resizeCleanup = () => window.removeEventListener('resize', handleResize);
+              }}
+            />
+          </div>
         </div>
       </div>
 

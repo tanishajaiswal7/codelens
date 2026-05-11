@@ -12,14 +12,14 @@
 }
 
 .editor-surface {
-  /* flex to fill remaining space after header/footer; monaco scrolls content */
-  flex: 1 1 auto;
-  min-height: 200px;
-  overflow: hidden;
-  position: relative;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
   width: 100%;
-  /* Prevent container from shrinking below a reasonable minimum */
-  max-height: none !important;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Ensure the Monaco editor's internal viewport shows all lines and scrolls internally */
@@ -40,7 +40,7 @@
 }
 
 .pane-header {
-  height: 34px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -74,7 +74,7 @@
 }
 
 .editor-footer {
-  height: 42px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: space-between;

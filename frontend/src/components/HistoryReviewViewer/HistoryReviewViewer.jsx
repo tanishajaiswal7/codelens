@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Editor from '@monaco-editor/react'
 import ReviewPanel from '../ReviewPanel/ReviewPanel'
 import './HistoryReviewViewer.css'
@@ -100,32 +100,49 @@ export default function HistoryReviewViewer({
           </div>
 
           <div className="hrv-editor-wrap">
-            {review.code ? (
-              <Editor
-                value={review.code}
-                language={language}
-                theme="vs-dark"
-                options={{
-                  readOnly: true,
-                  minimap: { enabled: false },
-                  fontSize: 12,
-                  lineHeight: 20,
-                  scrollBeyondLastLine: false,
-                  wordWrap: 'on',
-                  renderLineHighlight: 'all',
-                  lineNumbers: 'on',
-                  folding: false,
-                  contextmenu: false,
-                  scrollbar: {
-                    verticalScrollbarSize: 4,
-                    horizontalScrollbarSize: 4,
-                  },
-                }}
-                onMount={(editor) => {
-                  editorRef.current = editor
-                }}
-              />
-            ) : (
+              {review.code ? (
+                <div style={{ width: '100%', height: '100%', minHeight: '400px', position: 'relative', overflow: 'hidden' }}>
+                  <Editor
+                    value={review.code}
+                    language={language}
+                    theme="vs-dark"
+                    height="100%"
+                    width="100%"
+                    options={{
+                      readOnly: true,
+                      minimap: { enabled: false },
+                      fontSize: 12,
+                      lineHeight: 20,
+                      scrollBeyondLastLine: false,
+                      wordWrap: 'off',
+                      renderLineHighlight: 'all',
+                      lineNumbers: 'on',
+                      folding: false,
+                      contextmenu: false,
+                      automaticLayout: true,
+                      minimap: { enabled: false },
+                      scrollbar: {
+                        vertical: 'visible',
+                        horizontal: 'visible',
+                        verticalScrollbarSize: 10,
+                        horizontalScrollbarSize: 10,
+                      },
+                      fixedOverflowWidgets: true,
+                      padding: { top: 12, bottom: 12 },
+                    }}
+                    onMount={(editor) => {
+                      editorRef.current = editor
+                      setTimeout(() => {
+                        try { editor.layout(); } catch (e) {}
+                        try { editor.revealLine(1); } catch (e) {}
+                      }, 100);
+                      const handleResize = () => { try { editor.layout(); } catch (e) {} };
+                      window.addEventListener('resize', handleResize);
+                      editor._resizeCleanup = () => window.removeEventListener('resize', handleResize);
+                    }}
+                  />
+                </div>
+              ) : (
               <div className="hrv-no-code">
                 <div className="hrv-no-code-icon">📄</div>
                 <div className="hrv-no-code-text">
@@ -149,6 +166,14 @@ export default function HistoryReviewViewer({
 
       </div>
     </div>
+  
+  // Cleanup editor resize handlers on unmount
+  useEffect(() => {
+    return () => {
+      try { editorRef.current && editorRef.current._resizeCleanup && editorRef.current._resizeCleanup(); } catch (e) {}
+    };
+  }, []);
+  
   )
 }
 
