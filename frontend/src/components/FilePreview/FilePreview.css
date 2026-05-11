@@ -200,13 +200,14 @@
   min-height: 0;
 }
 
-/* Force Monaco to fill the container */
-.fp-editor .monaco-editor,
-.fp-editor .monaco-editor-background,
-.fp-editor .overflow-guard {
-  height: 100% !important;
+.fp-editor .monaco-editor {
   width: 100% !important;
-  overflow: auto !important;
+  height: 100% !important;
+}
+
+.fp-editor .overflow-guard {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Loading state */
@@ -242,4 +243,14 @@
   color: var(--accent);
   font-size: 12px;
   font-family: 'Instrument Sans', sans-serif;
+}
+/* Monaco viewport fix */
+.fp-editor > div {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.monaco-scrollable-element {
+  height: 100% !important;
 }
