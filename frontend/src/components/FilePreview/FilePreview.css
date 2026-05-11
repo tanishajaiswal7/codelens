@@ -245,11 +245,7 @@
   font-family: 'Instrument Sans', sans-serif;
 }
 /* Monaco viewport fix */
-.fp-editor > div {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-}
+
 
 .monaco-scrollable-element {
   height: 100% !important;

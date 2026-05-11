@@ -129,13 +129,12 @@ export default function FilePreview({
       {/* Monaco Editor — takes remaining height */}
       <div className="file-editor-container">
         <div className="fp-editor">
-          <div
+     <div
   style={{
     width: '100%',
-    flex: 1,
-    minHeight: 0,
+    height: '100%',
     position: 'relative',
-    display: 'flex'
+    minHeight: 0
   }}
 >
             <Editor
